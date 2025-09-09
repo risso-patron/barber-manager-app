@@ -16,7 +16,7 @@ export default function HomePage() {
           </p>
           <div className="space-x-4">
             <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-              <Link href="/auth/login">Iniciar Sesión</Link>
+              <Link href="/login">Iniciar Sesión</Link>
             </Button>
             <Button
               asChild
@@ -24,7 +24,7 @@ export default function HomePage() {
               size="lg"
               className="text-white border-white hover:bg-white hover:text-slate-900 bg-transparent"
             >
-              <Link href="/auth/register">Registrarse</Link>
+              <Link href="/register">Registrarse</Link>
             </Button>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-                <Link href="/auth/register">Comenzar Gratis</Link>
+                <Link href="/register">Comenzar Gratis</Link>
               </Button>
             </CardContent>
           </Card>

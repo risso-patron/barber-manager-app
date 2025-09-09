@@ -3,8 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { useAppStore } from "@/lib/store"
+import { useDemoAuth } from "@/lib/demo-auth"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -17,12 +16,10 @@ export function Sidebar({ userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
-  const { user, setUser } = useAppStore()
+  const { user, logout } = useDemoAuth()
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+  const handleLogout = () => {
+    logout()
     router.push("/auth/login")
   }
 

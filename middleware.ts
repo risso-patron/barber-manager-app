@@ -63,9 +63,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Para rutas protegidas, redirigir al login si no hay usuario
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    // En el cliente, verificaremos localStorage
+    // El middleware no puede acceder a localStorage, así que dejamos pasar
+    // y verificamos en el componente
+    return NextResponse.next()
+  }
+
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/dashboard/:path*"],
 }

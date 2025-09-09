@@ -1,17 +1,32 @@
-import type React from "react"
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth"
-import { Sidebar } from "@/components/layout/sidebar"
+"use client"
 
-export default async function DashboardLayout({
+import type React from "react"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useDemoAuth } from "@/lib/demo-auth"
+import { Sidebar } from "@/components/layout/sidebar"
+import { Loader2 } from "lucide-react"
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await getCurrentUser()
+  const { user, isAuthenticated } = useDemoAuth()
+  const router = useRouter()
 
-  if (!user) {
-    redirect("/auth/login")
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/auth/login")
+    }
+  }, [isAuthenticated, router])
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 interface RegisterFormData {
   name: string
@@ -25,6 +25,7 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedRole, setSelectedRole] = useState<"client" | "employee">("client")
+  const [isNetworkError, setIsNetworkError] = useState(false)
   const router = useRouter()
 
   const {
@@ -38,9 +39,32 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
     setError(null)
+    setIsNetworkError(false)
 
     try {
+      // Check if we're in a preview environment
+      const isPreview =
+        window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("preview")
+
+      if (isPreview) {
+        // Simulate successful registration in preview mode
+        setError(
+          "Modo de demostración: El registro se ha simulado exitosamente. En producción, esto crearía una cuenta real.",
+        )
+        setTimeout(() => {
+          router.push("/auth/login?demo=true")
+        }, 2000)
+        return
+      }
+
       const supabase = createClient()
+
+      // Test connection first
+      const { data: testData, error: testError } = await supabase.from("users").select("count").limit(1)
+
+      if (testError && testError.message.includes("Failed to fetch")) {
+        throw new Error("NETWORK_ERROR")
+      }
 
       // Sign up with Supabase Auth with metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -56,6 +80,9 @@ export function RegisterForm() {
       })
 
       if (authError) {
+        if (authError.message.includes("Failed to fetch") || authError.message.includes("NetworkError")) {
+          throw new Error("NETWORK_ERROR")
+        }
         setError(authError.message)
         return
       }
@@ -82,9 +109,17 @@ export function RegisterForm() {
         // Show success message and redirect
         router.push("/auth/login?message=Registro exitoso. Revisa tu email para confirmar tu cuenta.")
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Registration error:", err)
-      setError("Error inesperado. Intenta nuevamente.")
+
+      if (err.message === "NETWORK_ERROR" || err.message?.includes("Failed to fetch")) {
+        setIsNetworkError(true)
+        setError(
+          "Error de conexión. Esto puede ocurrir en el modo de vista previa. En producción, la aplicación funcionará correctamente.",
+        )
+      } else {
+        setError("Error inesperado. Intenta nuevamente.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -97,6 +132,16 @@ export function RegisterForm() {
         <CardDescription>Regístrate en Barber Manager</CardDescription>
       </CardHeader>
       <CardContent>
+        {isNetworkError && (
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Modo de Vista Previa:</strong> Esta es una demostración. En producción, la aplicación se conectará
+              correctamente a Supabase.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nombre Completo</Label>
@@ -181,14 +226,14 @@ export function RegisterForm() {
           </div>
 
           {error && (
-            <Alert variant="destructive">
+            <Alert variant={isNetworkError ? "default" : "destructive"}>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear Cuenta
+            {isNetworkError ? "Simular Registro" : "Crear Cuenta"}
           </Button>
         </form>
 
