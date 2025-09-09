@@ -1,8 +1,14 @@
+import { AppointmentSystem } from "@/components/appointments/appointment-system"
+
 export default function EmployeePage() {
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">Panel del Barbero</h1>
-      <p>Agenda diaria, historial de clientes y disponibilidad.</p>
-    </main>
-  );
+    <div className="p-6 space-y-6">
+      <div className="border-b pb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Mi Área de Trabajo</h1>
+        <p className="text-gray-600">Gestiona tu agenda y horarios de trabajo</p>
+      </div>
+      
+      <AppointmentSystem />
+    </div>
+  )
 }
