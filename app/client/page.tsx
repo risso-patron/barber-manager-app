@@ -11,4 +11,14 @@ export default function ClientPage() {
       <AppointmentSystem />
     </div>
   )
+
+}import { AppointmentForm } from "@/components/appointment-system/AppointmentForm";
+
+export default function ClientPage() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Reservar una cita</h1>
+      <AppointmentForm />
+    </div>
+  );
 }
