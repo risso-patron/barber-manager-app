@@ -155,26 +155,22 @@ export default function ClientPage() {
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
-
-    const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
     
     // Verificar si es hoy
     if (date.toDateString() === today.toDateString()) {
-      return `Hoy a las ${timeStr}`
+      return `Hoy`
     }
     
     // Verificar si es mañana
     if (date.toDateString() === tomorrow.toDateString()) {
-      return `Mañana a las ${timeStr}`
+      return `Mañana`
     }
     
     // Fecha normal
     return date.toLocaleDateString('es-ES', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     })
   }
 
