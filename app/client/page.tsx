@@ -340,6 +340,12 @@ export default function ClientPage() {
                 <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Completadas</div>
                 <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{appointments.filter(a => a.status === 'completed').length}</div>
               </div>
+              <div style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', borderRadius: '1rem', padding: '1.5rem', color: 'white' }}>
+                <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Total Gastado</div>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+                  ${appointments.filter(a => a.status === 'completed' && a.service?.price).reduce((sum, a) => sum + (a.service?.price || 0), 0).toFixed(2)}
+                </div>
+              </div>
             </div>
 
             {/* Próximas citas */}
@@ -420,6 +426,11 @@ export default function ClientPage() {
                             {appointment.employee && (
                               <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
                                 👤 Con: <strong>{appointment.employee.name || appointment.employee.email}</strong>
+                              </div>
+                            )}
+                            {appointment.service?.price && (
+                              <div style={{ fontSize: '0.875rem', color: '#059669', fontWeight: '600', marginTop: '0.5rem' }}>
+                                💰 Precio: ${appointment.service.price.toFixed(2)}
                               </div>
                             )}
                           </div>
@@ -528,8 +539,6 @@ export default function ClientPage() {
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                                <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                           <div style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b' }}>
                             {appointment.service?.name || 'Servicio no especificado'}
                           </div>
@@ -544,7 +553,7 @@ export default function ClientPage() {
                             {getStatusText(appointment.status)}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b' }}>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b', flexWrap: 'wrap' }}>
                           <span>📅 {new Date(appointment.appointment_date).toLocaleDateString('es-ES', {
                             day: 'numeric',
                             month: 'short',
@@ -553,17 +562,8 @@ export default function ClientPage() {
                           {appointment.employee && (
                             <span>👤 {appointment.employee.name || appointment.employee.email}</span>
                           )}
-                        </div>
-                      </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b' }}>
-                          <span>� {new Date(appointment.date).toLocaleDateString('es-ES', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}</span>
-                          {appointment.employee && (
-                            <span>👤 {appointment.employee.name || appointment.employee.email}</span>
+                          {appointment.service?.price && (
+                            <span style={{ color: '#059669', fontWeight: '600' }}>� ${appointment.service.price.toFixed(2)}</span>
                           )}
                         </div>
                       </div>
