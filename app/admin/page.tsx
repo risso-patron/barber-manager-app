@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { getCurrentUserRole } from "@/lib/roles"
 
 // Hooks
 import { useDashboardStats } from "./hooks/use-dashboard-stats"
@@ -29,14 +30,41 @@ export default function AdminPage() {
   const [showClientModal, setShowClientModal] = useState(false)
   const [showEmployeeModal, setShowEmployeeModal] = useState(false)
   const [showInventoryModal, setShowInventoryModal] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   
   const router = useRouter()
   const { stats, recentAppointments, loading, error, refresh } = useDashboardStats()
+
+  // Verificar que el usuario sea admin
+  useEffect(() => {
+    const checkRole = async () => {
+      const user = await getCurrentUserRole()
+      if (!user || user.role !== 'admin') {
+        router.push('/employee')
+        return
+      }
+      setIsAuthorized(true)
+      setCheckingAuth(false)
+    }
+    checkRole()
+  }, [router])
 
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  if (checkingAuth || !isAuthorized) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: '50px', height: '50px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }}></div>
+          <p style={{ color: '#64748b' }}>Verificando permisos...</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

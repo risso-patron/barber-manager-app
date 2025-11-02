@@ -44,7 +44,16 @@ export function LoginForm() {
         return
       }
 
-      router.push("/dashboard")
+      // Obtener rol del empleado
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('role, name')
+        .eq('email', data.email)
+        .single()
+
+      // Redirigir según el rol
+      const redirectPath = employee?.role === 'admin' ? '/admin' : '/employee'
+      router.push(redirectPath)
       router.refresh()
     } catch (err) {
       console.error("Login error:", err)
