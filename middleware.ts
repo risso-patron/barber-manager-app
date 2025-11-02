@@ -46,13 +46,19 @@ export async function middleware(request: NextRequest) {
 
   // Si hay usuario, verificar su rol y redirigir apropiadamente
   if (user) {
-    const { data: employee } = await supabase
-      .from('employees')
+    const { data: userData } = await supabase
+      .from('users')
       .select('role')
       .eq('email', user.email)
       .single()
 
-    const userRole = employee?.role || 'employee'
+    const userRole = userData?.role || 'employee'
+
+    // Solo permitir acceso a empleados y admins (no clientes)
+    if (userRole === 'client') {
+      url.pathname = '/booking'
+      return NextResponse.redirect(url)
+    }
 
     // Redirigir desde login a dashboard apropiado
     if (url.pathname === '/auth/login') {

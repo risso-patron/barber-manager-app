@@ -13,45 +13,56 @@ Ve a tu proyecto en Supabase:
 O bien, copia y pega este código:
 
 ```sql
--- Agregar columna de rol a la tabla employees
-ALTER TABLE employees 
-ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'employee' CHECK (role IN ('admin', 'employee'));
+## 1. Verificar el Esquema de la Base de Datos
 
--- Actualizar el primer empleado como admin (ajusta el email según tu empleado admin)
-UPDATE employees 
-SET role = 'admin' 
-WHERE email LIKE '%admin%' OR id = (SELECT id FROM employees ORDER BY created_at LIMIT 1);
+**IMPORTANTE**: La tabla `users` ya tiene la columna `role` con tipo ENUM `user_role` que incluye:
+- `'client'` - Clientes que reservan citas
+- `'employee'` - Empleados/barberos
+- `'admin'` - Administradores
 
--- Asegurar que todos los demás sean 'employee'
-UPDATE employees 
-SET role = 'employee' 
-WHERE role IS NULL;
-```
+No necesitas ejecutar ninguna migración de esquema porque el rol ya existe.
 
-### 2. Verificar la migración
+## 2. Asignar Roles de Admin
 
-Ejecuta esta query para verificar que los roles se asignaron correctamente:
+Solo necesitas actualizar qué usuarios tienen rol de `'admin'`:
+
+1. Abre tu proyecto en **Supabase**
+2. Ve a **SQL Editor**
+3. Ejecuta este comando para asignar admin al primer usuario empleado:
 
 ```sql
-SELECT id, name, email, role FROM employees;
+-- Actualizar el primer usuario como admin (ajusta el email según necesites)
+UPDATE users 
+SET role = 'admin' 
+WHERE email LIKE '%admin%' OR id = (SELECT id FROM users WHERE role IN ('employee', 'admin') ORDER BY created_at LIMIT 1);
+```
+```
+
+## 3. Verificar los Roles
+
+Verifica que los roles estén asignados correctamente:
+
+```sql
+SELECT id, name, email, role FROM users WHERE role IN ('admin', 'employee');
 ```
 
 Deberías ver:
-- Al menos un empleado con `role = 'admin'`
-- Los demás con `role = 'employee'`
+- Al menos un usuario con `role = 'admin'`
+- Los demás empleados con `role = 'employee'`
+- Los clientes NO aparecen en esta consulta (tienen `role = 'client'`)
 
-### 3. Ajustar roles manualmente (opcional)
+### 4. Asignar Admin Manualmente (Opcional)
 
-Si necesitas cambiar roles manualmente:
+Si necesitas cambiar el admin o asignar más admins:
 
 ```sql
--- Hacer a un empleado admin
-UPDATE employees 
+-- Cambiar un usuario específico a admin
+UPDATE users 
 SET role = 'admin' 
 WHERE email = 'tu-email@ejemplo.com';
 
--- Hacer a un admin empleado normal
-UPDATE employees 
+-- Cambiar un admin de vuelta a employee
+UPDATE users 
 SET role = 'employee' 
 WHERE email = 'empleado@ejemplo.com';
 ```

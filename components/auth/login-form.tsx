@@ -44,15 +44,15 @@ export function LoginForm() {
         return
       }
 
-      // Obtener rol del empleado
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('role, name')
-        .eq('email', data.email)
+      // Obtener rol del usuario
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', email)
         .single()
 
-      // Redirigir según el rol
-      const redirectPath = employee?.role === 'admin' ? '/admin' : '/employee'
+      // Redirigir según el rol (solo admin y employee, no client)
+      const redirectPath = userData?.role === 'admin' ? '/admin' : '/employee'
       router.push(redirectPath)
       router.refresh()
     } catch (err) {

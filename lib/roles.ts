@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 
-export type UserRole = 'admin' | 'employee'
+export type UserRole = 'admin' | 'employee' | 'client'
 
 export interface UserWithRole {
   id: string
@@ -19,20 +19,23 @@ export async function getCurrentUserRole(): Promise<UserWithRole | null> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Buscar empleado por email
-  const { data: employee } = await supabase
-    .from('employees')
+  // Buscar usuario por email
+  const { data: userData } = await supabase
+    .from('users')
     .select('id, name, email, role')
     .eq('email', user.email)
     .single()
 
-  if (!employee) return null
+  if (!userData) return null
+
+  // Solo permitir roles admin y employee (no client)
+  if (userData.role === 'client') return null
 
   return {
-    id: employee.id,
-    email: employee.email,
-    role: employee.role || 'employee',
-    name: employee.name
+    id: userData.id,
+    email: userData.email,
+    role: userData.role as UserRole,
+    name: userData.name
   }
 }
 

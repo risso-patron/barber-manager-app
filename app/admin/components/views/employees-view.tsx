@@ -27,8 +27,9 @@ export function EmployeesView() {
   const loadEmployees = async () => {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('employees')
+      .from('users')
       .select('*')
+      .in('role', ['employee', 'admin'])
       .order('created_at', { ascending: false })
 
     if (!error && data) {
@@ -40,7 +41,7 @@ export function EmployeesView() {
   const toggleActiveStatus = async (id: string, currentStatus: boolean) => {
     const supabase = createClient()
     const { error } = await supabase
-      .from('employees')
+      .from('users')
       .update({ is_active: !currentStatus })
       .eq('id', id)
 
@@ -58,7 +59,7 @@ export function EmployeesView() {
 
     const supabase = createClient()
     const { error } = await supabase
-      .from('employees')
+      .from('users')
       .delete()
       .eq('id', id)
 

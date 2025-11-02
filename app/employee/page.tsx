@@ -52,9 +52,9 @@ export default function EmployeePage() {
     
     // Cargar todos los empleados para el selector
     const { data: employees } = await supabase
-      .from('employees')
+      .from('users')
       .select('id, name, email')
-      .eq('is_active', true)
+      .in('role', ['employee', 'admin'])
       .order('name')
 
     if (employees) {
@@ -73,7 +73,7 @@ export default function EmployeePage() {
 
     // Buscar empleado por email
     const { data: employee, error } = await supabase
-      .from('employees')
+      .from('users')
       .select('id, name')
       .eq('email', user.email)
       .single()
