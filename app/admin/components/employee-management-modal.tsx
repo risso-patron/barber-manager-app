@@ -100,7 +100,9 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
         admin: 'Administrador',
         barber: 'Barbero',
         secretary: 'Asistente',
-      }      toast.success(`${roleNames[formData.role]} agregado correctamente`)
+      }
+      
+      toast.success(`${roleNames[formData.role]} agregado correctamente`)
       await loadEmployees()
       setShowAddForm(false)
       resetForm()
