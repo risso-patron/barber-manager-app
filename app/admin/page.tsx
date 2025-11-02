@@ -102,7 +102,7 @@ export default function AdminPage() {
       case 'calendar':
         return <CalendarView />
       case 'clients':
-        return <ClientsView />
+        return <ClientsView onNewClient={() => setShowClientModal(true)} />
       case 'employees':
         return <EmployeesView onNewEmployee={() => setShowEmployeeModal(true)} />
       case 'inventory':
