@@ -7,9 +7,11 @@ import toast from 'react-hot-toast'
 interface Appointment {
   id: string
   client_name: string
+  client_email: string
   employee_name: string
   service: string
   appointment_date: string
+  appointment_time: string
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
   notes?: string
 }
@@ -28,12 +30,29 @@ export function AppointmentsView() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('appointments')
-      .select('*')
+      .select(`
+        *,
+        clients:client_id (name, email),
+        employees:barber_id (name),
+        services:service_id (name, price)
+      `)
       .order('appointment_date', { ascending: false })
       .limit(50)
 
     if (!error && data) {
-      setAppointments(data)
+      // Transformar los datos para que coincidan con la interfaz
+      const formattedData = data.map((apt: any) => ({
+        id: apt.id,
+        client_name: apt.clients?.name || 'Cliente no encontrado',
+        client_email: apt.clients?.email || '',
+        employee_name: apt.employees?.name || 'Empleado no encontrado',
+        service: apt.services?.name || 'Servicio no encontrado',
+        appointment_date: apt.appointment_date,
+        appointment_time: apt.appointment_time,
+        status: apt.status,
+        notes: apt.notes
+      }))
+      setAppointments(formattedData)
     }
     setLoading(false)
   }
@@ -200,13 +219,14 @@ export function AppointmentsView() {
               {filteredAppointments.map((apt) => (
                 <tr key={apt.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#334155' }}>
-                    {new Date(apt.appointment_date).toLocaleDateString('es-ES', { 
+                    <div>{new Date(apt.appointment_date).toLocaleDateString('es-ES', { 
                       day: '2-digit', 
                       month: 'short', 
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                      year: 'numeric'
+                    })}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                      {apt.appointment_time}
+                    </div>
                   </td>
                   <td style={{ padding: '1rem', fontSize: '0.875rem', fontWeight: '500', color: '#1e293b' }}>
                     {apt.client_name}
