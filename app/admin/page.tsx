@@ -14,6 +14,7 @@ import { TabsNavigation } from "./components/tabs-navigation"
 // Views
 import { OverviewView } from "./components/views/overview-view"
 import { AppointmentsView } from "./components/views/appointments-view"
+import { CalendarView } from "./components/views/calendar-view"
 import { ClientsView } from "./components/views/clients-view"
 import { EmployeesView } from "./components/views/employees-view"
 import { InventoryView } from "./components/views/inventory-view"
@@ -98,6 +99,8 @@ export default function AdminPage() {
         )
       case 'appointments':
         return <AppointmentsView />
+      case 'calendar':
+        return <CalendarView />
       case 'clients':
         return <ClientsView />
       case 'employees':

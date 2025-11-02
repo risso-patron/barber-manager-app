@@ -12,7 +12,8 @@ interface TabsNavigationProps {
 export function TabsNavigation({ activeTab, onTabChange }: TabsNavigationProps) {
   const tabs: Tab[] = [
     { id: 'overview', label: 'Vista General', icon: '📊' },
-    { id: 'appointments', label: 'Citas', icon: '📅' },
+    { id: 'appointments', label: 'Citas', icon: '�' },
+    { id: 'calendar', label: 'Calendario', icon: '�📅' },
     { id: 'clients', label: 'Clientes', icon: '👥' },
     { id: 'employees', label: 'Empleados', icon: '💼' },
     { id: 'inventory', label: 'Inventario', icon: '📦' },
