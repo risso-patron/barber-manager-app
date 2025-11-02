@@ -6,19 +6,19 @@ import toast from 'react-hot-toast'
 
 interface InventoryItem {
   id: string
-  name: string
+  product_name: string
   quantity: number
   min_stock: number
-  unit: string
-  category: string
-  last_updated: string
+  supplier?: string
+  cost_per_unit?: number
+  created_at: string
+  updated_at: string
 }
 
 export function InventoryView() {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState<string>('all')
 
   useEffect(() => {
     loadInventory()
@@ -29,7 +29,7 @@ export function InventoryView() {
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
-      .order('name', { ascending: true })
+      .order('product_name', { ascending: true })
 
     if (!error && data) {
       setItems(data)
@@ -72,13 +72,10 @@ export function InventoryView() {
     }
   }
 
-  const categories = ['all', ...Array.from(new Set(items.map(item => item.category)))]
-
   const filteredItems = items.filter(item => {
-    const matchesSearch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (item.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-    const matchesCategory = filterCategory === 'all' || item.category === filterCategory
-    return matchesSearch && matchesCategory
+    const matchesSearch = (item.product_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (item.supplier?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    return matchesSearch
   })
 
   const lowStockItems = items.filter(item => item.quantity <= item.min_stock)
@@ -124,7 +121,7 @@ export function InventoryView() {
                 fontWeight: '500',
                 color: '#92400e'
               }}>
-                {item.name} ({item.quantity} {item.unit})
+                {item.product_name} ({item.quantity} uds)
               </span>
             ))}
           </div>
@@ -153,24 +150,6 @@ export function InventoryView() {
               fontSize: '0.875rem'
             }}
           />
-          
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            style={{
-              padding: '0.75rem',
-              border: '2px solid #e2e8f0',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              cursor: 'pointer'
-            }}
-          >
-            {categories.map(cat => (
-              <option key={cat} value={cat}>
-                {cat === 'all' ? '📋 Todas las categorías' : cat}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
@@ -199,23 +178,8 @@ export function InventoryView() {
                   position: 'relative'
                 }}
               >
-                {/* Badge de categoría */}
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '0.375rem',
-                  fontSize: '0.625rem',
-                  fontWeight: '600',
-                  background: '#f1f5f9',
-                  color: '#64748b'
-                }}>
-                  {item.category}
-                </div>
-
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem', paddingRight: '4rem' }}>
-                  {item.name}
+                  {item.product_name}
                 </h3>
 
                 {/* Estado del stock */}
@@ -236,11 +200,11 @@ export function InventoryView() {
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#64748b' }}>
                     <span>Cantidad Actual</span>
-                    <span style={{ fontWeight: '600', color: '#1e293b' }}>{item.quantity} {item.unit}</span>
+                    <span style={{ fontWeight: '600', color: '#1e293b' }}>{item.quantity} uds</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#64748b' }}>
                     <span>Stock Mínimo</span>
-                    <span style={{ fontWeight: '600' }}>{item.min_stock} {item.unit}</span>
+                    <span style={{ fontWeight: '600' }}>{item.min_stock} uds</span>
                   </div>
                 </div>
 
