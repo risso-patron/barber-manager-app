@@ -12,10 +12,11 @@ interface InventoryModalProps {
 
 interface InventoryItem {
   id: string
-  name: string
+  product_name: string
   quantity: number
-  unit: string
   min_stock: number
+  supplier?: string
+  cost_per_unit?: number
 }
 
 export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalProps) {
@@ -24,10 +25,11 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
   const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
+    product_name: '',
     quantity: 0,
-    unit: '',
-    min_stock: 0
+    min_stock: 0,
+    supplier: '',
+    cost_per_unit: 0
   })
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
       const { data, error } = await supabase
         .from('inventory')
         .select('*')
-        .order('name')
+        .order('product_name')
 
       if (error) throw error
       setItems(data || [])
@@ -61,10 +63,11 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
       const { error } = await supabase
         .from('inventory')
         .insert({
-          name: formData.name,
+          product_name: formData.product_name,
           quantity: formData.quantity,
-          unit: formData.unit,
-          min_stock: formData.min_stock
+          min_stock: formData.min_stock,
+          supplier: formData.supplier || null,
+          cost_per_unit: formData.cost_per_unit || null
         })
 
       if (error) throw error
@@ -99,7 +102,7 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
   }
 
   const resetForm = () => {
-    setFormData({ name: '', quantity: 0, unit: '', min_stock: 0 })
+    setFormData({ product_name: '', quantity: 0, min_stock: 0, supplier: '', cost_per_unit: 0 })
   }
 
   if (!isOpen) return null
@@ -202,28 +205,9 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.product_name}
+                    onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
                     required
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
-                    Unidad *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    required
-                    placeholder="ej: ml, g, pcs"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
@@ -262,6 +246,24 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
                     onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
                     required
                     min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
+                    Proveedor
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                    placeholder="Opcional"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
@@ -339,13 +341,13 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                        {item.name}
+                        {item.product_name}
                       </td>
                       <td style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                        {item.quantity} {item.unit}
+                        {item.quantity} uds
                       </td>
                       <td style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.875rem' }}>
-                        {item.min_stock} {item.unit}
+                        {item.min_stock} uds
                       </td>
                       <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                         <span style={{
