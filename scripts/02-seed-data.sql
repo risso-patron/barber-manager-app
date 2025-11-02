@@ -20,4 +20,13 @@ INSERT INTO public.inventory (product_name, quantity, min_stock, supplier, cost_
 ('Cera para Cabello', 8, 3, 'Productos XYZ', 8.00),
 ('Aceite para Barba', 12, 4, 'Distribuidora ABC', 15.00),
 ('Toallas Desechables', 50, 10, 'Suministros DEF', 0.50),
-('Cuchillas de Afeitar', 25, 8, 'Productos XYZ', 2.00);
+('Cuchillas de Afeitar', 25, 8, 'Productos XYZ', 2.00),
+('Gel Fijador', 6, 3, 'Distribuidora ABC', 9.00),
+('Loción Aftershave', 10, 4, 'Productos XYZ', 11.00),
+('Capa de Corte', 20, 5, 'Suministros DEF', 3.00);
+
+-- Note: Users will be created through the registration process
+-- The trigger will automatically add them to the public.users table
+-- After registering, you can manually update a user to admin role:
+-- UPDATE public.users SET role = 'admin' WHERE email = 'your-email@example.com';
+

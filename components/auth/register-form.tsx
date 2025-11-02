@@ -4,12 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { createClient } from "@/lib/supabase/client"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 
 interface RegisterFormData {
@@ -17,14 +16,11 @@ interface RegisterFormData {
   email: string
   password: string
   confirmPassword: string
-  role: "client" | "employee"
-  phone?: string
 }
 
 export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedRole, setSelectedRole] = useState<"client" | "employee">("client")
   const router = useRouter()
 
   const {
@@ -33,6 +29,7 @@ export function RegisterForm() {
     formState: { errors },
     watch,
   } = useForm<RegisterFormData>()
+
   const password = watch("password")
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -42,15 +39,12 @@ export function RegisterForm() {
     try {
       const supabase = createClient()
 
-      // Sign up with Supabase Auth with metadata
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
             name: data.name,
-            role: selectedRole,
-            phone: data.phone || null,
           },
         },
       })
@@ -60,51 +54,33 @@ export function RegisterForm() {
         return
       }
 
-      if (authData.user) {
-        // Try to create user profile manually if trigger doesn't work
-        try {
-          const { error: profileError } = await supabase.from("users").insert({
-            id: authData.user.id,
-            name: data.name,
-            email: data.email,
-            role: selectedRole,
-            phone: data.phone || null,
-          })
-
-          // Ignore error if user already exists (trigger worked)
-          if (profileError && !profileError.message.includes("duplicate key")) {
-            console.error("Profile creation error:", profileError)
-          }
-        } catch (profileErr) {
-          console.error("Profile creation failed:", profileErr)
-        }
-
-        // Show success message and redirect
-        router.push("/auth/login?message=Registro exitoso. Revisa tu email para confirmar tu cuenta.")
-      }
+      router.push("/dashboard")
+      router.refresh()
     } catch (err) {
-      console.error("Registration error:", err)
-      setError("Error inesperado. Intenta nuevamente.")
+      console.error("Register error:", err)
+      setError("Ocurrió un error inesperado. Intenta nuevamente.")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-        <CardDescription>Regístrate en Barber Manager</CardDescription>
+        <CardTitle className="text-2xl font-bold">Barber Manager</CardTitle>
+        <CardDescription>Crea tu cuenta</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre Completo</Label>
+            <Label htmlFor="name">Nombre completo</Label>
             <Input
               id="name"
-              placeholder="Juan Pérez"
+              type="text"
+              placeholder="Tu nombre"
+              autoComplete="name"
               {...register("name", {
-                required: "El nombre es requerido",
+                required: "El nombre es obligatorio",
                 minLength: {
                   value: 2,
                   message: "El nombre debe tener al menos 2 caracteres",
@@ -115,16 +91,17 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               type="email"
               placeholder="tu@email.com"
+              autoComplete="email"
               {...register("email", {
-                required: "El email es requerido",
+                required: "El correo es obligatorio",
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Email inválido",
+                  message: "Correo inválido",
                 },
               })}
             />
@@ -132,31 +109,14 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono (Opcional)</Label>
-            <Input id="phone" type="tel" placeholder="+1234567890" {...register("phone")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tipo de Usuario</Label>
-            <Select value={selectedRole} onValueChange={(value: "client" | "employee") => setSelectedRole(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">Cliente</SelectItem>
-                <SelectItem value="employee">Empleado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="password">Contraseña</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Tu contraseña"
+              autoComplete="new-password"
               {...register("password", {
-                required: "La contraseña es requerida",
+                required: "La contraseña es obligatoria",
                 minLength: {
                   value: 6,
                   message: "La contraseña debe tener al menos 6 caracteres",
@@ -167,13 +127,14 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+            <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder="Confirma tu contraseña"
+              autoComplete="new-password"
               {...register("confirmPassword", {
-                required: "Confirma tu contraseña",
+                required: "Debes confirmar la contraseña",
                 validate: (value) => value === password || "Las contraseñas no coinciden",
               })}
             />
@@ -188,17 +149,15 @@ export function RegisterForm() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear Cuenta
+            Registrarse
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            ¿Ya tienes cuenta?{" "}
-            <Button variant="link" className="p-0" onClick={() => router.push("/auth/login")}>
-              Inicia sesión aquí
-            </Button>
-          </p>
+        <div className="mt-4 text-center text-sm text-gray-600">
+          ¿Ya tienes cuenta?{" "}
+          <Button variant="link" className="p-0" onClick={() => router.push("/auth/login")}>
+            Inicia sesión aquí
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -4,11 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { createClient } from "@/lib/supabase/client"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 
 interface LoginFormData {
@@ -34,13 +34,13 @@ export function LoginForm() {
     try {
       const supabase = createClient()
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
 
-      if (error) {
-        setError(error.message)
+      if (authError) {
+        setError(authError.message)
         return
       }
 
@@ -48,14 +48,14 @@ export function LoginForm() {
       router.refresh()
     } catch (err) {
       console.error("Login error:", err)
-      setError("Error inesperado. Intenta nuevamente.")
+      setError("Ocurrio un error inesperado. Intenta nuevamente.")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Barber Manager</CardTitle>
         <CardDescription>Inicia sesión en tu cuenta</CardDescription>
@@ -63,16 +63,17 @@ export function LoginForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               type="email"
               placeholder="tu@email.com"
+              autoComplete="email"
               {...register("email", {
-                required: "El email es requerido",
+                required: "El correo es obligatorio",
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Email inválido",
+                  message: "Correo inválido",
                 },
               })}
             />
@@ -84,9 +85,10 @@ export function LoginForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Tu contraseña"
+              autoComplete="current-password"
               {...register("password", {
-                required: "La contraseña es requerida",
+                required: "La contraseña es obligatoria",
                 minLength: {
                   value: 6,
                   message: "La contraseña debe tener al menos 6 caracteres",
@@ -104,17 +106,15 @@ export function LoginForm() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Iniciar Sesión
+            Iniciar sesión
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            ¿No tienes cuenta?{" "}
-            <Button variant="link" className="p-0" onClick={() => router.push("/auth/register")}>
-              Regístrate aquí
-            </Button>
-          </p>
+        <div className="mt-4 text-center text-sm text-gray-600">
+          ¿No tienes cuenta?{" "}
+          <Button variant="link" className="p-0" onClick={() => router.push("/auth/register")}>
+            Regístrate aquí
+          </Button>
         </div>
       </CardContent>
     </Card>

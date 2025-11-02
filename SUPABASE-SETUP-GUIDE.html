@@ -1,0 +1,336 @@
+<!-- 
+  📋 GUÍA RÁPIDA: CONFIGURAR SUPABASE
+  
+  Abre este archivo en tu navegador y sigue las instrucciones paso a paso.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración de Supabase - Barber Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: white;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #60a5fa; }
+    h2 { 
+      font-size: 1.8rem; 
+      margin: 2rem 0 1rem; 
+      padding-bottom: 0.5rem; 
+      border-bottom: 2px solid #60a5fa;
+    }
+    h3 { font-size: 1.3rem; margin: 1.5rem 0 0.5rem; color: #93c5fd; }
+    .step {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+      transition: all 0.3s;
+    }
+    .btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+    .btn-success { background: #16a34a; }
+    .btn-success:hover { background: #15803d; }
+    code {
+      background: rgba(0,0,0,0.3);
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-family: 'Courier New', monospace;
+      color: #fbbf24;
+    }
+    pre {
+      background: rgba(0,0,0,0.5);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    pre code { background: none; padding: 0; }
+    .success { color: #4ade80; font-weight: 600; }
+    .warning { 
+      background: rgba(251, 191, 36, 0.2);
+      border-left: 4px solid #fbbf24;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .info {
+      background: rgba(96, 165, 250, 0.2);
+      border-left: 4px solid #60a5fa;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    ul { margin-left: 1.5rem; margin-top: 0.5rem; }
+    li { margin: 0.5rem 0; }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin: 0.5rem 0;
+    }
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .progress {
+      background: rgba(0,0,0,0.3);
+      border-radius: 1rem;
+      padding: 1rem;
+      margin: 1.5rem 0;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #2563eb, #60a5fa);
+      height: 30px;
+      border-radius: 0.5rem;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Configuración de Supabase</h1>
+    <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">
+      Sigue estos pasos para configurar la base de datos de Barber Manager
+    </p>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+    </div>
+
+    <h2>✅ Paso 1: Verificar Credenciales</h2>
+    <div class="step">
+      <div class="info">
+        <strong>¡Buenas noticias!</strong> Ya tienes configurado tu archivo <code>.env.local</code>
+      </div>
+      
+      <h3>Tu configuración actual:</h3>
+      <pre><code>NEXT_PUBLIC_SUPABASE_URL=https://fxnxwowikkhjvjoddnga.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc... (configurado ✓)</code></pre>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step1" onchange="updateProgress()">
+        <label for="step1">Credenciales verificadas</label>
+      </div>
+    </div>
+
+    <h2>📊 Paso 2: Acceder al SQL Editor</h2>
+    <div class="step">
+      <ol>
+        <li>Abre tu proyecto en Supabase:</li>
+        <a href="https://supabase.com/dashboard/project/fxnxwowikkhjvjoddnga" target="_blank" class="btn">
+          🔗 Abrir Proyecto Supabase
+        </a>
+        
+        <li style="margin-top: 1rem;">En el panel izquierdo, haz clic en <strong>SQL Editor</strong></li>
+        <li>Haz clic en <strong>+ New query</strong></li>
+      </ol>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step2" onchange="updateProgress()">
+        <label for="step2">SQL Editor abierto</label>
+      </div>
+    </div>
+
+    <h2>🗄️ Paso 3: Crear las Tablas</h2>
+    <div class="step">
+      <p><strong>Copia TODO el contenido del siguiente archivo:</strong></p>
+      <pre><code>scripts/01-create-tables.sql</code></pre>
+      
+      <div class="warning">
+        <strong>⚠️ Importante:</strong> Copia TODO el archivo completo (327 líneas). 
+        Incluye tablas, políticas, triggers e índices.
+      </div>
+      
+      <ol>
+        <li>Abre el archivo <code>scripts/01-create-tables.sql</code> en VS Code</li>
+        <li>Selecciona todo (Ctrl+A) y copia (Ctrl+C)</li>
+        <li>Pega en el SQL Editor de Supabase</li>
+        <li>Haz clic en <strong>Run</strong> o presiona <strong>Ctrl+Enter</strong></li>
+        <li>Espera a ver el mensaje: <span class="success">"Success. No rows returned"</span></li>
+      </ol>
+      
+      <div class="info">
+        <strong>💡 Esto creará:</strong>
+        <ul>
+          <li>10 tablas principales</li>
+          <li>Políticas de seguridad (RLS)</li>
+          <li>Triggers automáticos</li>
+          <li>Funciones personalizadas</li>
+          <li>Índices de rendimiento</li>
+        </ul>
+      </div>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step3" onchange="updateProgress()">
+        <label for="step3">Tablas creadas exitosamente</label>
+      </div>
+    </div>
+
+    <h2>🌱 Paso 4: Insertar Datos de Prueba</h2>
+    <div class="step">
+      <p><strong>Ahora vamos a agregar datos iniciales:</strong></p>
+      
+      <ol>
+        <li>En Supabase SQL Editor, haz clic en <strong>+ New query</strong></li>
+        <li>Abre el archivo <code>scripts/02-seed-data.sql</code></li>
+        <li>Copia todo el contenido y pégalo en la nueva query</li>
+        <li>Haz clic en <strong>Run</strong></li>
+      </ol>
+      
+      <div class="info">
+        <strong>💡 Esto insertará:</strong>
+        <ul>
+          <li>5 servicios (cortes, barba, etc.)</li>
+          <li>8 productos de inventario</li>
+          <li>Configuraciones iniciales del negocio</li>
+        </ul>
+      </div>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step4" onchange="updateProgress()">
+        <label for="step4">Datos de prueba insertados</label>
+      </div>
+    </div>
+
+    <h2>✔️ Paso 5: Verificar que Todo Funcione</h2>
+    <div class="step">
+      <h3>Verifica las tablas creadas:</h3>
+      <ol>
+        <li>En Supabase, ve a <strong>Table Editor</strong> (panel izquierdo)</li>
+        <li>Deberías ver estas tablas:</li>
+      </ol>
+      
+      <div class="info">
+        <ul style="columns: 2; margin-top: 0.5rem;">
+          <li>✅ users</li>
+          <li>✅ services</li>
+          <li>✅ appointments</li>
+          <li>✅ inventory</li>
+          <li>✅ inventory_movements</li>
+          <li>✅ time_logs</li>
+          <li>✅ business_settings</li>
+          <li>✅ financial_transactions</li>
+          <li>✅ employee_commissions</li>
+          <li>✅ customer_loyalty</li>
+        </ul>
+      </div>
+      
+      <h3 style="margin-top: 1.5rem;">Verifica los datos:</h3>
+      <ul>
+        <li>Abre la tabla <strong>services</strong> → deberías ver 5 servicios</li>
+        <li>Abre la tabla <strong>inventory</strong> → deberías ver 8 productos</li>
+        <li>Abre la tabla <strong>business_settings</strong> → deberías ver configuraciones</li>
+      </ul>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step5" onchange="updateProgress()">
+        <label for="step5">Todo verificado correctamente</label>
+      </div>
+    </div>
+
+    <h2>👤 Paso 6: Crear Primer Usuario Admin</h2>
+    <div class="step">
+      <div class="warning">
+        <strong>⚠️ Este paso lo harás DESPUÉS de registrarte en la app</strong>
+      </div>
+      
+      <h3>Proceso:</h3>
+      <ol>
+        <li>Primero, regístrate en tu aplicación usando el formulario de registro</li>
+        <li>Luego, ve a Supabase → <strong>Table Editor</strong> → <strong>users</strong></li>
+        <li>Busca tu usuario por email</li>
+        <li>Haz clic en el campo <code>role</code></li>
+        <li>Cámbialo de <code>client</code> a <code>admin</code></li>
+        <li>Guarda los cambios</li>
+      </ol>
+      
+      <h3 style="margin-top: 1.5rem;">Alternativa (usando SQL):</h3>
+      <pre><code>-- Reemplaza 'tu-email@ejemplo.com' con tu email real
+UPDATE public.users 
+SET role = 'admin' 
+WHERE email = 'tu-email@ejemplo.com';</code></pre>
+      
+      <div class="checkbox">
+        <input type="checkbox" id="step6" onchange="updateProgress()">
+        <label for="step6">Usuario admin creado (después del registro)</label>
+      </div>
+    </div>
+
+    <h2>🎉 ¡Configuración Completada!</h2>
+    <div class="step">
+      <div class="success" style="font-size: 1.2rem; text-align: center; padding: 1rem;">
+        ✅ ¡Tu base de datos está lista para usar!
+      </div>
+      
+      <h3>Próximos pasos:</h3>
+      <ul>
+        <li>✅ Probar el sistema de autenticación (login/registro)</li>
+        <li>✅ Crear tu primer usuario admin</li>
+        <li>✅ Explorar el dashboard</li>
+        <li>✅ Crear citas de prueba</li>
+        <li>✅ Gestionar inventario</li>
+      </ul>
+      
+      <div style="text-align: center; margin-top: 2rem;">
+        <a href="http://localhost:3000" class="btn btn-success" style="font-size: 1.1rem;">
+          🚀 Ir a la Aplicación
+        </a>
+      </div>
+    </div>
+
+    <h2>📚 Recursos Útiles</h2>
+    <div class="step">
+      <ul>
+        <li><code>DATABASE-SUMMARY.md</code> - Resumen de toda la estructura</li>
+        <li><code>SETUP-DATABASE.md</code> - Guía detallada de configuración</li>
+        <li><code>scripts/03-useful-queries.sql</code> - Consultas útiles para reportes</li>
+        <li><code>lib/database-helpers.ts</code> - Funciones helper de TypeScript</li>
+      </ul>
+      
+      <div style="margin-top: 1rem;">
+        <a href="https://supabase.com/docs" target="_blank" class="btn">
+          📖 Documentación de Supabase
+        </a>
+        <a href="https://supabase.com/dashboard/project/fxnxwowikkhjvjoddnga" target="_blank" class="btn">
+          🔗 Panel de Supabase
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      const checked = document.querySelectorAll('input[type="checkbox"]:checked').length;
+      const total = checkboxes.length;
+      const percentage = Math.round((checked / total) * 100);
+      
+      const progressBar = document.getElementById('progressBar');
+      progressBar.style.width = percentage + '%';
+      progressBar.textContent = percentage + '%';
+    }
+  </script>
+</body>
+</html>

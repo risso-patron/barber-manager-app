@@ -73,3 +73,55 @@ export interface TimeLog {
   total_hours?: number
   created_at: string
 }
+
+// Financial transactions
+export type TransactionType = "income" | "expense"
+export type TransactionCategory = 
+  | "service" 
+  | "product_sale" 
+  | "salary" 
+  | "supplies" 
+  | "rent" 
+  | "utilities" 
+  | "other"
+
+export interface FinancialTransaction {
+  id: string
+  transaction_type: TransactionType
+  category: TransactionCategory
+  amount: number
+  description?: string
+  reference_id?: string
+  payment_method?: "cash" | "card" | "transfer" | "other"
+  created_by: string
+  transaction_date: string
+  created_at: string
+}
+
+// Employee commissions
+export interface EmployeeCommission {
+  id: string
+  employee_id: string
+  appointment_id?: string
+  amount: number
+  commission_rate?: number
+  payment_status: "pending" | "paid"
+  payment_date?: string
+  notes?: string
+  created_at: string
+}
+
+// Customer loyalty
+export interface CustomerLoyalty {
+  id: string
+  client_id: string
+  points: number
+  total_spent: number
+  last_visit?: string
+  created_at: string
+  updated_at: string
+}
+
+// Lockup types
+export type LockupKind = "basic" | "premium"
+export type LockupType = "typeA" | "typeB"
