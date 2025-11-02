@@ -20,14 +20,18 @@ interface Client {
 
 interface Appointment {
   id: string
-  date: string
+  appointment_date: string
+  appointment_time: string
   status: string
-  service_type: string | null
+  notes: string | null
+  service: {
+    name: string
+    price: number
+  } | null
   employee: {
     name: string | null
     email: string
   } | null
-  notes: string | null
 }
 
 export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
@@ -63,17 +67,21 @@ export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
       .from('appointments')
       .select(`
         id,
-        date,
+        appointment_date,
+        appointment_time,
         status,
-        service_type,
         notes,
-        employee:employee_id (
+        service:service_id (
+          name,
+          price
+        ),
+        employee:barber_id (
           name,
           email
         )
       `)
       .eq('client_id', clientId)
-      .order('date', { ascending: false })
+      .order('appointment_date', { ascending: false })
 
     if (!appointmentsError && appointmentsData) {
       setAppointments(appointmentsData)
@@ -317,16 +325,14 @@ export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
                       <div>
                         <div style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
-                          {appointment.service_type || 'Servicio no especificado'}
+                          {appointment.service?.name || 'Servicio no especificado'}
                         </div>
                         <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                          📅 {new Date(appointment.date).toLocaleDateString('es-ES', { 
+                          📅 {new Date(appointment.appointment_date).toLocaleDateString('es-ES', { 
                             day: 'numeric',
                             month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                            year: 'numeric'
+                          })} - {appointment.appointment_time}
                         </div>
                       </div>
                       <span style={{
