@@ -7,7 +7,11 @@ import { Label } from "@/components/ui/label"
 import { useAppStore } from "@/lib/store"
 import type { Appointment } from "@/lib/types"
 
-export function AppointmentForm() {
+interface AppointmentFormProps {
+  onSuccess?: () => void
+}
+
+export function AppointmentForm({ onSuccess }: AppointmentFormProps = {}) {
   const { user, addAppointment } = useAppStore()
   const [barberId, setBarberId] = useState("")
   const [serviceId, setServiceId] = useState("")
@@ -41,6 +45,11 @@ export function AppointmentForm() {
     setAppointmentDate("")
     setAppointmentTime("")
     setNotes("")
+    
+    // Llamar al callback si existe
+    if (onSuccess) {
+      onSuccess()
+    }
   }
 
   return (

@@ -3,7 +3,11 @@
 import { AppointmentForm } from "./appointment-form"
 import { useAppStore } from "@/lib/store"
 
-export function AppointmentSystem() {
+interface AppointmentSystemProps {
+  onAppointmentCreated?: () => void
+}
+
+export function AppointmentSystem({ onAppointmentCreated }: AppointmentSystemProps = {}) {
   const { appointments } = useAppStore()
 
   return (
@@ -13,7 +17,7 @@ export function AppointmentSystem() {
         <p className="text-sm text-gray-500 dark:text-slate-400">
           Completa el formulario para crear una nueva reserva con tu barbero de confianza.
         </p>
-        <AppointmentForm />
+        <AppointmentForm onSuccess={onAppointmentCreated} />
       </section>
 
       <section className="space-y-3">

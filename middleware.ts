@@ -44,6 +44,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Permitir acceso a /client para usuarios autenticados (verificaremos el rol después)
+  if (user && url.pathname.startsWith('/client')) {
+    // Dejar pasar para que se verifique el rol más adelante
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .ilike('email', user.email?.toLowerCase() || '')
+      .single()
+    
+    // Solo permitir clientes en /client
+    if (userData?.role !== 'client') {
+      url.pathname = userData?.role === 'admin' ? '/admin' : '/employee'
+      return NextResponse.redirect(url)
+    }
+    
+    // Si es cliente, permitir acceso a /client
+    return supabaseResponse
+  }
+
   // Si hay usuario, verificar su rol y redirigir apropiadamente
   if (user) {
     // Normalizar email a minúsculas para evitar problemas
@@ -55,24 +74,24 @@ export async function middleware(request: NextRequest) {
       .ilike('email', normalizedEmail) // ilike = case-insensitive LIKE
       .single()
 
-    console.log('🔍 MIDDLEWARE - Email del usuario:', user.email)
-    console.log('🔍 MIDDLEWARE - Datos obtenidos:', userData)
-    console.log('🔍 MIDDLEWARE - Error:', userError)
-
     const userRole = userData?.role || 'employee'
-    console.log('🔍 MIDDLEWARE - Rol asignado:', userRole)
 
-    // Solo permitir acceso a empleados, secretarias y admins (no clientes)
-    if (userRole === 'client') {
-      url.pathname = '/booking'
+    // Redirigir clientes a su dashboard /client (excepto si ya están en /client)
+    if (userRole === 'client' && !url.pathname.startsWith('/client') && !isPublicRoute) {
+      url.pathname = '/client'
       return NextResponse.redirect(url)
     }
 
     // Redirigir desde login a dashboard apropiado
     if (url.pathname === '/auth/login') {
-      console.log('🔍 MIDDLEWARE - Redirigiendo a:', userRole === 'admin' ? '/admin' : '/employee')
-      // Admin va a /admin, secretaria y empleado a /employee
-      url.pathname = userRole === 'admin' ? '/admin' : '/employee'
+      // Admin va a /admin, cliente a /client, secretaria y empleado a /employee
+      if (userRole === 'admin') {
+        url.pathname = '/admin'
+      } else if (userRole === 'client') {
+        url.pathname = '/client'
+      } else {
+        url.pathname = '/employee'
+      }
       return NextResponse.redirect(url)
     }
 
