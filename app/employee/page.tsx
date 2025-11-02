@@ -255,13 +255,16 @@ export default function EmployeePage() {
             }}
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#667eea',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              fontWeight: '500'
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}
           >
             🔄 Cambiar Usuario
@@ -274,13 +277,16 @@ export default function EmployeePage() {
             }}
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#ef4444',
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontSize: '0.875rem',
-              fontWeight: '500'
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}
           >
             🚪 Cerrar Sesión

@@ -123,8 +123,23 @@ export default function AdminPage() {
             </h1>
             <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Gestiona tu barbería desde un solo lugar</p>
           </div>
-          <button onClick={handleLogout} style={{ padding: '0.75rem 1.5rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500' }}>
-            Cerrar Sesión
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            🚪 Cerrar Sesión
           </button>
         </div>
 

@@ -156,6 +156,12 @@ export default function ClientPage() {
     })
   }
 
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/auth/login'
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -199,31 +205,52 @@ export default function ClientPage() {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ background: 'white', borderRadius: '1rem', padding: '2rem', marginBottom: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2.5rem',
+                  fontWeight: 'bold',
+                  color: 'white'
+                }}
+              >
+                {user?.name?.[0]?.toUpperCase() || user?.email[0].toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
+                  ¡Hola, {user?.name || user?.email}!
+                </h1>
+                <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                  Bienvenido a tu dashboard personal
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
               style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '0.75rem 1.5rem',
+                background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2.5rem',
-                fontWeight: 'bold',
-                color: 'white'
+                gap: '0.5rem',
+                whiteSpace: 'nowrap'
               }}
             >
-              {user?.name?.[0]?.toUpperCase() || user?.email[0].toUpperCase()}
-            </div>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
-                ¡Hola, {user?.name || user?.email}!
-              </h1>
-              <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                Bienvenido a tu dashboard personal
-              </p>
-            </div>
+              🚪 Cerrar Sesión
+            </button>
           </div>
         </div>
 
