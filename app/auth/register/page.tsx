@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -28,26 +29,49 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
+      // Primero crear el usuario en Auth
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name: name,
-            role: 'client' // Por defecto todos son clientes
+            role: 'client'
           },
         },
       })
 
       if (authError) {
         setError(authError.message)
+        setIsLoading(false)
         return
       }
 
       if (data.user) {
-        // Redirigir al dashboard del cliente
-        router.push("/client")
-        router.refresh()
+        // Insertar manualmente en la tabla users (sin depender del trigger)
+        const { error: dbError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            name: name,
+            email: email,
+            role: 'client'
+          })
+
+        if (dbError) {
+          console.error("Database error:", dbError)
+          setError("Usuario creado pero hubo un error en la base de datos. Por favor contacta al administrador.")
+          setIsLoading(false)
+          return
+        }
+
+        // Mostrar mensaje de éxito con instrucciones sobre el email
+        setSuccess("¡Registro exitoso! Por favor revisa tu correo electrónico para confirmar tu cuenta. Revisa también la carpeta de spam si no lo encuentras.")
+        
+        // Opcional: Redirigir después de 5 segundos
+        setTimeout(() => {
+          router.push("/auth/login")
+        }, 5000)
       }
     } catch (err) {
       console.error("Register error:", err)
@@ -97,6 +121,20 @@ export default function RegisterPage() {
             color: '#991b1b'
           }}>
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{
+            background: '#d1fae5',
+            border: '1px solid #6ee7b7',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            marginBottom: '1rem',
+            color: '#065f46',
+            lineHeight: '1.6'
+          }}>
+            {success}
           </div>
         )}
 
