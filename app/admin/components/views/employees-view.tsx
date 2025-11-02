@@ -40,8 +40,18 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
       .in('role', ['employee', 'admin', 'secretary'])
       .order('created_at', { ascending: false })
 
+    console.log('📊 EMPLOYEES VIEW - Data:', data)
+    console.log('📊 EMPLOYEES VIEW - Error:', error)
+
     if (!error && data) {
-      setEmployees(data)
+      // Asegurar que is_active tenga un valor por defecto si no existe
+      const employeesWithStatus = data.map(emp => ({
+        ...emp,
+        is_active: emp.is_active ?? true // Si no existe, por defecto es true
+      }))
+      setEmployees(employeesWithStatus)
+    } else if (error) {
+      console.error('❌ Error cargando empleados:', error)
     }
     setLoading(false)
   }
