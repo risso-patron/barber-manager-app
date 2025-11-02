@@ -17,6 +17,17 @@ export default function HomePage() {
           ✂️ Barber Manager
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <a href="/booking" style={{
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.5rem 1.5rem',
+            background: '#10b981',
+            borderRadius: '0.5rem',
+            fontWeight: '600',
+            transition: 'all 0.3s'
+          }}>
+            📅 Reservar Cita
+          </a>
           <a href="/auth/login" style={{
             color: 'white',
             textDecoration: 'none',

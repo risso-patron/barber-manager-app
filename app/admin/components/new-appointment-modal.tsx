@@ -81,15 +81,14 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess }: NewAppointme
     try {
       const supabase = createClient()
 
-      const appointmentDate = `${formData.date}T${formData.time}:00`
-
       const { error: insertError } = await supabase
         .from('appointments')
         .insert({
           client_id: formData.clientId,
           barber_id: formData.barberId,
           service_id: formData.serviceId,
-          appointment_date: appointmentDate,
+          appointment_date: formData.date,
+          appointment_time: formData.time,
           status: 'confirmed',
           notes: formData.notes
         })
