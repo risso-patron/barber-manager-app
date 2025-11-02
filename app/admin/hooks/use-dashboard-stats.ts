@@ -5,7 +5,7 @@ interface DashboardStats {
   todayAppointments: number
   monthlyRevenue: number
   totalClients: number
-  activeEmployees: number
+  barbers: number
 }
 
 interface RecentAppointment {
@@ -21,7 +21,7 @@ export function useDashboardStats() {
     todayAppointments: 0,
     monthlyRevenue: 0,
     totalClients: 0,
-    activeEmployees: 0
+    barbers: 0
   })
   const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -70,17 +70,17 @@ export function useDashboardStats() {
         .select('*', { count: 'exact', head: true })
         .eq('role', 'client')
 
-      // Empleados activos
-      const { count: employeesCount } = await supabase
+      // Barberos activos
+      const { count: barbersCount } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
-        .eq('role', 'employee')
+        .eq('role', 'barber')
 
       setStats({
         todayAppointments: todayCount || 0,
         monthlyRevenue: monthlyRevenue,
         totalClients: clientsCount || 0,
-        activeEmployees: employeesCount || 0
+        barbers: barbersCount || 0
       })
 
       // Citas recientes (últimas 10)

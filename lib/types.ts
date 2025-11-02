@@ -1,4 +1,6 @@
-export type UserRole = "client" | "employee" | "secretary" | "admin"
+export type UserRole = "client" | "barber" | "secretary" | "admin"
+
+export type EmployeePosition = "barbero" | "dueno" | "recepcionista"
 
 export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
 
@@ -7,6 +9,7 @@ export interface User {
   name: string
   email: string
   role: UserRole
+  employee_position?: EmployeePosition // Solo aplica para role = 'employee' o 'admin'
   phone?: string
   avatar_url?: string
   is_active?: boolean

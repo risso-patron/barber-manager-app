@@ -9,7 +9,7 @@ interface OverviewViewProps {
     todayAppointments: number
     monthlyRevenue: number
     totalClients: number
-    activeEmployees: number
+    barbers: number
   }
   recentAppointments: any[]
   onNewAppointment: () => void

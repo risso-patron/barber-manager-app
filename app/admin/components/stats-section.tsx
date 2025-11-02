@@ -5,7 +5,7 @@ interface StatsSectionProps {
     todayAppointments: number
     monthlyRevenue: number
     totalClients: number
-    activeEmployees: number
+    barbers: number
   }
 }
 
@@ -43,8 +43,8 @@ export function StatsSection({ stats }: StatsSectionProps) {
       
       <StatCard
         icon="💼"
-        title="Empleados Activos"
-        value={stats.activeEmployees}
+        title="Barberos Activos"
+        value={stats.barbers}
         subtitle="Barberos trabajando"
         gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
       />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import toast from 'react-hot-toast'
+import type { EmployeePosition } from "@/lib/types"
 
 interface EmployeeManagementModalProps {
   isOpen: boolean
@@ -16,6 +17,7 @@ interface Employee {
   email: string
   phone: string | null
   role: string
+  employee_position?: EmployeePosition
   created_at: string
 }
 
@@ -29,7 +31,8 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
     email: '',
     phone: '',
     password: '',
-    role: 'employee' as 'employee' | 'secretary' | 'admin'
+    role: 'barber' as 'barber' | 'secretary' | 'admin',
+    employee_position: 'barbero' as EmployeePosition
   })
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .in('role', ['employee', 'secretary', 'admin'])
+        .in('role', ['barber', 'secretary', 'admin'])
         .order('name')
 
       if (error) throw error
@@ -86,6 +89,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
             email: formData.email,
             phone: formData.phone || null,
             role: formData.role,
+            employee_position: formData.employee_position,
             is_active: true
           })
 
@@ -93,7 +97,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
       }
 
       const roleNames = {
-        employee: 'Empleado',
+        barber: 'Barbero',
         secretary: 'Secretaria',
         admin: 'Administrador'
       }
@@ -133,7 +137,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
   }
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', password: '', role: 'employee' })
+    setFormData({ name: '', email: '', phone: '', password: '', role: 'barber', employee_position: 'barbero' })
   }
 
   if (!isOpen) return null
@@ -282,10 +286,42 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                       fontSize: '0.875rem'
                     }}
                   >
-                    <option value="employee">💼 Empleado</option>
+                    <option value="barber">💼 Barbero</option>
                     <option value="secretary">📋 Secretaria</option>
                     <option value="admin">👑 Administrador</option>
                   </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
+                    Posición *
+                  </label>
+                  <select
+                    value={formData.employee_position}
+                    onChange={(e) => setFormData({ ...formData, employee_position: e.target.value as EmployeePosition })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="barbero">✂️ Barbero (registra citas y ventas)</option>
+                    <option value="dueno">👔 Dueño (contabilidad y compras)</option>
+                    <option value="recepcionista">📞 Recepcionista (apoyo en limpieza)</option>
+                  </select>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: '#64748b', 
+                    marginTop: '0.25rem',
+                    fontStyle: 'italic'
+                  }}>
+                    {formData.employee_position === 'barbero' && '• Puede registrar citas y ventas'}
+                    {formData.employee_position === 'dueno' && '• Acceso a contabilidad y compras'}
+                    {formData.employee_position === 'recepcionista' && '• Apoyo en limpieza ligera'}
+                  </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
@@ -375,6 +411,9 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                     Email
                   </th>
                   <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
+                    Posición
+                  </th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
                     Teléfono
                   </th>
                   <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600', fontSize: '0.875rem' }}>
@@ -383,36 +422,63 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                 </tr>
               </thead>
               <tbody>
-                {employees.map((employee) => (
-                  <tr key={employee.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                      {employee.name}
-                    </td>
-                    <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
-                      {employee.email}
-                    </td>
-                    <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
-                      {employee.phone || '-'}
-                    </td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      <button
-                        onClick={() => handleDeleteEmployee(employee.id)}
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          background: '#fee2e2',
-                          color: '#dc2626',
-                          border: 'none',
-                          borderRadius: '0.25rem',
-                          cursor: 'pointer',
-                          fontSize: '0.75rem',
-                          fontWeight: '500'
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {employees.map((employee) => {
+                  const getPositionBadge = (position?: EmployeePosition) => {
+                    const badges = {
+                      barbero: { emoji: '✂️', text: 'Barbero', bg: '#dbeafe', color: '#1e40af' },
+                      dueno: { emoji: '👔', text: 'Dueño', bg: '#fef3c7', color: '#92400e' },
+                      recepcionista: { emoji: '📞', text: 'Recepcionista', bg: '#e0e7ff', color: '#3730a3' }
+                    }
+                    const badge = position ? badges[position] : { emoji: '❓', text: 'Sin asignar', bg: '#f1f5f9', color: '#64748b' }
+                    return (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '0.25rem 0.75rem',
+                        background: badge.bg,
+                        color: badge.color,
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        {badge.emoji} {badge.text}
+                      </span>
+                    )
+                  }
+
+                  return (
+                    <tr key={employee.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
+                        {employee.name}
+                      </td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
+                        {employee.email}
+                      </td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
+                        {getPositionBadge(employee.employee_position)}
+                      </td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
+                        {employee.phone || '-'}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleDeleteEmployee(employee.id)}
+                          style={{
+                            padding: '0.25rem 0.75rem',
+                            background: '#fee2e2',
+                            color: '#dc2626',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
             {employees.length === 0 && !showAddForm && (

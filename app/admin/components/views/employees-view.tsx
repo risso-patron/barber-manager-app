@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import toast from 'react-hot-toast'
+import type { EmployeePosition } from "@/lib/types"
+import { getPositionBadge, getPositionDescription } from "@/lib/permissions"
 
 interface Employee {
   id: string
   name: string
-  role: 'admin' | 'employee' | 'secretary'
+  role: 'admin' | 'barber' | 'secretary'
+  employee_position?: EmployeePosition
   phone: string | null
   email: string
   is_active: boolean
@@ -24,7 +27,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all')
-  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'employee' | 'secretary'>('all')
+  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'barber' | 'secretary'>('all')
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -37,7 +40,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .in('role', ['employee', 'admin', 'secretary'])
+      .in('role', ['barber', 'admin', 'secretary'])
       .order('created_at', { ascending: false })
 
     console.log('📊 EMPLOYEES VIEW - Data:', data)
@@ -51,7 +54,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
       }))
       setEmployees(employeesWithStatus)
     } else if (error) {
-      console.error('❌ Error cargando empleados:', error)
+      console.error('❌ Error cargando barberos:', error)
     }
     setLoading(false)
   }
@@ -68,7 +71,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
     
     if (fetchError) {
       console.error('Error al verificar estado:', fetchError)
-      toast.error('Error al verificar el estado del empleado')
+      toast.error('Error al verificar el estado del barbero')
       return
     }
     
@@ -80,23 +83,23 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
       .eq('id', id)
 
     if (!error) {
-      toast.success(`Empleado ${newStatus ? 'activado' : 'desactivado'} correctamente`)
+      toast.success(`Barbero ${newStatus ? 'activado' : 'desactivado'} correctamente`)
       loadEmployees()
     } else {
       console.error('Error al actualizar:', error)
-      toast.error('Error al actualizar el estado del empleado')
+      toast.error('Error al actualizar el estado del barbero')
     }
   }
 
-  const changeRole = async (id: string, newRole: 'admin' | 'employee' | 'secretary') => {
-    const roleNames = {
+  const changeRole = async (id: string, newRole: 'admin' | 'barber' | 'secretary') => {
+    const roleLabels: Record<string, string> = {
       admin: 'Administrador',
-      employee: 'Empleado',
+      barber: 'Barbero',
       secretary: 'Secretaria'
     }
     
     const confirmChange = window.confirm(
-      `¿Estás seguro de cambiar el rol a ${roleNames[newRole]}?`
+      `¿Estás seguro de cambiar el rol a ${roleLabels[newRole]}?`
     )
     if (!confirmChange) return
 
@@ -116,7 +119,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
 
   const deleteEmployee = async (id: string) => {
     const confirmDelete = window.confirm(
-      '¿Estás seguro de eliminar este empleado? Esta acción no se puede deshacer.'
+      '¿Estás seguro de eliminar este barbero? Esta acción no se puede deshacer.'
     )
     if (!confirmDelete) return
 
@@ -127,10 +130,10 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
       .eq('id', id)
 
     if (!error) {
-      toast.success('Empleado eliminado correctamente')
+      toast.success('Barbero eliminado correctamente')
       loadEmployees()
     } else {
-      toast.error('Error al eliminar el empleado. Puede tener registros asociados.')
+      toast.error('Error al eliminar el barbero. Puede tener registros asociados.')
     }
   }
 
@@ -151,10 +154,9 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
   const statsData = {
     total: employees.length,
     admins: employees.filter(e => e.role === 'admin').length,
-    employees: employees.filter(e => e.role === 'employee').length,
+    barbers: employees.filter(e => e.role === 'barber').length,
     secretaries: employees.filter(e => e.role === 'secretary').length,
-    active: employees.filter(e => e.is_active).length,
-    inactive: employees.filter(e => !e.is_active).length
+    active: employees.filter(e => e.is_active).length
   }
 
   if (loading) {
@@ -178,8 +180,8 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{statsData.admins}</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', borderRadius: '1rem', padding: '1.5rem', color: 'white' }}>
-          <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Empleados</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{statsData.employees}</div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Barberos</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{statsData.barbers}</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', borderRadius: '1rem', padding: '1.5rem', color: 'white' }}>
           <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Secretarias</div>
@@ -195,7 +197,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
       <div style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
-            💼 Gestión de Empleados
+            💼 Gestión de Barberos
           </h2>
           <button
             onClick={onNewEmployee}
@@ -213,7 +215,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
               gap: '0.5rem'
             }}
           >
-            ➕ Nuevo Empleado
+            ➕ Nuevo Barbero
           </button>
         </div>
 
@@ -247,7 +249,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
           >
             <option value="all">👔 Todos los roles</option>
             <option value="admin">👑 Admin</option>
-            <option value="employee">💼 Empleado</option>
+            <option value="barber">💼 Barbero</option>
             <option value="secretary">📋 Secretaria</option>
           </select>
 
@@ -269,16 +271,16 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
         </div>
 
         <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '1rem' }}>
-          Mostrando {filteredEmployees.length} de {employees.length} empleados
+          Mostrando {filteredEmployees.length} de {employees.length} barberos
         </div>
       </div>
 
-      {/* Grid de Empleados */}
+      {/* Grid de Barberos */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
         {filteredEmployees.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', background: 'white', borderRadius: '1rem', padding: '3rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💼</div>
-            <p style={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '1.125rem', fontWeight: '500' }}>No se encontraron empleados</p>
+            <p style={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '1.125rem', fontWeight: '500' }}>No se encontraron barberos</p>
             <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Prueba ajustando los filtros de búsqueda</p>
           </div>
         ) : (
@@ -336,9 +338,26 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                     {employee.role === 'admin' && <span style={{ fontSize: '1rem' }}>👑</span>}
                     {employee.role === 'secretary' && <span style={{ fontSize: '1rem' }}>📋</span>}
                   </h3>
-                  <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '500', textTransform: 'capitalize' }}>
-                    {employee.role === 'admin' ? 'Administrador' : employee.role === 'secretary' ? 'Secretaria' : 'Empleado'}
+                  <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '500', textTransform: 'capitalize', marginBottom: '0.5rem' }}>
+                    {employee.role === 'admin' ? 'Administrador' : employee.role === 'secretary' ? 'Secretaria' : 'Barbero'}
                   </p>
+                  {/* Badge de posición */}
+                  {employee.employee_position && (() => {
+                    const badge = getPositionBadge(employee.employee_position)
+                    return (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '0.25rem 0.75rem',
+                        background: badge.bg,
+                        color: badge.color,
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        {badge.emoji} {badge.text}
+                      </span>
+                    )
+                  })()}
                 </div>
               </div>
 
@@ -348,8 +367,13 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                   📧 {employee.email}
                 </div>
                 {employee.phone && (
-                  <div style={{ fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📱 {employee.phone}
+                  </div>
+                )}
+                {employee.employee_position && (
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', fontStyle: 'italic', background: '#f8fafc', padding: '0.5rem', borderRadius: '0.375rem' }}>
+                    💼 {getPositionDescription(employee.employee_position)}
                   </div>
                 )}
                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
@@ -378,7 +402,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                       background: 'white'
                     }}
                   >
-                    <option value="employee">💼 Empleado</option>
+                    <option value="barber">💼 Barbero</option>
                     <option value="secretary">📋 Secretaria</option>
                     <option value="admin">👑 Administrador</option>
                   </select>

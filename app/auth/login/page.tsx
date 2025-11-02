@@ -40,8 +40,8 @@ export default function LoginPage() {
         // Redirigir según el rol
         if (userData?.role === 'admin') {
           router.push("/admin")
-        } else if (userData?.role === 'employee') {
-          router.push("/employee")
+        } else if (userData?.role === 'barber') {
+          router.push("/barber")
         } else {
           router.push("/client")
         }

@@ -45,7 +45,7 @@ export function AppointmentsView() {
         id: apt.id,
         client_name: apt.clients?.name || 'Cliente no encontrado',
         client_email: apt.clients?.email || '',
-        employee_name: apt.employees?.name || 'Empleado no encontrado',
+        employee_name: apt.employees?.name || 'Barbero no encontrado',
         service: apt.services?.name || 'Servicio no encontrado',
         appointment_date: apt.appointment_date,
         appointment_time: apt.appointment_time,
@@ -159,7 +159,7 @@ export function AppointmentsView() {
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <input
             type="text"
-            placeholder="🔍 Buscar por cliente, empleado o servicio..."
+            placeholder="🔍 Buscar por cliente, barbero o servicio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -209,7 +209,7 @@ export function AppointmentsView() {
               <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Fecha</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Cliente</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Empleado</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Barbero</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Servicio</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Estado</th>
                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Acciones</th>

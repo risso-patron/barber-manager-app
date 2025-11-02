@@ -2,7 +2,7 @@
 -- Note: JWT secret is managed by Supabase automatically
 
 -- Create custom types
-CREATE TYPE user_role AS ENUM ('client', 'employee', 'admin');
+CREATE TYPE user_role AS ENUM ('client', 'barber', 'admin');
 CREATE TYPE appointment_status AS ENUM ('pending', 'confirmed', 'completed', 'cancelled');
 
 -- Users table (extends Supabase auth.users)

@@ -42,7 +42,7 @@ export default function AdminPage() {
     const checkRole = async () => {
       const user = await getCurrentUserRole()
       if (!user || user.role !== 'admin') {
-        router.push('/employee')
+        router.push('/barber')
         return
       }
       setIsAuthorized(true)

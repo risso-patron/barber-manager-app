@@ -55,7 +55,7 @@ export async function middleware(request: NextRequest) {
     
     // Solo permitir clientes en /client
     if (userData?.role !== 'client') {
-      url.pathname = userData?.role === 'admin' ? '/admin' : '/employee'
+      url.pathname = userData?.role === 'admin' ? '/admin' : '/barber'
       return NextResponse.redirect(url)
     }
     
@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
       .ilike('email', normalizedEmail) // ilike = case-insensitive LIKE
       .single()
 
-    const userRole = userData?.role || 'employee'
+    const userRole = userData?.role || 'barber'
 
     // Redirigir clientes a su dashboard /client (excepto si ya están en /client)
     if (userRole === 'client' && !url.pathname.startsWith('/client') && !isPublicRoute) {
@@ -84,25 +84,25 @@ export async function middleware(request: NextRequest) {
 
     // Redirigir desde login a dashboard apropiado
     if (url.pathname === '/auth/login') {
-      // Admin va a /admin, cliente a /client, secretaria y empleado a /employee
+      // Admin va a /admin, cliente a /client, secretaria y barbero a /barber
       if (userRole === 'admin') {
         url.pathname = '/admin'
       } else if (userRole === 'client') {
         url.pathname = '/client'
       } else {
-        url.pathname = '/employee'
+        url.pathname = '/barber'
       }
       return NextResponse.redirect(url)
     }
 
     // Proteger ruta /admin - solo admins
     if (url.pathname.startsWith('/admin') && userRole !== 'admin') {
-      url.pathname = '/employee'
+      url.pathname = '/barber'
       return NextResponse.redirect(url)
     }
 
-    // Proteger ruta /employee - no permitir a admins (opcional)
-    // if (url.pathname.startsWith('/employee') && userRole === 'admin') {
+    // Proteger ruta /barber - no permitir a admins (opcional)
+    // if (url.pathname.startsWith('/barber') && userRole === 'admin') {
     //   url.pathname = '/admin'
     //   return NextResponse.redirect(url)
     // }

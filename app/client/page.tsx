@@ -52,12 +52,18 @@ export default function ClientPage() {
       return
     }
 
-    // Cargar datos del perfil
+    console.log('🔍 AUTH USER:', authUser)
+    console.log('🔍 AUTH USER EMAIL:', authUser.email)
+
+    // Cargar datos del perfil - buscar por email (case insensitive)
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id, name, email, phone, created_at')
-      .eq('id', authUser.id)
+      .ilike('email', authUser.email || '')
       .single()
+
+    console.log('🔍 USER DATA:', userData)
+    console.log('🔍 USER ERROR:', userError)
 
     if (!userError && userData) {
       setUser(userData)
@@ -65,27 +71,35 @@ export default function ClientPage() {
         name: userData.name || '',
         phone: userData.phone || ''
       })
-    }
 
-    // Cargar citas
-    const { data: appointmentsData, error: appointmentsError } = await supabase
-      .from('appointments')
-      .select(`
-        id,
-        date,
-        status,
-        service_type,
-        notes,
-        employee:employee_id (
-          name,
-          email
-        )
-      `)
-      .eq('client_id', authUser.id)
-      .order('date', { ascending: false })
+      // Cargar citas usando el ID del usuario de la tabla users
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          date,
+          status,
+          service_type,
+          notes,
+          employee:employee_id (
+            name,
+            email
+          )
+        `)
+        .eq('client_id', userData.id)
+        .order('date', { ascending: false })
 
-    if (!appointmentsError && appointmentsData) {
-      setAppointments(appointmentsData)
+      console.log('🔍 APPOINTMENTS DATA:', appointmentsData)
+      console.log('🔍 APPOINTMENTS ERROR:', appointmentsError)
+
+      if (!appointmentsError && appointmentsData) {
+        setAppointments(appointmentsData)
+      } else {
+        console.error('Error cargando citas:', appointmentsError)
+      }
+    } else {
+      console.error('Error cargando usuario:', userError)
+      toast.error('No se encontró el perfil del usuario')
     }
 
     setLoading(false)
