@@ -104,7 +104,7 @@ export default function AdminPage() {
       case 'clients':
         return <ClientsView />
       case 'employees':
-        return <EmployeesView />
+        return <EmployeesView onNewEmployee={() => setShowEmployeeModal(true)} />
       case 'inventory':
         return <InventoryView />
       default:

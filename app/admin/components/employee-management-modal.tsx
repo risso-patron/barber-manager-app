@@ -28,7 +28,8 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
     name: '',
     email: '',
     phone: '',
-    password: ''
+    password: '',
+    role: 'employee' as 'employee' | 'secretary' | 'admin'
   })
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('role', 'employee')
+        .in('role', ['employee', 'secretary', 'admin'])
         .order('name')
 
       if (error) throw error
@@ -68,7 +69,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
         options: {
           data: {
             name: formData.name,
-            role: 'employee'
+            role: formData.role
           }
         }
       })
@@ -84,13 +85,20 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
             name: formData.name,
             email: formData.email,
             phone: formData.phone || null,
-            role: 'employee'
+            role: formData.role,
+            is_active: true
           })
 
         if (dbError) throw dbError
       }
 
-      toast.success('Empleado agregado correctamente')
+      const roleNames = {
+        employee: 'Empleado',
+        secretary: 'Secretaria',
+        admin: 'Administrador'
+      }
+      
+      toast.success(`${roleNames[formData.role]} agregado correctamente`)
       await loadEmployees()
       setShowAddForm(false)
       resetForm()
@@ -125,7 +133,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
   }
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', phone: '', password: '' })
+    setFormData({ name: '', email: '', phone: '', password: '', role: 'employee' })
   }
 
   if (!isOpen) return null
@@ -257,6 +265,27 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                       fontSize: '0.875rem'
                     }}
                   />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
+                    Rol *
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    <option value="employee">💼 Empleado</option>
+                    <option value="secretary">📋 Secretaria</option>
+                    <option value="admin">👑 Administrador</option>
+                  </select>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>

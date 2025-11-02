@@ -62,7 +62,7 @@ export async function middleware(request: NextRequest) {
     const userRole = userData?.role || 'employee'
     console.log('🔍 MIDDLEWARE - Rol asignado:', userRole)
 
-    // Solo permitir acceso a empleados y admins (no clientes)
+    // Solo permitir acceso a empleados, secretarias y admins (no clientes)
     if (userRole === 'client') {
       url.pathname = '/booking'
       return NextResponse.redirect(url)
@@ -71,6 +71,7 @@ export async function middleware(request: NextRequest) {
     // Redirigir desde login a dashboard apropiado
     if (url.pathname === '/auth/login') {
       console.log('🔍 MIDDLEWARE - Redirigiendo a:', userRole === 'admin' ? '/admin' : '/employee')
+      // Admin va a /admin, secretaria y empleado a /employee
       url.pathname = userRole === 'admin' ? '/admin' : '/employee'
       return NextResponse.redirect(url)
     }

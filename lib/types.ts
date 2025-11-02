@@ -1,4 +1,4 @@
-export type UserRole = "client" | "employee" | "admin"
+export type UserRole = "client" | "employee" | "secretary" | "admin"
 
 export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
 
@@ -9,6 +9,7 @@ export interface User {
   role: UserRole
   phone?: string
   avatar_url?: string
+  is_active?: boolean
   created_at: string
   updated_at: string
 }
