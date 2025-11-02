@@ -47,6 +47,33 @@ export function AppointmentsView() {
 
     if (!error) {
       toast.success('Estado actualizado correctamente')
+      
+      // Enviar email de notificación solo para estados confirmados, cancelados o completados
+      if (['confirmed', 'cancelled', 'completed'].includes(newStatus)) {
+        try {
+          const appointment = appointments.find(apt => apt.id === id)
+          if (appointment && appointment.client_email) {
+            const { sendAppointmentStatusUpdate } = await import('@/lib/email')
+            await sendAppointmentStatusUpdate({
+              clientName: appointment.client_name || 'Cliente',
+              clientEmail: appointment.client_email,
+              service: appointment.service || 'Servicio',
+              barberName: appointment.employee_name || 'Barbero',
+              date: new Date(appointment.appointment_date).toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }),
+              time: appointment.appointment_time,
+              status: newStatus as 'confirmed' | 'cancelled' | 'completed'
+            })
+          }
+        } catch (emailError) {
+          console.error('Error sending status email:', emailError)
+        }
+      }
+      
       loadAppointments()
     } else {
       toast.error('Error al actualizar el estado')

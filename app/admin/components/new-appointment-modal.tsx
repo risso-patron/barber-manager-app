@@ -95,6 +95,34 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess }: NewAppointme
 
       if (insertError) throw insertError
 
+      // Enviar email de confirmación
+      try {
+        const client = clients.find(c => c.id === formData.clientId)
+        const barber = employees.find(e => e.id === formData.barberId)
+        const service = services.find(s => s.id === formData.serviceId)
+        
+        if (client && barber && service) {
+          const { sendAppointmentConfirmation } = await import('@/lib/email')
+          await sendAppointmentConfirmation({
+            clientName: client.name,
+            clientEmail: client.email,
+            service: service.name,
+            barberName: barber.name,
+            date: new Date(formData.date).toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            time: formData.time,
+            notes: formData.notes
+          })
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError)
+        // No lanzamos error para no afectar la creación de la cita
+      }
+
       toast.success('Cita creada correctamente')
       onSuccess()
       onClose()

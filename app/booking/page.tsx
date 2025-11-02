@@ -187,6 +187,29 @@ export default function BookingPage() {
 
       if (appointmentError) throw appointmentError
 
+      // Enviar email de confirmación
+      try {
+        const barber = employees.find(e => e.id === selectedBarber)
+        const { sendAppointmentConfirmation } = await import('@/lib/email')
+        await sendAppointmentConfirmation({
+          clientName: clientData.name,
+          clientEmail: clientData.email,
+          service: selectedService.name,
+          barberName: barber?.name || 'Tu barbero',
+          date: new Date(selectedDate).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          time: selectedTime,
+          notes: clientData.notes
+        })
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError)
+        // No lanzamos error para no afectar la creación de la cita
+      }
+
       toast.success('¡Reserva creada exitosamente! Recibirás un correo de confirmación.')
       
       // Reset form
