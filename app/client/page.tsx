@@ -15,10 +15,14 @@ interface UserProfile {
 
 interface Appointment {
   id: string
-  date: string
+  appointment_date: string
+  appointment_time: string
   status: string
-  service_type: string | null
   notes: string | null
+  service: {
+    name: string
+    price: number
+  } | null
   employee: {
     name: string | null
     email: string
@@ -77,17 +81,21 @@ export default function ClientPage() {
         .from('appointments')
         .select(`
           id,
-          date,
+          appointment_date,
+          appointment_time,
           status,
-          service_type,
           notes,
-          employee:employee_id (
+          service:service_id (
+            name,
+            price
+          ),
+          employee:barber_id (
             name,
             email
           )
         `)
         .eq('client_id', userData.id)
-        .order('date', { ascending: false })
+        .order('appointment_date', { ascending: false })
 
       console.log('🔍 APPOINTMENTS DATA:', appointmentsData)
       console.log('🔍 APPOINTMENTS ERROR:', appointmentsError)
@@ -200,10 +208,10 @@ export default function ClientPage() {
   }
 
   const upcomingAppointments = appointments.filter(a => 
-    new Date(a.date) >= new Date() && a.status !== 'cancelled' && a.status !== 'completed'
+    new Date(a.appointment_date) >= new Date() && a.status !== 'cancelled' && a.status !== 'completed'
   )
   const pastAppointments = appointments.filter(a => 
-    new Date(a.date) < new Date() || a.status === 'completed'
+    new Date(a.appointment_date) < new Date() || a.status === 'completed'
   )
 
   if (loading) {
@@ -408,10 +416,10 @@ export default function ClientPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
-                              {appointment.service_type || 'Servicio no especificado'}
+                              {appointment.service?.name || 'Servicio no especificado'}
                             </div>
                             <div style={{ fontSize: '0.9rem', color: '#667eea', fontWeight: '600', marginBottom: '0.25rem' }}>
-                              � {formatDateTime(appointment.date)}
+                              📅 {formatDateTime(appointment.appointment_date)} - {appointment.appointment_time}
                             </div>
                             {appointment.employee && (
                               <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
@@ -524,8 +532,10 @@ export default function ClientPage() {
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                                                <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                           <div style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b' }}>
-                            {appointment.service_type || 'Servicio no especificado'}
+                            {appointment.service?.name || 'Servicio no especificado'}
                           </div>
                           <span style={{
                             fontSize: '0.7rem',
@@ -537,6 +547,18 @@ export default function ClientPage() {
                           }}>
                             {getStatusText(appointment.status)}
                           </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b' }}>
+                          <span>📅 {new Date(appointment.appointment_date).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })} - {appointment.appointment_time}</span>
+                          {appointment.employee && (
+                            <span>👤 {appointment.employee.name || appointment.employee.email}</span>
+                          )}
+                        </div>
+                      </div>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#64748b' }}>
                           <span>� {new Date(appointment.date).toLocaleDateString('es-ES', {
