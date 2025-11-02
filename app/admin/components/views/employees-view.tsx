@@ -95,7 +95,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
     const roleLabels: Record<string, string> = {
       admin: 'Administrador',
       barber: 'Barbero',
-      secretary: 'Secretaria'
+      secretary: 'Asistente'
     }
     
     const confirmChange = window.confirm(
@@ -184,7 +184,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{statsData.barbers}</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', borderRadius: '1rem', padding: '1.5rem', color: 'white' }}>
-          <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Secretarias</div>
+          <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '0.5rem' }}>Asistentes</div>
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{statsData.secretaries}</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', borderRadius: '1rem', padding: '1.5rem', color: 'white' }}>
@@ -250,7 +250,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
             <option value="all">👔 Todos los roles</option>
             <option value="admin">👑 Admin</option>
             <option value="barber">💼 Barbero</option>
-            <option value="secretary">📋 Secretaria</option>
+            <option value="secretary">📋 Asistente</option>
           </select>
 
           <select
@@ -339,7 +339,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                     {employee.role === 'secretary' && <span style={{ fontSize: '1rem' }}>📋</span>}
                   </h3>
                   <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '500', textTransform: 'capitalize', marginBottom: '0.5rem' }}>
-                    {employee.role === 'admin' ? 'Administrador' : employee.role === 'secretary' ? 'Secretaria' : 'Barbero'}
+                    {employee.role === 'admin' ? 'Administrador' : employee.role === 'secretary' ? 'Asistente' : 'Barbero'}
                   </p>
                   {/* Badge de posición */}
                   {employee.employee_position && (() => {
@@ -403,7 +403,7 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                     }}
                   >
                     <option value="barber">💼 Barbero</option>
-                    <option value="secretary">📋 Secretaria</option>
+                    <option value="secretary">📋 Asistente</option>
                     <option value="admin">👑 Administrador</option>
                   </select>
                 </div>

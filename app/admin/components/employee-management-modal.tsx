@@ -96,13 +96,11 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
         if (dbError) throw dbError
       }
 
-      const roleNames = {
+      const roleNames: Record<string, string> = {
+        admin: 'Administrador',
         barber: 'Barbero',
-        secretary: 'Secretaria',
-        admin: 'Administrador'
-      }
-      
-      toast.success(`${roleNames[formData.role]} agregado correctamente`)
+        secretary: 'Asistente',
+      }      toast.success(`${roleNames[formData.role]} agregado correctamente`)
       await loadEmployees()
       setShowAddForm(false)
       resetForm()
@@ -274,21 +272,20 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>
                     Rol *
                   </label>
-                  <select
+                                    <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                    required
                     style={{
                       width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem'
+                      padding: '0.75rem',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      fontSize: '1rem'
                     }}
                   >
                     <option value="barber">💼 Barbero</option>
-                    <option value="secretary">📋 Secretaria</option>
-                    <option value="admin">👑 Administrador</option>
+                    <option value="secretary">📋 Asistente</option>
+                    <option value="admin">👑 Admin</option>
                   </select>
                 </div>
                 <div>
