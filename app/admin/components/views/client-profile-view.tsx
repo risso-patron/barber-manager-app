@@ -113,6 +113,11 @@ export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
     }
   }
 
+  // Calcular el total gastado (solo citas completadas)
+  const totalSpent = appointments
+    .filter(apt => apt.status === 'completed' && apt.service?.price)
+    .reduce((sum, apt) => sum + (apt.service?.price || 0), 0)
+
   const totalAppointments = appointments.length
   const completedAppointments = appointments.filter(a => a.status === 'completed').length
   const cancelledAppointments = appointments.filter(a => a.status === 'cancelled').length
@@ -219,6 +224,12 @@ export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
           <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6b6b' }}>{cancelledAppointments}</div>
             <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Canceladas</div>
+          </div>
+          <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
+              ${totalSpent.toFixed(2)}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', marginTop: '0.25rem' }}>Total Gastado</div>
           </div>
         </div>
       </div>
@@ -334,6 +345,11 @@ export function ClientProfileView({ clientId, onBack }: ClientProfileProps) {
                             year: 'numeric'
                           })} - {appointment.appointment_time}
                         </div>
+                        {appointment.service?.price && (
+                          <div style={{ fontSize: '0.875rem', color: '#059669', fontWeight: '600', marginTop: '0.5rem' }}>
+                            💰 Precio: ${appointment.service.price.toFixed(2)}
+                          </div>
+                        )}
                       </div>
                       <span style={{
                         fontSize: '0.75rem',
