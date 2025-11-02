@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface Employee {
   id: string
@@ -44,12 +45,16 @@ export function EmployeesView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success(`Empleado ${!currentStatus ? 'activado' : 'desactivado'} correctamente`)
       loadEmployees()
+    } else {
+      toast.error('Error al actualizar el estado del empleado')
     }
   }
 
   const deleteEmployee = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este empleado?')) return
+    const confirmDelete = window.confirm('¿Estás seguro de eliminar este empleado?')
+    if (!confirmDelete) return
 
     const supabase = createClient()
     const { error } = await supabase
@@ -58,7 +63,10 @@ export function EmployeesView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Empleado eliminado correctamente')
       loadEmployees()
+    } else {
+      toast.error('Error al eliminar el empleado')
     }
   }
 

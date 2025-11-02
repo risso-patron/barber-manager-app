@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface NewAppointmentModalProps {
   isOpen: boolean
@@ -95,11 +96,12 @@ export function NewAppointmentModal({ isOpen, onClose, onSuccess }: NewAppointme
 
       if (insertError) throw insertError
 
+      toast.success('Cita creada correctamente')
       onSuccess()
       onClose()
       resetForm()
     } catch (err: any) {
-      setError(err.message || 'Error al crear la cita')
+      toast.error(err.message || 'Error al crear la cita')
     } finally {
       setLoading(false)
     }

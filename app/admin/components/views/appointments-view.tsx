@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface Appointment {
   id: string
@@ -45,12 +46,16 @@ export function AppointmentsView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Estado actualizado correctamente')
       loadAppointments()
+    } else {
+      toast.error('Error al actualizar el estado')
     }
   }
 
   const deleteAppointment = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta cita?')) return
+    const confirmDelete = window.confirm('¿Estás seguro de eliminar esta cita?')
+    if (!confirmDelete) return
 
     const supabase = createClient()
     const { error } = await supabase
@@ -59,7 +64,10 @@ export function AppointmentsView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Cita eliminada correctamente')
       loadAppointments()
+    } else {
+      toast.error('Error al eliminar la cita')
     }
   }
 

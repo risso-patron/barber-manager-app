@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface Client {
   id: string
@@ -34,7 +35,8 @@ export function ClientsView() {
   }
 
   const deleteClient = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este cliente?')) return
+    const confirmDelete = window.confirm('¿Estás seguro de eliminar este cliente?')
+    if (!confirmDelete) return
 
     const supabase = createClient()
     const { error } = await supabase
@@ -43,7 +45,10 @@ export function ClientsView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Cliente eliminado correctamente')
       loadClients()
+    } else {
+      toast.error('Error al eliminar el cliente')
     }
   }
 

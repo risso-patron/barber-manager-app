@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface EmployeeManagementModalProps {
   isOpen: boolean
@@ -89,19 +90,21 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
         if (dbError) throw dbError
       }
 
+      toast.success('Empleado agregado correctamente')
       await loadEmployees()
       setShowAddForm(false)
       resetForm()
       onSuccess()
     } catch (err: any) {
-      setError(err.message)
+      toast.error(err.message || 'Error al agregar el empleado')
     } finally {
       setLoading(false)
     }
   }
 
   const handleDeleteEmployee = async (employeeId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este empleado?')) return
+    const confirmDelete = window.confirm('¿Estás seguro de eliminar este empleado?')
+    if (!confirmDelete) return
 
     try {
       const supabase = createClient()
@@ -113,10 +116,11 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
         .eq('id', employeeId)
 
       if (error) throw error
+      toast.success('Empleado eliminado correctamente')
       await loadEmployees()
       onSuccess()
     } catch (err: any) {
-      setError(err.message)
+      toast.error(err.message || 'Error al eliminar el empleado')
     }
   }
 

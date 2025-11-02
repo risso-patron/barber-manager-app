@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface InventoryModalProps {
   isOpen: boolean
@@ -68,12 +69,13 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
 
       if (error) throw error
 
+      toast.success('Producto agregado correctamente')
       await loadInventory()
       setShowAddForm(false)
       resetForm()
       onSuccess()
     } catch (err: any) {
-      setError(err.message)
+      toast.error(err.message || 'Error al agregar el producto')
     } finally {
       setLoading(false)
     }
@@ -88,10 +90,11 @@ export function InventoryModal({ isOpen, onClose, onSuccess }: InventoryModalPro
         .eq('id', itemId)
 
       if (error) throw error
+      toast.success('Cantidad actualizada correctamente')
       await loadInventory()
       onSuccess()
     } catch (err: any) {
-      setError(err.message)
+      toast.error(err.message || 'Error al actualizar la cantidad')
     }
   }
 

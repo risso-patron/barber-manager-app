@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface InventoryItem {
   id: string
@@ -46,12 +47,16 @@ export function InventoryView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Cantidad actualizada correctamente')
       loadInventory()
+    } else {
+      toast.error('Error al actualizar la cantidad')
     }
   }
 
   const deleteItem = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este producto?')) return
+    const confirmDelete = window.confirm('¿Estás seguro de eliminar este producto?')
+    if (!confirmDelete) return
 
     const supabase = createClient()
     const { error } = await supabase
@@ -60,7 +65,10 @@ export function InventoryView() {
       .eq('id', id)
 
     if (!error) {
+      toast.success('Producto eliminado correctamente')
       loadInventory()
+    } else {
+      toast.error('Error al eliminar el producto')
     }
   }
 

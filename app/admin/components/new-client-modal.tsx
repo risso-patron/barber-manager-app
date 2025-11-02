@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import toast from 'react-hot-toast'
 
 interface NewClientModalProps {
   isOpen: boolean
@@ -56,11 +57,12 @@ export function NewClientModal({ isOpen, onClose, onSuccess }: NewClientModalPro
         if (dbError) throw dbError
       }
 
+      toast.success('Cliente creado correctamente')
       onSuccess()
       onClose()
       resetForm()
     } catch (err: any) {
-      setError(err.message || 'Error al crear el cliente')
+      toast.error(err.message || 'Error al crear el cliente')
     } finally {
       setLoading(false)
     }
