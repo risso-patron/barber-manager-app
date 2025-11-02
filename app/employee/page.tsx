@@ -245,53 +245,28 @@ export default function EmployeePage() {
             {employeeName ? `Hola, ${employeeName}! ` : ''}Gestiona tu agenda diaria y mantén el control de tus horarios
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button
-            onClick={() => {
-              setShowEmployeeSelector(true)
-              setEmployeeId(null)
-              setEmployeeName('')
-              setAppointments([])
-            }}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            🔄 Cambiar Usuario
-          </button>
-          <button
-            onClick={async () => {
-              const supabase = createClient()
-              await supabase.auth.signOut()
-              window.location.href = '/auth/login'
-            }}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            🚪 Cerrar Sesión
-          </button>
-        </div>
+        <button
+          onClick={async () => {
+            const supabase = createClient()
+            await supabase.auth.signOut()
+            window.location.href = '/auth/login'
+          }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          🚪 Cerrar Sesión
+        </button>
       </div>
 
       {/* Estadísticas del Día */}
