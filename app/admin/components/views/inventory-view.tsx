@@ -75,8 +75,8 @@ export function InventoryView() {
   const categories = ['all', ...Array.from(new Set(items.map(item => item.category)))]
 
   const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (item.category?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     const matchesCategory = filterCategory === 'all' || item.category === filterCategory
     return matchesSearch && matchesCategory
   })

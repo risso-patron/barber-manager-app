@@ -53,9 +53,9 @@ export function ClientsView() {
   }
 
   const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
+    (client.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (client.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (client.phone || '').includes(searchTerm)
   )
 
   if (loading) {

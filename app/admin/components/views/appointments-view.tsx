@@ -73,9 +73,9 @@ export function AppointmentsView() {
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesFilter = filter === 'all' || apt.status === filter
-    const matchesSearch = apt.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         apt.employee_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         apt.service.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = (apt.client_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (apt.employee_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (apt.service?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
