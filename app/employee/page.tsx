@@ -22,39 +22,76 @@ interface DayStats {
   cancelled: number
 }
 
+interface Employee {
+  id: string
+  name: string
+  email: string
+}
+
 export default function EmployeePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [todayStats, setTodayStats] = useState<DayStats>({ total: 0, completed: 0, pending: 0, cancelled: 0 })
   const [loading, setLoading] = useState(true)
   const [employeeId, setEmployeeId] = useState<string | null>(null)
+  const [employeeName, setEmployeeName] = useState<string>('')
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([])
+  const [showEmployeeSelector, setShowEmployeeSelector] = useState(false)
 
   useEffect(() => {
     loadEmployeeData()
   }, [])
 
+  useEffect(() => {
+    if (employeeId) {
+      loadAppointments(employeeId)
+    }
+  }, [employeeId])
+
   const loadEmployeeData = async () => {
     const supabase = createClient()
     
-    // Obtener usuario actual
+    // Cargar todos los empleados para el selector
+    const { data: employees } = await supabase
+      .from('employees')
+      .select('id, name, email')
+      .eq('is_active', true)
+      .order('name')
+
+    if (employees) {
+      setAllEmployees(employees)
+    }
+
+    // Intentar obtener usuario actual
     const { data: { user } } = await supabase.auth.getUser()
+    
     if (!user) {
-      toast.error('Debes iniciar sesión')
+      // Si no hay usuario autenticado, mostrar selector de empleados
+      setShowEmployeeSelector(true)
+      setLoading(false)
       return
     }
 
     // Buscar empleado por email
-    const { data: employee } = await supabase
+    const { data: employee, error } = await supabase
       .from('employees')
-      .select('id')
+      .select('id, name')
       .eq('email', user.email)
       .single()
 
-    if (!employee) {
-      toast.error('No se encontró el empleado')
+    if (error || !employee) {
+      // Si no se encuentra empleado con ese email, mostrar selector
+      setShowEmployeeSelector(true)
+      setLoading(false)
       return
     }
 
     setEmployeeId(employee.id)
+    setEmployeeName(employee.name)
+    setLoading(false)
+  }
+
+  const loadAppointments = async (empId: string) => {
+    const supabase = createClient()
     
     // Cargar citas del día
     const today = new Date().toISOString().split('T')[0]
@@ -69,7 +106,7 @@ export default function EmployeePage() {
         clients:client_id (name),
         services:service_id (name)
       `)
-      .eq('barber_id', employee.id)
+      .eq('barber_id', empId)
       .gte('appointment_date', today)
       .order('appointment_time', { ascending: true })
 
@@ -95,11 +132,22 @@ export default function EmployeePage() {
         cancelled: todayAppts.filter(a => a.status === 'cancelled').length
       })
     }
-    
-    setLoading(false)
+  }
+
+  const selectEmployee = (empId: string) => {
+    const employee = allEmployees.find(e => e.id === empId)
+    if (employee) {
+      setEmployeeId(empId)
+      setEmployeeName(employee.name)
+      setShowEmployeeSelector(false)
+      setLoading(true)
+      loadAppointments(empId).then(() => setLoading(false))
+    }
   }
 
   const updateAppointmentStatus = async (id: string, newStatus: string) => {
+    if (!employeeId) return
+    
     const supabase = createClient()
     const { error } = await supabase
       .from('appointments')
@@ -108,7 +156,7 @@ export default function EmployeePage() {
 
     if (!error) {
       toast.success('Estado actualizado')
-      loadEmployeeData()
+      loadAppointments(employeeId)
     } else {
       toast.error('Error al actualizar')
     }
@@ -126,16 +174,97 @@ export default function EmployeePage() {
     )
   }
 
+  // Mostrar selector de empleados si no hay uno seleccionado
+  if (showEmployeeSelector) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '1.5rem' }}>
+        <div style={{ background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '500px', width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👤</div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
+              Selecciona tu perfil
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+              Elige tu usuario para ver tu dashboard personal
+            </p>
+          </div>
+          
+          {allEmployees.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+              <p>No hay empleados activos disponibles</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {allEmployees.map((emp) => (
+                <button
+                  key={emp.id}
+                  onClick={() => selectEmployee(emp.id)}
+                  style={{
+                    padding: '1rem',
+                    background: '#f8fafc',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: '#1e293b'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#667eea'
+                    e.currentTarget.style.color = 'white'
+                    e.currentTarget.style.borderColor = '#667eea'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.color = '#1e293b'
+                    e.currentTarget.style.borderColor = '#e2e8f0'
+                  }}
+                >
+                  <div>{emp.name}</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{emp.email}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
-          💼 Mi Área de Trabajo
-        </h1>
-        <p style={{ color: '#64748b' }}>
-          Gestiona tu agenda diaria y mantén el control de tus horarios
-        </p>
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem' }}>
+            💼 Mi Área de Trabajo
+          </h1>
+          <p style={{ color: '#64748b' }}>
+            {employeeName ? `Hola, ${employeeName}! ` : ''}Gestiona tu agenda diaria y mantén el control de tus horarios
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setShowEmployeeSelector(true)
+            setEmployeeId(null)
+            setEmployeeName('')
+            setAppointments([])
+          }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: '500'
+          }}
+        >
+          🔄 Cambiar Usuario
+        </button>
       </div>
 
       {/* Estadísticas del Día */}
