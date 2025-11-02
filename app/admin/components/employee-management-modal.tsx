@@ -11,21 +11,9 @@ interface EmployeeManagementModalProps {
   onSuccess: () => void
 }
 
-interface Employee {
-  id: string
-  name: string
-  email: string
-  phone: string | null
-  role: string
-  employee_position?: EmployeePosition
-  created_at: string
-}
-
 export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: EmployeeManagementModalProps) {
-  const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,28 +22,6 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
     role: 'barber' as 'barber' | 'secretary' | 'admin',
     employee_position: 'barbero' as EmployeePosition
   })
-
-  useEffect(() => {
-    if (isOpen) {
-      loadEmployees()
-    }
-  }, [isOpen])
-
-  const loadEmployees = async () => {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .in('role', ['barber', 'secretary', 'admin'])
-        .order('name')
-
-      if (error) throw error
-      setEmployees(data || [])
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
 
   const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,36 +69,13 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
       }
       
       toast.success(`${roleNames[formData.role]} agregado correctamente`)
-      await loadEmployees()
-      setShowAddForm(false)
       resetForm()
       onSuccess()
+      onClose()
     } catch (err: any) {
       toast.error(err.message || 'Error al agregar el empleado')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleDeleteEmployee = async (employeeId: string) => {
-    const confirmDelete = window.confirm('¿Estás seguro de eliminar este empleado?')
-    if (!confirmDelete) return
-
-    try {
-      const supabase = createClient()
-      
-      // Nota: En producción, considera soft delete en lugar de hard delete
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', employeeId)
-
-      if (error) throw error
-      toast.success('Empleado eliminado correctamente')
-      await loadEmployees()
-      onSuccess()
-    } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar el empleado')
     }
   }
 
@@ -174,7 +117,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
           alignItems: 'center'
         }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1e293b' }}>
-            Gestión de Empleados
+            ➕ Agregar Nuevo Empleado
           </h2>
           <button
             onClick={onClose}
@@ -205,26 +148,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
             </div>
           )}
 
-          {!showAddForm && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-                fontWeight: '500',
-                marginBottom: '1.5rem'
-              }}
-            >
-              + Agregar Empleado
-            </button>
-          )}
-
-          {showAddForm && (
-            <form onSubmit={handleAddEmployee} style={{
+          <form onSubmit={handleAddEmployee} style={{
               background: '#f8fafc',
               padding: '1.5rem',
               borderRadius: '0.5rem',
@@ -379,7 +303,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAddForm(false)
+                    onClose()
                     resetForm()
                   }}
                   style={{
@@ -397,99 +321,6 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                 </button>
               </div>
             </form>
-          )}
-
-          <div style={{ overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
-                    Nombre
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
-                    Email
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
-                    Posición
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>
-                    Teléfono
-                  </th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600', fontSize: '0.875rem' }}>
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((employee) => {
-                  const getPositionBadge = (position?: EmployeePosition) => {
-                    const badges = {
-                      barbero: { emoji: '✂️', text: 'Barbero', bg: '#dbeafe', color: '#1e40af' },
-                      dueno: { emoji: '👔', text: 'Dueño', bg: '#fef3c7', color: '#92400e' },
-                      recepcionista: { emoji: '📞', text: 'Recepcionista', bg: '#e0e7ff', color: '#3730a3' }
-                    }
-                    const badge = position ? badges[position] : { emoji: '❓', text: 'Sin asignar', bg: '#f1f5f9', color: '#64748b' }
-                    return (
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '0.25rem 0.75rem',
-                        background: badge.bg,
-                        color: badge.color,
-                        borderRadius: '9999px',
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
-                      }}>
-                        {badge.emoji} {badge.text}
-                      </span>
-                    )
-                  }
-
-                  return (
-                    <tr key={employee.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                        {employee.name}
-                      </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
-                        {employee.email}
-                      </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
-                        {getPositionBadge(employee.employee_position)}
-                      </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
-                        {employee.phone || '-'}
-                      </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                        <button
-                          onClick={() => handleDeleteEmployee(employee.id)}
-                          style={{
-                            padding: '0.25rem 0.75rem',
-                            background: '#fee2e2',
-                            color: '#dc2626',
-                            border: 'none',
-                            borderRadius: '0.25rem',
-                            cursor: 'pointer',
-                            fontSize: '0.75rem',
-                            fontWeight: '500'
-                          }}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-            {employees.length === 0 && !showAddForm && (
-              <div style={{
-                textAlign: 'center',
-                padding: '2rem',
-                color: '#64748b',
-                fontSize: '0.875rem'
-              }}>
-                No hay empleados registrados. Agrega el primero.
-              </div>
-            )}
           </div>
         </div>
 
