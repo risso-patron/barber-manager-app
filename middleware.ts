@@ -46,13 +46,21 @@ export async function middleware(request: NextRequest) {
 
   // Si hay usuario, verificar su rol y redirigir apropiadamente
   if (user) {
-    const { data: userData } = await supabase
+    // Normalizar email a minúsculas para evitar problemas
+    const normalizedEmail = user.email?.toLowerCase() || ''
+    
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('role')
-      .eq('email', user.email)
+      .ilike('email', normalizedEmail) // ilike = case-insensitive LIKE
       .single()
 
+    console.log('🔍 MIDDLEWARE - Email del usuario:', user.email)
+    console.log('🔍 MIDDLEWARE - Datos obtenidos:', userData)
+    console.log('🔍 MIDDLEWARE - Error:', userError)
+
     const userRole = userData?.role || 'employee'
+    console.log('🔍 MIDDLEWARE - Rol asignado:', userRole)
 
     // Solo permitir acceso a empleados y admins (no clientes)
     if (userRole === 'client') {
@@ -62,6 +70,7 @@ export async function middleware(request: NextRequest) {
 
     // Redirigir desde login a dashboard apropiado
     if (url.pathname === '/auth/login') {
+      console.log('🔍 MIDDLEWARE - Redirigiendo a:', userRole === 'admin' ? '/admin' : '/employee')
       url.pathname = userRole === 'admin' ? '/admin' : '/employee'
       return NextResponse.redirect(url)
     }

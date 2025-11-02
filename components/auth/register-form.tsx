@@ -39,8 +39,11 @@ export function RegisterForm() {
     try {
       const supabase = createClient()
 
+      // Normalizar email a minúsculas
+      const normalizedEmail = data.email.toLowerCase().trim()
+
       const { error: authError } = await supabase.auth.signUp({
-        email: data.email,
+        email: normalizedEmail,
         password: data.password,
         options: {
           data: {

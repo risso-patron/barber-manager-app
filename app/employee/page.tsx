@@ -245,26 +245,47 @@ export default function EmployeePage() {
             {employeeName ? `Hola, ${employeeName}! ` : ''}Gestiona tu agenda diaria y mantén el control de tus horarios
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowEmployeeSelector(true)
-            setEmployeeId(null)
-            setEmployeeName('')
-            setAppointments([])
-          }}
-          style={{
-            padding: '0.75rem 1.5rem',
-            background: '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.5rem',
-            cursor: 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: '500'
-          }}
-        >
-          🔄 Cambiar Usuario
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            onClick={() => {
+              setShowEmployeeSelector(true)
+              setEmployeeId(null)
+              setEmployeeName('')
+              setAppointments([])
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#667eea',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+          >
+            🔄 Cambiar Usuario
+          </button>
+          <button
+            onClick={async () => {
+              const supabase = createClient()
+              await supabase.auth.signOut()
+              window.location.href = '/auth/login'
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '500'
+            }}
+          >
+            🚪 Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas del Día */}

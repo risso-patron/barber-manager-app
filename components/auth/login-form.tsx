@@ -34,8 +34,11 @@ export function LoginForm() {
     try {
       const supabase = createClient()
 
+      // Normalizar email a minúsculas
+      const normalizedEmail = data.email.toLowerCase().trim()
+
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
+        email: normalizedEmail,
         password: data.password,
       })
 
@@ -45,14 +48,22 @@ export function LoginForm() {
       }
 
       // Obtener rol del usuario
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('role')
-        .eq('email', email)
+        .ilike('email', normalizedEmail) // Búsqueda case-insensitive
         .single()
+
+      console.warn('===== DEBUG LOGIN =====')
+      console.warn('Email buscado:', data.email)
+      console.warn('Datos del usuario:', userData)
+      console.warn('Error al buscar usuario:', userError)
 
       // Redirigir según el rol (solo admin y employee, no client)
       const redirectPath = userData?.role === 'admin' ? '/admin' : '/employee'
+      console.warn('Redirigiendo a:', redirectPath, 'con rol:', userData?.role)
+      console.warn('=======================')
+      
       router.push(redirectPath)
       router.refresh()
     } catch (err) {
