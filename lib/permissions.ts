@@ -106,7 +106,7 @@ export function getPositionBadge(position?: EmployeePosition) {
   const badges = {
     barbero: { emoji: '✂️', text: 'Barbero', bg: '#dbeafe', color: '#1e40af' },
     dueno: { emoji: '👔', text: 'Dueño', bg: '#fef3c7', color: '#92400e' },
-    recepcionista: { emoji: '📞', text: 'Recepcionista', bg: '#e0e7ff', color: '#3730a3' }
+    recepcionista: { emoji: '📞', text: 'Asistente', bg: '#e0e7ff', color: '#3730a3' }
   }
   
   if (!position) {

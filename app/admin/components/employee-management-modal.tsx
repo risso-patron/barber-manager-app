@@ -233,7 +233,7 @@ export function EmployeeManagementModal({ isOpen, onClose, onSuccess }: Employee
                   >
                     <option value="barbero">✂️ Barbero (registra citas y ventas)</option>
                     <option value="dueno">👔 Dueño (contabilidad y compras)</option>
-                    <option value="recepcionista">📞 Recepcionista (apoyo en limpieza)</option>
+                    <option value="recepcionista">📞 Asistente (apoyo en limpieza)</option>
                   </select>
                   <div style={{ 
                     fontSize: '0.75rem', 

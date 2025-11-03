@@ -23,6 +23,7 @@ import { InventoryView } from "./components/views/inventory-view"
 import { NewAppointmentModal } from "./components/new-appointment-modal"
 import { NewClientModal } from "./components/new-client-modal"
 import { EmployeeManagementModal } from "./components/employee-management-modal"
+import { EditEmployeeModal } from "./components/edit-employee-modal"
 import { InventoryModal } from "./components/inventory-modal"
 
 export default function AdminPage() {
@@ -30,6 +31,8 @@ export default function AdminPage() {
   const [showAppointmentModal, setShowAppointmentModal] = useState(false)
   const [showClientModal, setShowClientModal] = useState(false)
   const [showEmployeeModal, setShowEmployeeModal] = useState(false)
+  const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null)
   const [showInventoryModal, setShowInventoryModal] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
@@ -55,6 +58,11 @@ export default function AdminPage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  const handleEditEmployee = (employee: any) => {
+    setSelectedEmployee(employee)
+    setShowEditEmployeeModal(true)
   }
 
   if (checkingAuth || !isAuthorized) {
@@ -104,7 +112,7 @@ export default function AdminPage() {
       case 'clients':
         return <ClientsView onNewClient={() => setShowClientModal(true)} />
       case 'employees':
-        return <EmployeesView onNewEmployee={() => setShowEmployeeModal(true)} />
+        return <EmployeesView onNewEmployee={() => setShowEmployeeModal(true)} onEditEmployee={handleEditEmployee} />
       case 'inventory':
         return <InventoryView />
       default:
@@ -155,6 +163,15 @@ export default function AdminPage() {
       <NewClientModal isOpen={showClientModal} onClose={() => setShowClientModal(false)} onSuccess={refresh} />
       <EmployeeManagementModal isOpen={showEmployeeModal} onClose={() => setShowEmployeeModal(false)} onSuccess={refresh} />
       <InventoryModal isOpen={showInventoryModal} onClose={() => setShowInventoryModal(false)} onSuccess={refresh} />
+      <EditEmployeeModal 
+        isOpen={showEditEmployeeModal} 
+        onClose={() => {
+          setShowEditEmployeeModal(false)
+          setSelectedEmployee(null)
+        }} 
+        onSuccess={refresh} 
+        employee={selectedEmployee}
+      />
 
       <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

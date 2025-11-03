@@ -408,8 +408,28 @@ export function EmployeesView({ onEditEmployee, onNewEmployee }: EmployeesViewPr
                   </select>
                 </div>
 
-                {/* Botones activar/eliminar */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                {/* Botones de acción */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  {/* Botón editar */}
+                  <button
+                    onClick={() => onEditEmployee && onEditEmployee(employee)}
+                    style={{
+                      padding: '0.75rem',
+                      background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    ✏️ Editar
+                  </button>
+
                   <button
                     onClick={() => toggleActiveStatus(employee.id, employee.is_active)}
                     style={{
