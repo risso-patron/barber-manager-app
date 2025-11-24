@@ -21,7 +21,17 @@ export default function DashboardPage() {
     // Verificar si hay usuario logueado
     const currentUser = localStorage.getItem("currentUser")
     if (currentUser) {
-      setUser(JSON.parse(currentUser))
+      const userData = JSON.parse(currentUser)
+      setUser(userData)
+      
+      // Redirigir según el rol
+      if (userData.role === "admin") {
+        router.push("/admin")
+      } else if (userData.role === "employee" || userData.role === "barber") {
+        router.push("/barber")
+      } else if (userData.role === "client") {
+        router.push("/client")
+      }
     } else {
       router.push("/login")
     }
