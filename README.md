@@ -2,6 +2,8 @@
 
 Una aplicación completa de gestión para barberías construida con Next.js 15 y Supabase.
 
+> ⚠️ **IMPORTANTE**: Este proyecto está en desarrollo. Revisa [SECURITY.md](./SECURITY.md) antes de desplegar a producción.
+
 ## Características
 
 ### 🔐 Autenticación por Roles
@@ -58,17 +60,38 @@ npm install
 
 3. Configura las variables de entorno:
 \`\`\`bash
-cp .env.example .env.local
+# Copia el archivo de ejemplo
+cp .env.local.example .env.local
+
+# Edita .env.local con tus credenciales de Supabase
 \`\`\`
 
 4. Configura tu proyecto de Supabase:
    - Crea un nuevo proyecto en [Supabase](https://supabase.com)
-   - Ejecuta los scripts SQL en `scripts/` para crear las tablas
-   - Actualiza las variables de entorno con tus credenciales
+   - Ve a Settings > API para obtener tu URL y Anon Key
+   - Ejecuta los scripts SQL en orden:
+     1. `scripts/01-create-tables.sql` - Crea las tablas
+     2. `scripts/02-seed-data.sql` - Datos iniciales
+     3. `scripts/03-create-demo-users.sql` - Usuarios demo (opcional)
+   - Actualiza `.env.local` con tus credenciales
 
 5. Ejecuta el proyecto:
 \`\`\`bash
 npm run dev
+\`\`\`
+
+6. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
+
+## Scripts Disponibles
+
+\`\`\`bash
+npm run dev          # Inicia el servidor de desarrollo
+npm run build        # Genera build de producción
+npm run start        # Inicia servidor de producción
+npm run lint         # Ejecuta ESLint
+npm run type-check   # Verifica tipos TypeScript
+npm run format       # Formatea código con Prettier
+npm run predeploy    # Verifica seguridad antes de deploy
 \`\`\`
 
 ## Estructura del Proyecto

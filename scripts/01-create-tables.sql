@@ -1,6 +1,3 @@
--- Enable RLS (Row Level Security)
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
-
 -- Create custom types
 CREATE TYPE user_role AS ENUM ('client', 'employee', 'admin');
 CREATE TYPE appointment_status AS ENUM ('pending', 'confirmed', 'completed', 'cancelled');

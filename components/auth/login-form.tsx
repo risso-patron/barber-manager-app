@@ -3,25 +3,22 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { useDemoAuth } from "@/lib/demo-auth"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, CheckCircle, Users } from "lucide-react"
-
-interface LoginFormData {
-  email: string
-  password: string
-}
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { loginSchema, type LoginInput } from "@/lib/schemas"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login } = useDemoAuth()
+  const { signIn } = useAuth()
 
   const message = searchParams.get("message")
 
@@ -29,51 +26,28 @@ export function LoginForm() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-  } = useForm<LoginFormData>()
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  })
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: LoginInput) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const result = await login(data.email, data.password)
+      const success = await signIn(data)
 
-      if (result.success) {
+      if (success) {
         router.push("/dashboard")
         router.refresh()
       } else {
-        setError(result.error || "Error de autenticación")
+        setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
       }
-    } catch (err: any) {
-      console.error("Login error:", err)
+    } catch (err) {
       setError("Error inesperado. Intenta nuevamente.")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleDemoLogin = async (email: string, password: string) => {
-    setValue("email", email)
-    setValue("password", password)
-    setIsLoading(true)
-
-    try {
-      const result = await login(email, password)
-      if (result.success) {
-        router.push("/dashboard")
-      }
-    } catch (err) {
-      setError("Error en login demo")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Función para auto-rellenar credenciales
-  const fillCredentials = (email: string, password: string) => {
-    setValue("email", email)
-    setValue("password", password)
   }
 
   return (
@@ -147,78 +121,6 @@ export function LoginForm() {
               </Button>
             </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Credenciales de prueba */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center text-sm">
-            <Users className="h-4 w-4 mr-2" />
-            Usuarios de Prueba - ¡Haz clic para probar!
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start text-left h-auto p-3 bg-white hover:bg-blue-100 border border-red-200"
-              onClick={() => handleDemoLogin("admin@barbermanager.com", "admin123")}
-              disabled={isLoading}
-            >
-              <div className="w-full">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-red-700">👑 Administrador</p>
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                </div>
-                <p className="text-xs text-gray-600">admin@barbermanager.com / admin123</p>
-                <p className="text-xs text-red-600 mt-1">Dashboard completo, gestión total</p>
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start text-left h-auto p-3 bg-white hover:bg-blue-100 border border-blue-200"
-              onClick={() => handleDemoLogin("empleado@barbermanager.com", "empleado123")}
-              disabled={isLoading}
-            >
-              <div className="w-full">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-blue-700">💼 Empleado</p>
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                </div>
-                <p className="text-xs text-gray-600">empleado@barbermanager.com / empleado123</p>
-                <p className="text-xs text-blue-600 mt-1">Agenda personal, control horario</p>
-              </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start text-left h-auto p-3 bg-white hover:bg-blue-100 border border-green-200"
-              onClick={() => handleDemoLogin("cliente@barbermanager.com", "cliente123")}
-              disabled={isLoading}
-            >
-              <div className="w-full">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-green-700">👤 Cliente</p>
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                </div>
-                <p className="text-xs text-gray-600">cliente@barbermanager.com / cliente123</p>
-                <p className="text-xs text-green-600 mt-1">Reservar citas, ver historial</p>
-              </div>
-            </Button>
-          </div>
-
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 text-xs">
-              <strong>¡Sistema Demo Listo!</strong> Haz clic en cualquier usuario para acceder instantáneamente. No
-              necesitas Supabase configurado.
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
     </div>

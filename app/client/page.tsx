@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, User, Star, History, Settings } from "lucide-react"
@@ -17,6 +18,7 @@ interface Appointment {
 
 export default function ClientDashboard() {
   const router = useRouter()
+  const user = useRequireAuth(["client", "admin"])
   const [appointments, setAppointments] = useState<Appointment[]>([
     {
       id: "1",
@@ -55,18 +57,9 @@ export default function ClientDashboard() {
     },
   ])
 
-  useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/auth/login")
-      return
-    }
-
-    const user = JSON.parse(currentUser)
-    if (user.role !== "client") {
-      router.push("/dashboard")
-    }
-  }, [router])
+  if (!user) {
+    return null
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

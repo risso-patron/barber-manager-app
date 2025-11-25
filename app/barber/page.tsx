@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Users, DollarSign, TrendingUp, CheckCircle, User } from "lucide-react"
@@ -16,6 +17,7 @@ interface TodayAppointment {
 
 export default function BarberDashboard() {
   const router = useRouter()
+  const user = useRequireAuth(["employee", "barber", "admin"])
   const [isWorking, setIsWorking] = useState(false)
   const [workStartTime, setWorkStartTime] = useState<string | null>(null)
 
@@ -67,25 +69,20 @@ export default function BarberDashboard() {
   }
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/auth/login")
-      return
-    }
+    if (!user) return
 
-    const user = JSON.parse(currentUser)
-    if (user.role !== "employee" && user.role !== "barber") {
-      router.push("/dashboard")
-    }
-
-    // Check if already working
-    const workStatus = localStorage.getItem("workStatus")
+    // Check if already working - usando sessionStorage en lugar de localStorage para datos temporales
+    const workStatus = sessionStorage.getItem("workStatus")
     if (workStatus) {
       const status = JSON.parse(workStatus)
       setIsWorking(status.isWorking)
       setWorkStartTime(status.startTime)
     }
-  }, [router])
+  }, [user])
+
+  if (!user) {
+    return null
+  }
 
   const handleClockIn = () => {
     const now = new Date().toLocaleTimeString("es-ES", {
@@ -94,7 +91,7 @@ export default function BarberDashboard() {
     })
     setIsWorking(true)
     setWorkStartTime(now)
-    localStorage.setItem(
+    sessionStorage.setItem(
       "workStatus",
       JSON.stringify({ isWorking: true, startTime: now })
     )
@@ -103,7 +100,7 @@ export default function BarberDashboard() {
   const handleClockOut = () => {
     setIsWorking(false)
     setWorkStartTime(null)
-    localStorage.removeItem("workStatus")
+    sessionStorage.removeItem("workStatus")
   }
 
   const getStatusColor = (status: string) => {

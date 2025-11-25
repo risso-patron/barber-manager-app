@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle } from "lucide-react"
@@ -19,6 +20,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const router = useRouter()
+  const user = useRequireAuth(["admin"])
   const [stats, setStats] = useState<DashboardStats>({
     totalAppointments: 156,
     todayAppointments: 12,
@@ -30,19 +32,9 @@ export default function AdminDashboard() {
     pendingAppointments: 8,
   })
 
-  useEffect(() => {
-    // Verificar autenticación
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/auth/login")
-      return
-    }
-
-    const user = JSON.parse(currentUser)
-    if (user.role !== "admin") {
-      router.push("/dashboard")
-    }
-  }, [router])
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
