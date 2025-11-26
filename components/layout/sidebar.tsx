@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useDemoAuth } from "@/lib/demo-auth"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -16,10 +16,10 @@ export function Sidebar({ userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { user, logout } = useDemoAuth()
+  const { user, signOut } = useAuth()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await signOut()
     router.push("/auth/login")
   }
 

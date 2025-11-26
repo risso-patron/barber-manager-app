@@ -1,27 +1,19 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useDemoAuth } from "@/lib/demo-auth"
+import { useAuth } from "@/hooks/useAuth"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Loader2 } from "lucide-react"
+import { redirect } from "next/navigation"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, isAuthenticated } = useDemoAuth()
-  const router = useRouter()
+  const { user, isLoading, isAuthenticated } = useAuth()
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/auth/login")
-    }
-  }, [isAuthenticated, router])
-
-  if (!isAuthenticated || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -29,9 +21,13 @@ export default function DashboardLayout({
     )
   }
 
+  if (!isAuthenticated || !user) {
+    redirect("/auth/login")
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar userRole={user.role} />
+      <Sidebar userRole={user.profile?.role || "client"} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6">{children}</div>
       </main>
