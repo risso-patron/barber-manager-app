@@ -3,24 +3,23 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
   userRole: "client" | "employee" | "admin"
+  userName?: string
 }
 
-export function Sidebar({ userRole }: SidebarProps) {
+export function Sidebar({ userRole, userName }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { user, signOut } = useAuth()
 
-  const handleLogout = async () => {
-    await signOut()
-    router.push("/auth/login")
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser")
+    router.push("/login")
   }
 
   const getMenuItems = () => {
@@ -46,6 +45,7 @@ export function Sidebar({ userRole }: SidebarProps) {
           ...baseItems,
           { href: "/admin/appointments", label: "Citas", icon: Calendar },
           { href: "/admin/employees", label: "Empleados", icon: Users },
+          { href: "/admin/services", label: "Servicios", icon: Scissors },
           { href: "/admin/inventory", label: "Inventario", icon: Package },
           { href: "/admin/reports", label: "Reportes", icon: BarChart3 },
           { href: "/admin/settings", label: "Configuración", icon: Settings },
@@ -87,7 +87,7 @@ export function Sidebar({ userRole }: SidebarProps) {
           </div>
           {!isCollapsed && (
             <div>
-              <p className="text-sm font-medium">{user?.name}</p>
+              <p className="text-sm font-medium">{userName || "Usuario"}</p>
               <p className="text-xs text-slate-400 capitalize">{userRole}</p>
             </div>
           )}

@@ -1,32 +1,44 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/useAuth"
-import { DASHBOARD_BY_ROLE } from "@/lib/constants"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const [isRedirecting, setIsRedirecting] = useState(true)
 
   useEffect(() => {
-    if (isLoading) return
-
-    if (!user) {
-      router.push("/auth/login")
+    // Verificar si hay usuario logueado en localStorage
+    const currentUser = localStorage.getItem("currentUser")
+    
+    if (!currentUser) {
+      // No hay usuario, redirigir al login
+      router.replace("/login")
       return
     }
 
-    // Redirigir según el rol del usuario
-    const role = user.profile?.role
-    if (role && role in DASHBOARD_BY_ROLE) {
-      const dashboardPath = DASHBOARD_BY_ROLE[role as keyof typeof DASHBOARD_BY_ROLE]
-      router.push(dashboardPath)
-    } else {
-      // Fallback para roles desconocidos
-      router.push("/auth/login")
+    try {
+      const user = JSON.parse(currentUser)
+      const role = user.role
+
+      // Redirigir según el rol
+      if (role === "admin") {
+        router.replace("/admin")
+      } else if (role === "employee" || role === "barber") {
+        router.replace("/barber")
+      } else if (role === "client") {
+        router.replace("/client")
+      } else {
+        // Rol desconocido, redirigir al login
+        localStorage.removeItem("currentUser")
+        router.replace("/login")
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error)
+      localStorage.removeItem("currentUser")
+      router.replace("/login")
     }
-  }, [user, isLoading, router])
+  }, [router])
 
   // Mostrar loading mientras redirige
   return (

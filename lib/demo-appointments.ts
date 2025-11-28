@@ -1,0 +1,220 @@
+// Demo data for appointments management
+export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
+
+export interface Appointment {
+  id: string
+  clientId: string
+  clientName: string
+  clientPhone: string
+  employeeId: string
+  employeeName: string
+  serviceId: string
+  serviceName: string
+  date: string
+  time: string
+  duration: number // in minutes
+  price: number
+  status: AppointmentStatus
+  notes?: string
+  createdAt: string
+}
+
+export interface Service {
+  id: string
+  name: string
+  duration: number // in minutes
+  price: number
+  description?: string
+}
+
+export interface Employee {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: "barber" | "employee"
+  avatar?: string
+}
+
+export interface Client {
+  id: string
+  name: string
+  email: string
+  phone: string
+  avatar?: string
+}
+
+// Demo Services
+export const DEMO_SERVICES: Service[] = [
+  { id: "s1", name: "Corte Clásico", duration: 30, price: 15, description: "Corte tradicional con tijera y máquina" },
+  { id: "s2", name: "Corte + Barba", duration: 45, price: 25, description: "Corte de cabello y arreglo de barba" },
+  { id: "s3", name: "Afeitado Clásico", duration: 30, price: 18, description: "Afeitado tradicional con navaja" },
+  { id: "s4", name: "Tinte", duration: 60, price: 35, description: "Coloración completa" },
+  { id: "s5", name: "Corte Niño", duration: 20, price: 12, description: "Corte para niños hasta 12 años" },
+]
+
+// Demo Employees
+export const DEMO_EMPLOYEES: Employee[] = [
+  { id: "e1", name: "Carlos Pérez", email: "carlos@barbershop.com", phone: "555-0101", role: "barber" },
+  { id: "e2", name: "María García", email: "maria@barbershop.com", phone: "555-0102", role: "barber" },
+  { id: "e3", name: "Juan López", email: "juan@barbershop.com", phone: "555-0103", role: "barber" },
+]
+
+// Demo Clients
+export const DEMO_CLIENTS: Client[] = [
+  { id: "c1", name: "Pedro Martínez", email: "pedro@email.com", phone: "555-1001" },
+  { id: "c2", name: "Ana Rodríguez", email: "ana@email.com", phone: "555-1002" },
+  { id: "c3", name: "Luis Fernández", email: "luis@email.com", phone: "555-1003" },
+  { id: "c4", name: "Carmen Sánchez", email: "carmen@email.com", phone: "555-1004" },
+  { id: "c5", name: "Miguel Torres", email: "miguel@email.com", phone: "555-1005" },
+]
+
+// Generate demo appointments
+const today = new Date()
+const tomorrow = new Date(today)
+tomorrow.setDate(tomorrow.getDate() + 1)
+const nextWeek = new Date(today)
+nextWeek.setDate(nextWeek.getDate() + 7)
+
+export const DEMO_APPOINTMENTS: Appointment[] = [
+  {
+    id: "a1",
+    clientId: "c1",
+    clientName: "Pedro Martínez",
+    clientPhone: "555-1001",
+    employeeId: "e1",
+    employeeName: "Carlos Pérez",
+    serviceId: "s2",
+    serviceName: "Corte + Barba",
+    date: today.toISOString().split('T')[0],
+    time: "10:00",
+    duration: 45,
+    price: 25,
+    status: "confirmed",
+    notes: "Cliente prefiere corte bajo",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: "a2",
+    clientId: "c2",
+    clientName: "Ana Rodríguez",
+    clientPhone: "555-1002",
+    employeeId: "e2",
+    employeeName: "María García",
+    serviceId: "s1",
+    serviceName: "Corte Clásico",
+    date: today.toISOString().split('T')[0],
+    time: "11:30",
+    duration: 30,
+    price: 15,
+    status: "pending",
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: "a3",
+    clientId: "c3",
+    clientName: "Luis Fernández",
+    clientPhone: "555-1003",
+    employeeId: "e1",
+    employeeName: "Carlos Pérez",
+    serviceId: "s3",
+    serviceName: "Afeitado Clásico",
+    date: today.toISOString().split('T')[0],
+    time: "14:00",
+    duration: 30,
+    price: 18,
+    status: "confirmed",
+    createdAt: new Date(Date.now() - 259200000).toISOString(),
+  },
+  {
+    id: "a4",
+    clientId: "c4",
+    clientName: "Carmen Sánchez",
+    clientPhone: "555-1004",
+    employeeId: "e3",
+    employeeName: "Juan López",
+    serviceId: "s4",
+    serviceName: "Tinte",
+    date: tomorrow.toISOString().split('T')[0],
+    time: "09:00",
+    duration: 60,
+    price: 35,
+    status: "pending",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: "a5",
+    clientId: "c5",
+    clientName: "Miguel Torres",
+    clientPhone: "555-1005",
+    employeeId: "e2",
+    employeeName: "María García",
+    serviceId: "s5",
+    serviceName: "Corte Niño",
+    date: tomorrow.toISOString().split('T')[0],
+    time: "16:00",
+    duration: 20,
+    price: 12,
+    status: "confirmed",
+    notes: "Niño de 8 años",
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: "a6",
+    clientId: "c1",
+    clientName: "Pedro Martínez",
+    clientPhone: "555-1001",
+    employeeId: "e1",
+    employeeName: "Carlos Pérez",
+    serviceId: "s2",
+    serviceName: "Corte + Barba",
+    date: new Date(Date.now() - 604800000).toISOString().split('T')[0],
+    time: "10:00",
+    duration: 45,
+    price: 25,
+    status: "completed",
+    createdAt: new Date(Date.now() - 1209600000).toISOString(),
+  },
+  {
+    id: "a7",
+    clientId: "c3",
+    clientName: "Luis Fernández",
+    clientPhone: "555-1003",
+    employeeId: "e2",
+    employeeName: "María García",
+    serviceId: "s1",
+    serviceName: "Corte Clásico",
+    date: new Date(Date.now() - 259200000).toISOString().split('T')[0],
+    time: "15:00",
+    duration: 30,
+    price: 15,
+    status: "cancelled",
+    notes: "Cliente canceló por motivos personales",
+    createdAt: new Date(Date.now() - 432000000).toISOString(),
+  },
+]
+
+// Helper functions
+export function getAppointmentsByDate(date: string): Appointment[] {
+  return DEMO_APPOINTMENTS.filter(apt => apt.date === date)
+}
+
+export function getAppointmentsByStatus(status: AppointmentStatus): Appointment[] {
+  return DEMO_APPOINTMENTS.filter(apt => apt.status === status)
+}
+
+export function getAppointmentsByEmployee(employeeId: string): Appointment[] {
+  return DEMO_APPOINTMENTS.filter(apt => apt.employeeId === employeeId)
+}
+
+export function getServiceById(id: string): Service | undefined {
+  return DEMO_SERVICES.find(s => s.id === id)
+}
+
+export function getEmployeeById(id: string): Employee | undefined {
+  return DEMO_EMPLOYEES.find(e => e.id === id)
+}
+
+export function getClientById(id: string): Client | undefined {
+  return DEMO_CLIENTS.find(c => c.id === id)
+}

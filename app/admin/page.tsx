@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle } from "lucide-react"
+import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors } from "lucide-react"
 
 interface DashboardStats {
   totalAppointments: number
@@ -128,10 +128,17 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => router.push("/admin/appointments")}
+                  >
                     Ver Todas las Citas
                   </Button>
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full"
+                    onClick={() => router.push("/admin/appointments")}
+                  >
                     Nueva Cita
                   </Button>
                 </div>
@@ -154,10 +161,17 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => router.push("/admin/employees")}
+                  >
                     Ver Empleados
                   </Button>
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full"
+                    onClick={() => router.push("/admin/employees")}
+                  >
                     Agregar Empleado
                   </Button>
                 </div>
@@ -167,7 +181,36 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-purple-500" />
+                  <Scissors className="h-5 w-5 text-purple-500" />
+                  Gestión de Servicios
+                </CardTitle>
+                <CardDescription>
+                  Administra los servicios ofrecidos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => router.push("/admin/services")}
+                  >
+                    Ver Servicios
+                  </Button>
+                  <Button 
+                    className="w-full"
+                    onClick={() => router.push("/admin/services")}
+                  >
+                    Agregar Servicio
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-orange-500" />
                   Inventario
                 </CardTitle>
                 <CardDescription>

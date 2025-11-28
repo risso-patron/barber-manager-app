@@ -52,34 +52,48 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simular delay de autenticación
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // Verificar credenciales
+      const user = DEMO_USERS.find((u) => u.email === email && u.password === password)
 
-    // Verificar credenciales
-    const user = DEMO_USERS.find((u) => u.email === email && u.password === password)
-
-    if (user) {
-      // Guardar usuario en localStorage
-      localStorage.setItem("currentUser", JSON.stringify(user))
-      router.push("/dashboard")
-    } else {
-      setError("Credenciales inválidas. Usa uno de los usuarios de prueba.")
+      if (user) {
+        // Guardar usuario en localStorage
+        localStorage.setItem("currentUser", JSON.stringify(user))
+        
+        // Simular delay mínimo
+        await new Promise((resolve) => setTimeout(resolve, 300))
+        
+        // Redirigir al dashboard
+        window.location.href = "/dashboard"
+      } else {
+        setError("Credenciales inválidas. Usa uno de los usuarios de prueba.")
+        setIsLoading(false)
+      }
+    } catch (err) {
+      console.error("Error en login:", err)
+      setError("Error al iniciar sesión. Intenta de nuevo.")
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   const handleDemoLogin = async (demoUser: (typeof DEMO_USERS)[0]) => {
     setIsLoading(true)
-    setEmail(demoUser.email)
-    setPassword(demoUser.password)
-
-    // Simular delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    // Guardar usuario en localStorage
-    localStorage.setItem("currentUser", JSON.stringify(demoUser))
-    router.push("/dashboard")
+    setError("")
+    
+    try {
+      // Guardar usuario en localStorage
+      localStorage.setItem("currentUser", JSON.stringify(demoUser))
+      
+      // Simular delay mínimo
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      
+      // Redirigir al dashboard
+      window.location.href = "/dashboard"
+    } catch (err) {
+      console.error("Error en demo login:", err)
+      setError("Error al iniciar sesión. Intenta de nuevo.")
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -100,6 +114,7 @@ export default function LoginPage() {
                   placeholder="tu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -112,6 +127,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   required
                 />
               </div>
