@@ -1,0 +1,513 @@
+"use client"
+
+import { useState, useMemo } from "react"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES, DEMO_SERVICES, DEMO_CLIENTS } from "@/lib/demo-appointments"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  Users, 
+  Calendar,
+  Download,
+  FileText,
+  PieChart,
+  Activity,
+  Clock,
+  Target
+} from "lucide-react"
+
+type ReportPeriod = "today" | "week" | "month" | "year"
+
+export default function ReportsPage() {
+  useRequireAuth(["admin"])
+  
+  const [period, setPeriod] = useState<ReportPeriod>("month")
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all")
+
+  const filteredAppointments = useMemo(() => {
+    const now = new Date()
+    const filtered = DEMO_APPOINTMENTS.filter(apt => {
+      const aptDate = new Date(apt.date)
+      
+      // Filter by period
+      let inPeriod = false
+      switch (period) {
+        case "today":
+          inPeriod = aptDate.toDateString() === now.toDateString()
+          break
+        case "week":
+          const weekAgo = new Date(now)
+          weekAgo.setDate(now.getDate() - 7)
+          inPeriod = aptDate >= weekAgo
+          break
+        case "month":
+          const monthAgo = new Date(now)
+          monthAgo.setMonth(now.getMonth() - 1)
+          inPeriod = aptDate >= monthAgo
+          break
+        case "year":
+          const yearAgo = new Date(now)
+          yearAgo.setFullYear(now.getFullYear() - 1)
+          inPeriod = aptDate >= yearAgo
+          break
+      }
+
+      // Filter by employee
+      const matchesEmployee = selectedEmployee === "all" || apt.employeeId === selectedEmployee
+
+      return inPeriod && matchesEmployee
+    })
+
+    return filtered
+  }, [period, selectedEmployee])
+
+  const stats = useMemo(() => {
+    const completed = filteredAppointments.filter(apt => apt.status === "completed")
+    const cancelled = filteredAppointments.filter(apt => apt.status === "cancelled")
+    const pending = filteredAppointments.filter(apt => apt.status === "pending")
+    
+    const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
+    const averageTicket = completed.length > 0 ? totalRevenue / completed.length : 0
+    
+    const totalDuration = completed.reduce((sum, apt) => sum + apt.duration, 0)
+    const averageDuration = completed.length > 0 ? totalDuration / completed.length : 0
+
+    // Service popularity
+    const serviceStats = completed.reduce((acc, apt) => {
+      const serviceName = apt.serviceName
+      if (!acc[serviceName]) {
+        acc[serviceName] = { count: 0, revenue: 0 }
+      }
+      acc[serviceName].count++
+      acc[serviceName].revenue += apt.price
+      return acc
+    }, {} as Record<string, { count: number; revenue: number }>)
+
+    const topServices = Object.entries(serviceStats)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .slice(0, 5)
+
+    // Employee performance
+    const employeeStats = completed.reduce((acc, apt) => {
+      const employeeName = apt.employeeName
+      if (!acc[employeeName]) {
+        acc[employeeName] = { count: 0, revenue: 0 }
+      }
+      acc[employeeName].count++
+      acc[employeeName].revenue += apt.price
+      return acc
+    }, {} as Record<string, { count: number; revenue: number }>)
+
+    const topEmployees = Object.entries(employeeStats)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+
+    // Client stats
+    const uniqueClients = new Set(completed.map(apt => apt.clientId)).size
+    const repeatClients = completed.reduce((acc, apt) => {
+      acc[apt.clientId] = (acc[apt.clientId] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    const clientsWithMultipleVisits = Object.values(repeatClients).filter(count => count > 1).length
+
+    // Daily distribution
+    const dailyRevenue = completed.reduce((acc, apt) => {
+      const date = apt.date
+      acc[date] = (acc[date] || 0) + apt.price
+      return acc
+    }, {} as Record<string, number>)
+
+    const bestDay = Object.entries(dailyRevenue)
+      .sort((a, b) => b[1] - a[1])[0]
+
+    return {
+      totalAppointments: filteredAppointments.length,
+      completed: completed.length,
+      cancelled: cancelled.length,
+      pending: pending.length,
+      totalRevenue,
+      averageTicket,
+      averageDuration,
+      topServices,
+      topEmployees,
+      uniqueClients,
+      clientsWithMultipleVisits,
+      retentionRate: uniqueClients > 0 ? (clientsWithMultipleVisits / uniqueClients) * 100 : 0,
+      completionRate: filteredAppointments.length > 0 ? (completed.length / filteredAppointments.length) * 100 : 0,
+      cancellationRate: filteredAppointments.length > 0 ? (cancelled.length / filteredAppointments.length) * 100 : 0,
+      bestDay
+    }
+  }, [filteredAppointments])
+
+  const handleExportPDF = () => {
+    alert("Exportando reporte en PDF... (Función a implementar)")
+  }
+
+  const handleExportExcel = () => {
+    alert("Exportando reporte en Excel... (Función a implementar)")
+  }
+
+  const getPeriodLabel = () => {
+    switch (period) {
+      case "today": return "Hoy"
+      case "week": return "Última Semana"
+      case "month": return "Último Mes"
+      case "year": return "Último Año"
+    }
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Reportes y Análisis</h1>
+          <p className="text-muted-foreground">Visualiza métricas y estadísticas del negocio</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportExcel}>
+            <FileText className="mr-2 h-4 w-4" />
+            Excel
+          </Button>
+          <Button variant="outline" onClick={handleExportPDF}>
+            <Download className="mr-2 h-4 w-4" />
+            PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex gap-2">
+              <Button
+                variant={period === "today" ? "default" : "outline"}
+                onClick={() => setPeriod("today")}
+                size="sm"
+              >
+                Hoy
+              </Button>
+              <Button
+                variant={period === "week" ? "default" : "outline"}
+                onClick={() => setPeriod("week")}
+                size="sm"
+              >
+                Semana
+              </Button>
+              <Button
+                variant={period === "month" ? "default" : "outline"}
+                onClick={() => setPeriod("month")}
+                size="sm"
+              >
+                Mes
+              </Button>
+              <Button
+                variant={period === "year" ? "default" : "outline"}
+                onClick={() => setPeriod("year")}
+                size="sm"
+              >
+                Año
+              </Button>
+            </div>
+            
+            <select
+              value={selectedEmployee}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
+              className="px-3 py-2 border rounded-md"
+            >
+              <option value="all">Todos los empleados</option>
+              {DEMO_EMPLOYEES.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.name}</option>
+              ))}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Key Metrics */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-4">Métricas Clave - {getPeriodLabel()}</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                Ticket promedio: ${stats.averageTicket.toFixed(2)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Citas Completadas</CardTitle>
+              <Calendar className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completed}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.completionRate.toFixed(1)}% tasa de finalización
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
+              <Users className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.uniqueClients}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.retentionRate.toFixed(1)}% tasa de retención
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Duración Promedio</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.averageDuration.toFixed(0)} min</div>
+              <p className="text-xs text-muted-foreground">
+                Por servicio
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        {/* Top Services */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-blue-600" />
+              Servicios Más Vendidos
+            </CardTitle>
+            <CardDescription>Por ingresos generados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.topServices.map(([service, data], index) => (
+                <div key={service} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium">{service}</p>
+                      <p className="text-xs text-muted-foreground">{data.count} servicios</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">${data.revenue.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+              {stats.topServices.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">No hay datos disponibles</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Employee Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-green-600" />
+              Rendimiento de Empleados
+            </CardTitle>
+            <CardDescription>Por ingresos generados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.topEmployees.map(([employee, data], index) => (
+                <div key={employee} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium">{employee}</p>
+                      <p className="text-xs text-muted-foreground">{data.count} servicios</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">${data.revenue.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${(data.revenue / data.count).toFixed(2)} promedio
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {stats.topEmployees.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">No hay datos disponibles</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid gap-6 md:grid-cols-3 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-600" />
+              Tasa de Finalización
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm">Completadas</span>
+                <span className="font-medium text-green-600">{stats.completed}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">Canceladas</span>
+                <span className="font-medium text-red-600">{stats.cancelled}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">Pendientes</span>
+                <span className="font-medium text-yellow-600">{stats.pending}</span>
+              </div>
+              <div className="pt-2 border-t">
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span>{stats.totalAppointments}</span>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-900">
+                  Tasa de finalización: <span className="font-bold">{stats.completionRate.toFixed(1)}%</span>
+                </p>
+                <p className="text-sm text-red-900 mt-1">
+                  Tasa de cancelación: <span className="font-bold">{stats.cancellationRate.toFixed(1)}%</span>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-600" />
+              Retención de Clientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Clientes únicos</p>
+                <p className="text-3xl font-bold">{stats.uniqueClients}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Clientes recurrentes</p>
+                <p className="text-3xl font-bold">{stats.clientsWithMultipleVisits}</p>
+              </div>
+              <div className="pt-2 border-t">
+                <p className="text-sm text-muted-foreground">Tasa de retención</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {stats.retentionRate.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-orange-600" />
+              Mejor Día
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.bestDay ? (
+                <>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Fecha</p>
+                    <p className="text-lg font-semibold">
+                      {new Date(stats.bestDay[0]).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ingresos generados</p>
+                    <p className="text-3xl font-bold text-green-600">
+                      ${stats.bestDay[1].toFixed(2)}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No hay datos disponibles
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumen Ejecutivo</CardTitle>
+          <CardDescription>Análisis general del período seleccionado</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                Puntos Positivos
+              </h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>✅ Tasa de finalización de {stats.completionRate.toFixed(1)}%</li>
+                <li>✅ {stats.uniqueClients} clientes únicos atendidos</li>
+                <li>✅ Ticket promedio de ${stats.averageTicket.toFixed(2)}</li>
+                <li>✅ {stats.retentionRate.toFixed(1)}% de retención de clientes</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-semibold flex items-center gap-2">
+                <Target className="h-4 w-4 text-blue-600" />
+                Áreas de Mejora
+              </h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                {stats.cancellationRate > 10 && (
+                  <li>⚠️ Reducir tasa de cancelación ({stats.cancellationRate.toFixed(1)}%)</li>
+                )}
+                {stats.retentionRate < 50 && (
+                  <li>⚠️ Mejorar retención de clientes ({stats.retentionRate.toFixed(1)}%)</li>
+                )}
+                {stats.pending > 5 && (
+                  <li>⚠️ {stats.pending} citas pendientes por confirmar</li>
+                )}
+                <li>📈 Oportunidad de aumentar ticket promedio</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
