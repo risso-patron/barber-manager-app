@@ -46,6 +46,18 @@ export interface Client {
   isActive?: boolean
 }
 
+export interface InventoryItem {
+  id: string
+  name: string
+  category: 'producto' | 'herramienta' | 'suministro'
+  quantity: number
+  minStock: number
+  price: number
+  supplier?: string
+  lastRestocked?: string
+  status?: 'disponible' | 'bajo' | 'agotado'
+}
+
 // Demo Services
 export const DEMO_SERVICES: Service[] = [
   { id: "s1", name: "Corte Clásico", duration: 30, price: 15, description: "Corte tradicional con tijera y máquina" },
@@ -69,6 +81,18 @@ export const DEMO_CLIENTS: Client[] = [
   { id: "c3", name: "Luis Fernández", email: "luis@email.com", phone: "555-1003", createdAt: "2024-03-10", isActive: true },
   { id: "c4", name: "Carmen Sánchez", email: "carmen@email.com", phone: "555-1004", createdAt: "2024-10-05", isActive: true },
   { id: "c5", name: "Miguel Torres", email: "miguel@email.com", phone: "555-1005", createdAt: "2024-11-12", isActive: true },
+]
+
+// Demo Inventory
+export const DEMO_INVENTORY: InventoryItem[] = [
+  { id: "i1", name: "Shampoo Profesional", category: "producto", quantity: 25, minStock: 10, price: 18.50, supplier: "Beauty Supply Co.", lastRestocked: "2024-11-15", status: "disponible" },
+  { id: "i2", name: "Cera para Cabello", category: "producto", quantity: 8, minStock: 10, price: 12.00, supplier: "Hair Products Inc.", lastRestocked: "2024-11-10", status: "bajo" },
+  { id: "i3", name: "Tijeras Profesionales", category: "herramienta", quantity: 15, minStock: 5, price: 45.00, supplier: "Pro Tools Ltd.", lastRestocked: "2024-10-20", status: "disponible" },
+  { id: "i4", name: "Máquina de Afeitar", category: "herramienta", quantity: 12, minStock: 8, price: 85.00, supplier: "Barber Equipment", lastRestocked: "2024-11-01", status: "disponible" },
+  { id: "i5", name: "Toallas Desechables", category: "suministro", quantity: 0, minStock: 20, price: 15.00, supplier: "Clean Supplies", lastRestocked: "2024-10-15", status: "agotado" },
+  { id: "i6", name: "Cuchillas de Repuesto", category: "suministro", quantity: 50, minStock: 30, price: 8.50, supplier: "Blade Masters", lastRestocked: "2024-11-20", status: "disponible" },
+  { id: "i7", name: "Gel de Afeitar", category: "producto", quantity: 18, minStock: 12, price: 9.75, supplier: "Hair Products Inc.", lastRestocked: "2024-11-18", status: "disponible" },
+  { id: "i8", name: "Aceite para Barba", category: "producto", quantity: 6, minStock: 8, price: 22.00, supplier: "Beauty Supply Co.", lastRestocked: "2024-11-05", status: "bajo" },
 ]
 
 // Generate demo appointments

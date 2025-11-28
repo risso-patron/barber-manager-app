@@ -219,10 +219,17 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button className="w-full" variant="outline">
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => router.push("/admin/inventory")}
+                  >
                     Ver Inventario
                   </Button>
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full"
+                    onClick={() => router.push("/admin/inventory")}
+                  >
                     Agregar Producto
                   </Button>
                 </div>
