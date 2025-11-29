@@ -4,6 +4,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
+import { Footer } from "@/components/layout/footer"
 import { Loader2 } from "lucide-react"
 
 export default function DashboardLayout({
@@ -51,6 +52,7 @@ export default function DashboardLayout({
       <Sidebar userRole={user.role || "client"} userName={user.name} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6">{children}</div>
+        <Footer />
       </main>
     </div>
   )

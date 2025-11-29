@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TermsModal } from "@/components/auth/terms-modal"
 import { Loader2, AlertCircle } from "lucide-react"
 
 interface RegisterFormData {
@@ -26,6 +27,8 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null)
   const [selectedRole, setSelectedRole] = useState<"client" | "employee">("client")
   const [isNetworkError, setIsNetworkError] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<RegisterFormData | null>(null)
   const router = useRouter()
 
   const {
@@ -37,6 +40,34 @@ export function RegisterForm() {
   const password = watch("password")
 
   const onSubmit = async (data: RegisterFormData) => {
+    // Verificar si ya aceptó términos
+    const consent = localStorage.getItem('userConsent');
+    if (!consent) {
+      // Mostrar modal de términos
+      setPendingFormData(data);
+      setShowTermsModal(true);
+      return;
+    }
+
+    // Proceder con el registro
+    await processRegistration(data);
+  };
+
+  const handleTermsAccept = async () => {
+    setShowTermsModal(false);
+    if (pendingFormData) {
+      await processRegistration(pendingFormData);
+      setPendingFormData(null);
+    }
+  };
+
+  const handleTermsDecline = () => {
+    setShowTermsModal(false);
+    setPendingFormData(null);
+    setError('Debes aceptar los términos para crear una cuenta');
+  };
+
+  const processRegistration = async (data: RegisterFormData) => {
     setIsLoading(true)
     setError(null)
     setIsNetworkError(false)
@@ -126,11 +157,18 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-        <CardDescription>Regístrate en Barber Manager</CardDescription>
-      </CardHeader>
+    <>
+      <TermsModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccept}
+        onDecline={handleTermsDecline}
+      />
+      
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
+          <CardDescription>Regístrate en Barber Manager</CardDescription>
+        </CardHeader>
       <CardContent>
         {isNetworkError && (
           <Alert className="mb-4">
@@ -247,5 +285,6 @@ export function RegisterForm() {
         </div>
       </CardContent>
     </Card>
+    </>
   )
 }
