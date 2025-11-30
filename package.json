@@ -10,7 +10,10 @@
     "predeploy": "node scripts/pre-deploy-check.js",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "validate-env": "node scripts/validate-env.js",
+    "security-check": "node scripts/pre-commit-security.js",
+    "setup-hooks": "node -e \"const fs = require('fs'); const path = require('path'); const hookPath = path.join('.git', 'hooks', 'pre-commit'); const hookContent = '#!/bin/sh\\nnode scripts/pre-commit-security.js'; fs.mkdirSync(path.dirname(hookPath), { recursive: true }); fs.writeFileSync(hookPath, hookContent, { mode: 0o755 }); console.log('✅ Git hooks configurados');\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

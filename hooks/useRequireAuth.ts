@@ -22,7 +22,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
     
     if (!currentUserStr) {
       // No user logged in, redirect to login
-      router.replace("/login")
+      router.replace("/auth/login")
       return
     }
 
@@ -42,7 +42,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
             client: "/client",
           }
           
-          const redirectPath = dashboardMap[currentUser.role] || "/login"
+          const redirectPath = dashboardMap[currentUser.role] || "/auth/login"
           router.replace(redirectPath)
           return
         }
@@ -54,7 +54,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
     } catch (error) {
       console.error("Error parsing user data:", error)
       localStorage.removeItem("currentUser")
-      router.replace("/login")
+      router.replace("/auth/login")
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar

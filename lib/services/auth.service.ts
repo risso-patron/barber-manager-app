@@ -1,13 +1,15 @@
 import { createBrowserClient } from "@supabase/ssr"
+import { DEMO_USERS } from "@/lib/demo-config"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables")
-}
+// Demo mode enabled if Supabase is not configured
+const isDemoMode = !supabaseUrl || !supabaseAnonKey
 
-const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+const supabase = isDemoMode 
+  ? null 
+  : createBrowserClient(supabaseUrl, supabaseAnonKey)
 
 export interface SignUpData {
   email: string
@@ -97,12 +99,64 @@ export async function signUp(data: SignUpData): Promise<AuthResponse> {
  */
 export async function signIn(data: SignInData): Promise<AuthResponse> {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    console.log("🔍 Auth Service - isDemoMode:", isDemoMode)
+    console.log("🔍 Auth Service - Supabase URL:", supabaseUrl)
+    console.log("🔍 Auth Service - Email:", data.email)
+    
+    // Demo mode authentication
+    if (isDemoMode) {
+      console.log("🎭 Modo DEMO activado")
+      console.log("👥 DEMO_USERS:", DEMO_USERS)
+      
+      const demoUser = DEMO_USERS.find(
+        (user) => user.email === data.email && user.password === data.password
+      )
+
+      console.log("🔎 Usuario demo encontrado:", demoUser)
+
+      if (!demoUser) {
+        console.log("❌ No se encontró usuario demo con esas credenciales")
+        return {
+          success: false,
+          error: "Credenciales inválidas. Por favor, verifica tu email y contraseña.",
+        }
+      }
+
+      // Store demo user in localStorage
+      const userProfile = {
+        id: demoUser.id,
+        email: demoUser.email,
+        profile: {
+          name: demoUser.name,
+          role: demoUser.role,
+          phone: demoUser.phone,
+          avatar_url: demoUser.avatar_url,
+        },
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("currentUser", JSON.stringify(userProfile))
+        console.log("💾 Usuario guardado en localStorage:", userProfile)
+      }
+
+      return {
+        success: true,
+        data: {
+          user: userProfile,
+          profile: userProfile.profile,
+        },
+      }
+    }
+
+    console.log("🔐 Autenticando con Supabase...")
+    // Supabase authentication
+    const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     })
 
     if (authError) {
+      console.log("❌ Error de Supabase:", authError)
       return {
         success: false,
         error: authError.message,
@@ -117,7 +171,7 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
     }
 
     // Get user profile
-    const { data: userProfile, error: profileError } = await supabase
+    const { data: userProfile, error: profileError } = await supabase!
       .from("users")
       .select("*")
       .eq("id", authData.user.id)
@@ -150,7 +204,19 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
  */
 export async function signOut(): Promise<AuthResponse> {
   try {
-    const { error } = await supabase.auth.signOut()
+    // Demo mode - clear localStorage
+    if (isDemoMode) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("currentUser")
+      }
+      return {
+        success: true,
+        data: { message: "Signed out successfully" },
+      }
+    }
+
+    // Supabase mode
+    const { error } = await supabase!.auth.signOut()
 
     if (error) {
       return {
@@ -176,10 +242,16 @@ export async function signOut(): Promise<AuthResponse> {
  */
 export async function getSession() {
   try {
+    // Demo mode - no session tracking
+    if (isDemoMode) {
+      return null
+    }
+
+    // Supabase mode
     const {
       data: { session },
       error,
-    } = await supabase.auth.getSession()
+    } = await supabase!.auth.getSession()
 
     if (error) {
       return null
@@ -196,17 +268,27 @@ export async function getSession() {
  */
 export async function getCurrentUser() {
   try {
+    // Demo mode - get user from localStorage
+    if (isDemoMode) {
+      if (typeof window === "undefined") {
+        return null
+      }
+      const storedUser = localStorage.getItem("currentUser")
+      return storedUser ? JSON.parse(storedUser) : null
+    }
+
+    // Supabase mode
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser()
+    } = await supabase!.auth.getUser()
 
     if (error || !user) {
       return null
     }
 
     // Get user profile
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabase!
       .from("users")
       .select("*")
       .eq("id", user.id)
@@ -226,7 +308,17 @@ export async function getCurrentUser() {
  */
 export async function getUserProfile(userId: string) {
   try {
-    const { data, error } = await supabase
+    // Demo mode - return from localStorage
+    if (isDemoMode) {
+      if (typeof window === "undefined") return null
+      const storedUser = localStorage.getItem("currentUser")
+      if (!storedUser) return null
+      const user = JSON.parse(storedUser)
+      return user.profile
+    }
+
+    // Supabase mode
+    const { data, error } = await supabase!
       .from("users")
       .select("*")
       .eq("id", userId)
@@ -254,7 +346,23 @@ export async function updateUserProfile(
   }
 ) {
   try {
-    const { data, error } = await supabase
+    // Demo mode - update localStorage
+    if (isDemoMode) {
+      if (typeof window === "undefined") {
+        return { success: false, error: "Cannot update in server context" }
+      }
+      const storedUser = localStorage.getItem("currentUser")
+      if (!storedUser) {
+        return { success: false, error: "User not found" }
+      }
+      const user = JSON.parse(storedUser)
+      user.profile = { ...user.profile, ...updates }
+      localStorage.setItem("currentUser", JSON.stringify(user))
+      return { success: true, data: user.profile }
+    }
+
+    // Supabase mode
+    const { data, error } = await supabase!
       .from("users")
       .update(updates)
       .eq("id", userId)
@@ -340,7 +448,19 @@ export async function resetPassword(email: string): Promise<AuthResponse> {
  * Subscribe to auth changes
  */
 export function onAuthStateChange(callback: (user: any | null) => void) {
-  return supabase.auth.onAuthStateChange(async (event, session) => {
+  // Demo mode - no real-time auth changes
+  if (isDemoMode) {
+    return {
+      data: {
+        subscription: {
+          unsubscribe: () => {},
+        },
+      },
+    }
+  }
+
+  // Supabase mode
+  return supabase!.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) {
       const profile = await getUserProfile(session.user.id)
       callback({
@@ -353,4 +473,4 @@ export function onAuthStateChange(callback: (user: any | null) => void) {
   })
 }
 
-export default supabase
+export default supabase || null

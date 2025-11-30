@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { DEMO_SERVICES, DEMO_EMPLOYEES, type Service, type Employee } from "@/lib/demo-appointments"
+import { Footer } from "@/components/layout/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -249,47 +250,49 @@ export default function PublicBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{barbershop.name}</h1>
-              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {barbershop.address}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  {barbershop.phone}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                  {barbershop.rating} ({barbershop.reviews} reseñas)
-                </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <div className="flex-1">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{barbershop.name}</h1>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {barbershop.address}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    {barbershop.phone}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    {barbershop.rating} ({barbershop.reviews} reseñas)
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Progress Steps */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <div key={s} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                s <= step ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
-              }`}>
-                {s}
+        {/* Progress Steps */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <div key={s} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                  s <= step ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  {s}
+                </div>
+                {s < 5 && (
+                  <div className={`w-16 h-1 mx-2 ${s < step ? "bg-blue-600" : "bg-gray-200"}`} />
+                )}
               </div>
-              {s < 5 && (
-                <div className={`w-16 h-1 mx-2 ${s < step ? "bg-blue-600" : "bg-gray-200"}`} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Step 1: Select Service */}
@@ -537,6 +540,8 @@ export default function PublicBookingPage() {
           </div>
         )}
       </div>
+      
+      <Footer />
     </div>
   )
 }

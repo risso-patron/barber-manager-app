@@ -1,8 +1,11 @@
-# Barber Manager
+# 💈 Barber Manager
 
-Una aplicación completa de gestión para barberías construida con Next.js 15 y Supabase.
+Sistema de gestión profesional para barberías modernas. Administra citas, empleados, clientes y servicios en una plataforma completa y elegante.
 
-> ⚠️ **IMPORTANTE**: Este proyecto está en desarrollo. Revisa [SECURITY.md](./SECURITY.md) antes de desplegar a producción.
+![Next.js](https://img.shields.io/badge/Next.js-15.2-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwind-css)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Características
 
@@ -82,17 +85,55 @@ npm run dev
 
 6. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
 
+## 🔒 Seguridad
+
+Este proyecto implementa múltiples capas de seguridad:
+
+### Protecciones Implementadas
+- ✅ **Rate Limiting**: Protección contra brute force y spam
+- ✅ **Input Validation**: Sanitización y validación de datos
+- ✅ **Security Headers**: CSP, HSTS, X-Frame-Options, etc.
+- ✅ **Pre-commit Hooks**: Bloqueo de secrets en commits
+- ✅ **Environment Validation**: Verificación de configuración
+
+### Scripts de Seguridad
+```bash
+# Validar variables de entorno
+npm run validate-env
+
+# Verificar seguridad del código
+npm run security-check
+
+# Configurar git hooks
+npm run setup-hooks
+```
+
+### Documentación de Seguridad
+- 📄 [SECURITY-REPORT.md](SECURITY-REPORT.md) - Análisis completo de seguridad
+- 📄 [docs/SECRET-ROTATION.md](docs/SECRET-ROTATION.md) - Guía de rotación de secrets
+- 📄 [docs/SECURITY-IMPLEMENTATION.md](docs/SECURITY-IMPLEMENTATION.md) - Implementaciones actuales
+
+⚠️ **IMPORTANTE**: Antes de producción, revisa [SECURITY-REPORT.md](SECURITY-REPORT.md) y rota todos los secrets.
+
 ## Scripts Disponibles
 
-\`\`\`bash
+```bash
+# Desarrollo
 npm run dev          # Inicia el servidor de desarrollo
 npm run build        # Genera build de producción
 npm run start        # Inicia servidor de producción
+
+# Calidad de código
 npm run lint         # Ejecuta ESLint
 npm run type-check   # Verifica tipos TypeScript
 npm run format       # Formatea código con Prettier
-npm run predeploy    # Verifica seguridad antes de deploy
-\`\`\`
+
+# Seguridad
+npm run validate-env # Valida variables de entorno
+npm run security-check # Verifica seguridad antes de commit
+npm run setup-hooks  # Configura git hooks de seguridad
+npm run predeploy    # Checklist pre-deployment
+```
 
 ## Estructura del Proyecto
 

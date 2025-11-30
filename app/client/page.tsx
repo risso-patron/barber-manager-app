@@ -160,7 +160,10 @@ export default function ClientDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="bg-white text-purple-600 hover:bg-purple-50">
+              <Button 
+                className="bg-white text-purple-600 hover:bg-purple-50"
+                onClick={() => router.push("/client/book")}
+              >
                 <Calendar className="mr-2 h-4 w-4" />
                 Reservar Nueva Cita
               </Button>
@@ -169,9 +172,18 @@ export default function ClientDashboard() {
 
           {/* Upcoming Appointments */}
           <Card>
-            <CardHeader>
-              <CardTitle>Próximas Citas</CardTitle>
-              <CardDescription>Tus citas programadas</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Próximas Citas</CardTitle>
+                <CardDescription>Tus citas programadas</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push("/client/appointments")}
+              >
+                Ver todas
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -226,10 +238,20 @@ export default function ClientDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No tienes citas programadas</p>
-                    <Button className="mt-4">Reservar Ahora</Button>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Calendar className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No tienes citas programadas
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Agenda tu próxima visita y mantén tu estilo impecable
+                    </p>
+                    <Button onClick={() => router.push("/client/book")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Reservar Ahora
+                    </Button>
                   </div>
                 )}
               </div>
@@ -238,13 +260,24 @@ export default function ClientDashboard() {
 
           {/* Past Appointments */}
           <Card>
-            <CardHeader>
-              <CardTitle>Historial de Servicios</CardTitle>
-              <CardDescription>Servicios completados</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Historial de Servicios</CardTitle>
+                <CardDescription>Servicios completados</CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => router.push("/client/history")}
+              >
+                <History className="mr-2 h-3 w-3" />
+                Ver historial completo
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {pastAppointments.map((appointment) => (
+                {pastAppointments.length > 0 ? (
+                  pastAppointments.slice(0, 3).map((appointment) => (
                   <div
                     key={appointment.id}
                     className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
@@ -267,7 +300,13 @@ export default function ClientDashboard() {
                       Calificar
                     </Button>
                   </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">Aún no tienes servicios completados</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

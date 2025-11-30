@@ -19,7 +19,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser")
-    router.push("/login")
+    router.push("/auth/login")
   }
 
   const getMenuItems = () => {

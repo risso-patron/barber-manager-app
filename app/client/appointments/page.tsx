@@ -7,6 +7,8 @@ import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { CancelAppointmentModal } from "@/components/client/cancel-appointment-modal"
+import { useToast, ToastContainer } from "@/components/ui/toast"
 import { 
   Calendar, 
   Clock, 
@@ -19,11 +21,16 @@ import {
   XCircle
 } from "lucide-react"
 
+type Appointment = typeof DEMO_APPOINTMENTS[0]
+
 export default function ClientAppointmentsPage() {
   const router = useRouter()
   const user = useRequireAuth(["client"])
+  const { toasts, removeToast, success, error } = useToast()
   
-  const [appointments] = useState(DEMO_APPOINTMENTS.filter(apt => apt.clientId === user?.id))
+  const [appointments, setAppointments] = useState(DEMO_APPOINTMENTS.filter(apt => apt.clientId === user?.id))
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null)
 
   const { upcoming, past } = useMemo(() => {
     const today = new Date()
@@ -69,6 +76,70 @@ export default function ClientAppointmentsPage() {
       case "pending": return "Pendiente"
       case "cancelled": return "Cancelada"
       default: return status
+    }
+  }
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment)
+    setCancelModalOpen(true)
+  }
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (!appointmentToCancel || !user) return
+
+    try {
+      // Llamar a la API de cancelación
+      const response = await fetch(`/api/appointments/${appointmentToCancel.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason,
+          clientName: user.name || user.email,
+          clientEmail: user.email,
+          clientPhone: user.phone || process.env.NEXT_PUBLIC_DEMO_PHONE,
+          appointment: {
+            date: appointmentToCancel.date,
+            time: appointmentToCancel.time,
+            serviceName: appointmentToCancel.serviceName,
+            employeeName: appointmentToCancel.employeeName
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor');
+      }
+
+      const result = await response.json();
+      
+      // Actualizar el estado local
+      const updatedAppointments = appointments.map(apt => 
+        apt.id === appointmentToCancel.id 
+          ? { ...apt, status: "cancelled" as const, cancellationReason: reason }
+          : apt
+      );
+      
+      setAppointments(updatedAppointments);
+
+      // Mensaje de éxito con detalles de notificaciones
+      const notifications = result.notifications;
+      let message = "Cita cancelada exitosamente.";
+      
+      if (notifications?.email) {
+        message += "\n📧 Confirmación enviada por email.";
+      }
+      if (notifications?.barberWhatsapp) {
+        message += "\n📱 Barbero notificado por WhatsApp.";
+      }
+      if (notifications?.clientWhatsapp) {
+        message += "\n📱 Confirmación enviada por WhatsApp.";
+      }
+      
+      success(message);
+      
+    } catch (err) {
+      console.error("Error cancelando la cita:", err);
+      error("Error al cancelar la cita. Por favor intenta de nuevo.");
     }
   }
 
@@ -152,7 +223,12 @@ export default function ClientAppointmentsPage() {
                         Editar
                       </Button>
                       {apt.status !== "cancelled" && (
-                        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleCancelClick(apt)}
+                        >
                           <X className="h-4 w-4 mr-1" />
                           Cancelar
                         </Button>
@@ -225,6 +301,27 @@ export default function ClientAppointmentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Cancel Appointment Modal */}
+      {appointmentToCancel && (
+        <CancelAppointmentModal
+          isOpen={cancelModalOpen}
+          onClose={() => {
+            setCancelModalOpen(false)
+            setAppointmentToCancel(null)
+          }}
+          onConfirm={handleCancelConfirm}
+          appointmentDetails={{
+            serviceName: appointmentToCancel.serviceName,
+            date: appointmentToCancel.date,
+            time: appointmentToCancel.time,
+            employeeName: appointmentToCancel.employeeName
+          }}
+        />
+      )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }
