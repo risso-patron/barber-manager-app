@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
@@ -17,11 +17,16 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { signIn } = useAuth()
 
-  const message = searchParams.get("message")
+  // Get message from URL params after mount to avoid hydration mismatch
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const msg = params.get("message")
+    if (msg) setMessage(msg)
+  }, [])
 
   const {
     register,

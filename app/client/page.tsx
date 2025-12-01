@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, User, Star, History, Settings } from "lucide-react"
+import { Calendar, Clock, User, Star, History, Settings, LogOut } from "lucide-react"
 
 interface Appointment {
   id: string
@@ -61,6 +61,11 @@ export default function ClientDashboard() {
     return null
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser")
+    router.push("/auth/login")
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -101,13 +106,23 @@ export default function ClientDashboard() {
               <h1 className="text-3xl font-bold">Mi Portal</h1>
               <p className="text-blue-100 mt-1">Gestiona tus citas y servicios</p>
             </div>
-            <Button
-              onClick={() => router.push("/dashboard")}
-              variant="outline"
-              className="bg-white text-blue-600 hover:bg-blue-50"
-            >
-              Dashboard General
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/dashboard")}
+                variant="outline"
+                className="bg-white text-blue-600 hover:bg-blue-50"
+              >
+                Dashboard General
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="bg-white text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </div>

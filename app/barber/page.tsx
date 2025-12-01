@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Users, DollarSign, TrendingUp, CheckCircle, User } from "lucide-react"
+import { Calendar, Clock, Users, DollarSign, TrendingUp, CheckCircle, User, LogOut } from "lucide-react"
 
 interface TodayAppointment {
   id: string
@@ -103,6 +103,12 @@ export default function BarberDashboard() {
     sessionStorage.removeItem("workStatus")
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser")
+    sessionStorage.removeItem("workStatus")
+    router.push("/auth/login")
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -157,13 +163,23 @@ export default function BarberDashboard() {
                   <div className="text-lg font-semibold">{workStartTime}</div>
                 </div>
               ) : null}
-              <Button
-                onClick={() => router.push("/dashboard")}
-                variant="outline"
-                className="bg-white text-indigo-600 hover:bg-indigo-50"
-              >
-                Dashboard General
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => router.push("/dashboard")}
+                  variant="outline"
+                  className="bg-white text-indigo-600 hover:bg-indigo-50"
+                >
+                  Dashboard General
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="bg-white text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Cerrar Sesión
+                </Button>
+              </div>
             </div>
           </div>
         </div>

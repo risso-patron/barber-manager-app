@@ -13,13 +13,16 @@ export default function DashboardPage() {
     
     if (!currentUser) {
       // No hay usuario, redirigir al login
-      router.replace("/login")
+      router.replace("/auth/login")
       return
     }
 
     try {
       const user = JSON.parse(currentUser)
-      const role = user.role
+      const role = user.profile?.role || user.role
+
+      console.log("👤 Usuario en dashboard:", user)
+      console.log("🎭 Rol detectado:", role)
 
       // Redirigir según el rol
       if (role === "admin") {
@@ -30,13 +33,14 @@ export default function DashboardPage() {
         router.replace("/client")
       } else {
         // Rol desconocido, redirigir al login
+        console.error("❌ Rol desconocido:", role)
         localStorage.removeItem("currentUser")
-        router.replace("/login")
+        router.replace("/auth/login")
       }
     } catch (error) {
       console.error("Error parsing user data:", error)
       localStorage.removeItem("currentUser")
-      router.replace("/login")
+      router.replace("/auth/login")
     }
   }, [router])
 

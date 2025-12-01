@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors } from "lucide-react"
+import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors, LogOut } from "lucide-react"
 
 interface DashboardStats {
   totalAppointments: number
@@ -36,6 +36,11 @@ export default function AdminDashboard() {
     return null
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser")
+    router.push("/auth/login")
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -46,12 +51,22 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
               <p className="text-gray-600 mt-1">Panel de control y gestión general</p>
             </div>
-            <Button
-              onClick={() => router.push("/dashboard")}
-              variant="outline"
-            >
-              Ver Dashboard General
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => router.push("/dashboard")}
+                variant="outline"
+              >
+                Ver Dashboard General
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </div>

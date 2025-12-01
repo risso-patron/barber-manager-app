@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Scissors, Calendar, Users, BarChart3 } from "lucide-react"
+import { Scissors, Calendar, Users, BarChart3, Clock } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -14,19 +14,28 @@ export default function HomePage() {
             La solución completa para gestionar tu barbería. Administra citas, empleados, inventario y más desde una
             sola plataforma.
           </p>
-          <div className="space-x-4">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 w-full sm:w-auto">
+              <Link href="/reservar">
+                <Clock className="h-5 w-5" />
+                Reservar Cita
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-slate-900 bg-transparent w-full sm:w-auto">
               <Link href="/auth/login">Iniciar Sesión</Link>
             </Button>
             <Button
               asChild
-              variant="outline"
+              variant="ghost"
               size="lg"
-              className="text-white border-white hover:bg-white hover:text-slate-900 bg-transparent"
+              className="text-white hover:bg-white/10 w-full sm:w-auto"
             >
               <Link href="/auth/register">Registrarse</Link>
             </Button>
           </div>
+          <p className="text-sm text-slate-400 mt-4">
+            ✨ Reserva tu cita en segundos sin necesidad de crear cuenta
+          </p>
         </div>
 
         {/* Features Grid */}

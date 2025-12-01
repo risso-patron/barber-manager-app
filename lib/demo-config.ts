@@ -14,7 +14,7 @@ export const DEMO_USERS = {
     name: 'Admin Demo',
     role: 'admin' as const,
     phone: '+1234567890',
-    avatar: null
+    avatar_url: null
   },
   barber: {
     id: 'demo-barber-001',
@@ -23,7 +23,7 @@ export const DEMO_USERS = {
     name: 'Carlos Martínez',
     role: 'barber' as const,
     phone: '+1234567891',
-    avatar: null
+    avatar_url: null
   },
   client: {
     id: 'demo-client-001',
@@ -32,7 +32,7 @@ export const DEMO_USERS = {
     name: 'Juan Pérez',
     role: 'client' as const,
     phone: '+1234567892',
-    avatar: null
+    avatar_url: null
   }
 };
 

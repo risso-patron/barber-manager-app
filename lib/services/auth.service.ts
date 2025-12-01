@@ -105,27 +105,31 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
     
     // Demo mode authentication
     if (isDemoMode) {
-      console.log("🎭 Modo DEMO activado")
-      console.log("👥 DEMO_USERS:", DEMO_USERS)
-      
-      const demoUser = DEMO_USERS.find(
-        (user) => user.email === data.email && user.password === data.password
-      )
+    console.log("🎭 Modo DEMO activado")
+    console.log("👥 DEMO_USERS:", DEMO_USERS)
+    
+    // Convert DEMO_USERS object to array
+    const demoUsersArray = Object.values(DEMO_USERS)
+    
+    const demoUser = demoUsersArray.find(
+      (user) => user.email === data.email && user.password === data.password
+    )
 
-      console.log("🔎 Usuario demo encontrado:", demoUser)
-
-      if (!demoUser) {
-        console.log("❌ No se encontró usuario demo con esas credenciales")
-        return {
-          success: false,
-          error: "Credenciales inválidas. Por favor, verifica tu email y contraseña.",
-        }
+    console.log("🔎 Usuario demo encontrado:", demoUser)
+    
+    if (!demoUser) {
+      console.log("❌ No se encontró usuario demo con esas credenciales")
+      return {
+        success: false,
+        error: "Credenciales inválidas. Por favor, verifica tu email y contraseña.",
       }
+    }
 
       // Store demo user in localStorage
       const userProfile = {
         id: demoUser.id,
         email: demoUser.email,
+        role: demoUser.role,
         profile: {
           name: demoUser.name,
           role: demoUser.role,
