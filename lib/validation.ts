@@ -149,7 +149,9 @@ export function validateFutureDate(dateString: string, minDaysFromNow: number = 
   valid: boolean
   error?: string
 } {
-  const date = new Date(dateString)
+  // Parsear como fecha local para evitar desfase de timezone (new Date('YYYY-MM-DD') es UTC)
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year!, month! - 1, day!)
   
   if (isNaN(date.getTime())) {
     return { valid: false, error: 'Fecha inválida' }
