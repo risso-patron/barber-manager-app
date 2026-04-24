@@ -1,15 +1,9 @@
+
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  // DEMO MODE - Middleware desactivado para permitir autenticación con localStorage
-  // Cuando uses Supabase real, descomenta el código a continuación
-  
-  return NextResponse.next()
-  
-  /* CÓDIGO ORIGINAL DE SUPABASE - Descomentar cuando uses Supabase real
-  
   const { createServerClient } = await import("@supabase/ssr")
-  
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -77,8 +71,6 @@ export async function middleware(request: NextRequest) {
   }
 
   return supabaseResponse
-  
-  FIN DEL CÓDIGO SUPABASE */
 }
 
 export const config = {
