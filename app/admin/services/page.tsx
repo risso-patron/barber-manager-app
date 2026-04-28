@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 import { 
   Scissors, 
   Plus, 
@@ -15,7 +16,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  ArrowLeft
 } from "lucide-react"
 import {
   DEMO_SERVICES,
@@ -86,13 +88,21 @@ export default function ServicesPage() {
 
   if (!user) return null
 
+  const router = useRouter()
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Servicios</h1>
-          <p className="text-gray-600 mt-1">Administra los servicios ofrecidos en la barbería</p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestión de Servicios</h1>
+            <p className="text-gray-600 mt-1">Administra los servicios ofrecidos en la barbería</p>
+          </div>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />

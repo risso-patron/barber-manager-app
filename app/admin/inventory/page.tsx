@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 import { 
   Package, 
   Plus, 
@@ -17,7 +18,8 @@ import {
   Archive,
   Edit,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from "lucide-react"
 import { InventoryModal } from "@/components/admin/inventory/inventory-modal"
 import { DeleteConfirmModal } from "@/components/admin/inventory/delete-confirm-modal"
@@ -139,12 +141,20 @@ export default function InventoryPage() {
     }
   }
 
+  const router = useRouter()
+
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Inventario</h1>
-          <p className="text-muted-foreground">Gestiona productos, herramientas y suministros</p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Inventario</h1>
+            <p className="text-muted-foreground">Gestiona productos, herramientas y suministros</p>
+          </div>
         </div>
         <Button onClick={() => { setSelectedItem(null); setIsModalOpen(true) }}>
           <Plus className="mr-2 h-4 w-4" />

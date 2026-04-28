@@ -53,10 +53,10 @@ export default function AdminDashboard() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/")}
                 variant="outline"
               >
-                Ver Dashboard General
+                Ir al Inicio
               </Button>
               <Button
                 onClick={handleLogout}
