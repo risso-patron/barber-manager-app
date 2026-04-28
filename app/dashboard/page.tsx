@@ -2,46 +2,69 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 
 export default function DashboardPage() {
   const router = useRouter()
   const [isRedirecting, setIsRedirecting] = useState(true)
 
   useEffect(() => {
-    // Verificar si hay usuario logueado en localStorage
-    const currentUser = localStorage.getItem("currentUser")
-    
-    if (!currentUser) {
-      // No hay usuario, redirigir al login
-      router.replace("/auth/login")
-      return
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    try {
-      const user = JSON.parse(currentUser)
-      const role = user.profile?.role || user.role
-
-      console.log("👤 Usuario en dashboard:", user)
-      console.log("🎭 Rol detectado:", role)
-
-      // Redirigir según el rol
-      if (role === "admin") {
-        router.replace("/admin")
-      } else if (role === "employee" || role === "barber") {
-        router.replace("/barber")
-      } else if (role === "client") {
-        router.replace("/client")
-      } else {
-        // Rol desconocido, redirigir al login
-        console.error("❌ Rol desconocido:", role)
+    // --- DEMO MODE ---
+    if (!supabaseUrl || !supabaseAnonKey) {
+      const currentUser = localStorage.getItem("currentUser")
+      if (!currentUser) {
+        router.replace("/auth/login")
+        return
+      }
+      try {
+        const user = JSON.parse(currentUser)
+        const role = user.profile?.role || user.role
+        const destinations: Record<string, string> = {
+          admin: "/admin",
+          employee: "/barber",
+          barber: "/barber",
+          client: "/client",
+        }
+        router.replace(destinations[role] || "/auth/login")
+      } catch {
         localStorage.removeItem("currentUser")
         router.replace("/auth/login")
       }
-    } catch (error) {
-      console.error("Error parsing user data:", error)
-      localStorage.removeItem("currentUser")
-      router.replace("/auth/login")
+      return
     }
+
+    // --- SUPABASE MODE ---
+    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+    const redirect = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser()
+
+      if (error || !user) {
+        router.replace("/auth/login")
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single()
+
+      const role = profile?.role || "client"
+      const destinations: Record<string, string> = {
+        admin: "/admin",
+        employee: "/barber",
+        barber: "/barber",
+        client: "/client",
+      }
+
+      router.replace(destinations[role] || "/auth/login")
+    }
+
+    redirect()
   }, [router])
 
   // Mostrar loading mientras redirige

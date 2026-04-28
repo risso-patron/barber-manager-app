@@ -2,62 +2,84 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 
-/**
- * Hook to require authentication and optionally specific roles
- * Redirects to login if not authenticated or insufficient permissions
- * DEMO VERSION - Uses localStorage instead of Supabase
- * 
- * @param allowedRoles - Optional array of allowed roles. If not provided, any authenticated user is allowed.
- * @returns The authenticated user or null during loading
- */
+const DASHBOARD_MAP: Record<string, string> = {
+  admin: "/admin",
+  employee: "/barber",
+  barber: "/barber",
+  client: "/client",
+}
+
 export function useRequireAuth(allowedRoles?: string[]) {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Get user from localStorage
-    const currentUserStr = localStorage.getItem("currentUser")
-    
-    if (!currentUserStr) {
-      // No user logged in, redirect to login
-      router.replace("/auth/login")
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // --- DEMO MODE (sin Supabase) ---
+    if (!supabaseUrl || !supabaseAnonKey) {
+      const currentUserStr = localStorage.getItem("currentUser")
+      if (!currentUserStr) {
+        router.replace("/auth/login")
+        return
+      }
+      try {
+        const currentUser = JSON.parse(currentUserStr)
+        if (allowedRoles?.length && !allowedRoles.includes(currentUser.role)) {
+          router.replace(DASHBOARD_MAP[currentUser.role] || "/auth/login")
+          return
+        }
+        setUser(currentUser)
+      } catch {
+        localStorage.removeItem("currentUser")
+        router.replace("/auth/login")
+      }
       return
     }
 
-    try {
-      const currentUser = JSON.parse(currentUserStr)
-      
-      // Check role permissions if specified
-      if (allowedRoles && allowedRoles.length > 0) {
-        const hasPermission = allowedRoles.includes(currentUser.role)
-        
-        if (!hasPermission) {
-          // Redirect to appropriate dashboard based on role
-          const dashboardMap: Record<string, string> = {
-            admin: "/admin",
-            employee: "/barber",
-            barber: "/barber",
-            client: "/client",
-          }
-          
-          const redirectPath = dashboardMap[currentUser.role] || "/auth/login"
-          router.replace(redirectPath)
-          return
-        }
+    // --- SUPABASE MODE ---
+    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+    const checkSession = async () => {
+      const { data: { user: authUser }, error } = await supabase.auth.getUser()
+
+      if (error || !authUser) {
+        router.replace("/auth/login")
+        return
       }
-      
-      // User is authenticated and has permission
-      setUser(currentUser)
-      setIsLoading(false)
-    } catch (error) {
-      console.error("Error parsing user data:", error)
-      localStorage.removeItem("currentUser")
-      router.replace("/auth/login")
+
+      // Get role from users table
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role, name, phone, avatar_url")
+        .eq("id", authUser.id)
+        .single()
+
+      const role = profile?.role || "client"
+
+      if (allowedRoles?.length && !allowedRoles.includes(role)) {
+        router.replace(DASHBOARD_MAP[role] || "/auth/login")
+        return
+      }
+
+      setUser({ id: authUser.id, email: authUser.email, role, profile })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Solo ejecutar una vez al montar
+
+    checkSession()
+
+    // Reaccionar a cambios de sesión (logout desde otra pestaña, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        router.replace("/auth/login")
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return user
 }
