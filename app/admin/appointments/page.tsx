@@ -103,7 +103,7 @@ export default function AppointmentsPage() {
     // Cargar servicios, empleados y clientes para los modales
     supabase.from("services").select("id, name, price, duration").eq("is_active", true).order("name")
       .then(({ data }) => { if (data) setServices(data) })
-    supabase.from("users").select("id, name, phone").neq("role", "client").order("name")
+    supabase.from("users").select("id, name, phone").eq("role", "employee").order("name")
       .then(({ data }) => { if (data) setEmployees(data) })
     supabase.from("users").select("id, name, phone").eq("role", "client").order("name")
       .then(({ data }) => { if (data) setClients(data) })
@@ -140,26 +140,24 @@ export default function AppointmentsPage() {
   const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
     let clientId = appointment.clientId
 
-    // Si es un cliente nuevo, crearlo primero
+    // Si es un cliente nuevo, crearlo vía API (service role para evitar RLS)
     if (clientId === "__new__") {
-      const { data: newClient, error: clientError } = await supabase
-        .from("users")
-        .insert({
-          name: appointment.clientName,
-          phone: appointment.clientPhone,
-          role: "client",
-          email: `${appointment.clientPhone.replace(/\D/g, "")}@guest.barber`,
-        })
-        .select("id")
-        .single()
-      if (clientError || !newClient) return
-      clientId = newClient.id
-      setClients(prev => [...prev, { id: clientId, name: appointment.clientName, phone: appointment.clientPhone, email: "" }])
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: appointment.clientName, phone: appointment.clientPhone }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.client) return
+      clientId = json.client.id
+      setClients(prev => [...prev, { id: clientId, name: appointment.clientName, phone: appointment.clientPhone, email: json.client.email || "" }])
     }
 
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert({
+    // Crear la cita vía API (service role para evitar RLS de INSERT)
+    const res = await fetch("/api/appointments/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         client_id: clientId,
         barber_id: appointment.employeeId,
         service_id: appointment.serviceId,
@@ -167,11 +165,11 @@ export default function AppointmentsPage() {
         appointment_time: appointment.time,
         status: appointment.status,
         notes: appointment.notes || null,
-      })
-      .select()
-      .single()
-    if (!error && data) {
-      setAppointments([{ ...appointment, clientId, id: data.id, createdAt: data.created_at }, ...appointments])
+      }),
+    })
+    const json = await res.json()
+    if (res.ok && json.appointment) {
+      setAppointments([{ ...appointment, clientId, id: json.appointment.id, createdAt: json.appointment.created_at }, ...appointments])
     }
     setIsCreateModalOpen(false)
   }
