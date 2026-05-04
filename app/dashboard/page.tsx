@@ -47,11 +47,15 @@ export default function DashboardPage() {
         return
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("role")
         .eq("id", user.id)
         .single()
+
+      if (profileError) {
+        console.error("Error leyendo perfil:", profileError.message)
+      }
 
       const role = profile?.role || "client"
       const destinations: Record<string, string> = {

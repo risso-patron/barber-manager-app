@@ -62,8 +62,9 @@ export default function ClientDashboard() {
     return null
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("currentUser")
+    await supabase.auth.signOut()
     router.push("/auth/login")
   }
 

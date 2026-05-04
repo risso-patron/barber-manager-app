@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,12 +20,14 @@ import {
   UserPlus,
   TrendingUp
 } from "lucide-react"
-import {
-  DEMO_CLIENTS,
-  type Client
-} from "@/lib/demo-appointments"
+import type { Client } from "@/lib/demo-appointments"
 import { ClientModal } from "@/components/admin/clients/client-modal"
 import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function ClientsPage() {
   const user = useRequireAuth(["admin"])
@@ -35,10 +38,26 @@ export default function ClientsPage() {
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Initialize clients once on mount
+  // Load clients from Supabase
   useEffect(() => {
-    setClients(DEMO_CLIENTS)
-  }, [])
+    if (!user) return
+    supabase
+      .from("users")
+      .select("id, name, email, phone, created_at")
+      .eq("role", "client")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        setClients(data.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || "",
+          createdAt: u.created_at,
+          isActive: true,
+        })))
+      })
+  }, [user])
 
   // Filter clients
   const filteredClients = useMemo(() => {
@@ -79,26 +98,38 @@ export default function ClientsPage() {
     }
   }, [clients])
 
-  const handleCreateClient = (client: Omit<Client, "id">) => {
-    const newClient: Client = {
-      ...client,
-      id: `c${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      isActive: true,
+  const handleCreateClient = async (client: Omit<Client, "id">) => {
+    const res = await fetch("/api/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: client.name, phone: client.phone, email: client.email }),
+    })
+    if (res.ok) {
+      const { client: created } = await res.json()
+      setClients([{
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        phone: created.phone || "",
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      }, ...clients])
     }
-    setClients([newClient, ...clients])
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateClient = (client: Client | Omit<Client, "id">) => {
+  const handleUpdateClient = async (client: Client | Omit<Client, "id">) => {
     const updatedClient = client as Client
-    setClients(clients.map(c => 
-      c.id === updatedClient.id ? updatedClient : c
-    ))
+    await supabase
+      .from("users")
+      .update({ name: updatedClient.name, email: updatedClient.email, phone: updatedClient.phone })
+      .eq("id", updatedClient.id)
+    setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
     setEditingClient(null)
   }
 
-  const handleDeleteClient = (id: string) => {
+  const handleDeleteClient = async (id: string) => {
+    await supabase.from("users").delete().eq("id", id)
     setClients(clients.filter(c => c.id !== id))
     setDeletingClient(null)
   }

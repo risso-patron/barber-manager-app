@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES, DEMO_SERVICES, DEMO_CLIENTS } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { 
@@ -21,15 +21,70 @@ import {
 
 type ReportPeriod = "today" | "week" | "month" | "year"
 
+interface ReportAppointment {
+  id: string
+  date: string
+  status: string
+  clientId: string
+  employeeId: string
+  employeeName: string
+  serviceName: string
+  price: number
+  duration: number
+}
+
+interface ReportEmployee {
+  id: string
+  name: string
+}
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ReportsPage() {
   useRequireAuth(["admin"])
   
   const [period, setPeriod] = useState<ReportPeriod>("month")
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all")
+  const [appointments, setAppointments] = useState<ReportAppointment[]>([])
+  const [employees, setEmployees] = useState<ReportEmployee[]>([])
+
+  useEffect(() => {
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, status, client_id, barber_id,
+        service:services(name, price, duration),
+        barber:users!appointments_barber_id_fkey(id, name)`)
+      .order("appointment_date", { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          date: a.appointment_date,
+          status: a.status,
+          clientId: a.client_id,
+          employeeId: a.barber_id,
+          employeeName: a.barber?.name || "Sin asignar",
+          serviceName: a.service?.name || "Sin servicio",
+          price: a.service?.price || 0,
+          duration: a.service?.duration || 0,
+        })))
+      })
+    supabase
+      .from("users")
+      .select("id, name")
+      .eq("role", "employee")
+      .order("name")
+      .then(({ data }) => {
+        if (data) setEmployees(data as ReportEmployee[])
+      })
+  }, [])
 
   const filteredAppointments = useMemo(() => {
     const now = new Date()
-    const filtered = DEMO_APPOINTMENTS.filter(apt => {
+    const filtered = appointments.filter(apt => {
       const aptDate = new Date(apt.date)
       
       // Filter by period
@@ -62,7 +117,7 @@ export default function ReportsPage() {
     })
 
     return filtered
-  }, [period, selectedEmployee])
+  }, [period, selectedEmployee, appointments])
 
   const stats = useMemo(() => {
     const completed = filteredAppointments.filter(apt => apt.status === "completed")
@@ -222,7 +277,7 @@ export default function ReportsPage() {
               className="px-3 py-2 border rounded-md"
             >
               <option value="all">Todos los empleados</option>
-              {DEMO_EMPLOYEES.map(emp => (
+              {employees.map(emp => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
             </select>

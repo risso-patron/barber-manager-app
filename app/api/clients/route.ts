@@ -27,14 +27,14 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { name, phone } = body
+  const { name, phone, email: providedEmail } = body
 
   if (!name || !phone) {
     return NextResponse.json({ error: "Nombre y teléfono son requeridos" }, { status: 400 })
   }
 
-  // Derive a guest email from phone
-  const guestEmail = `${phone.replace(/\D/g, "")}@guest.barber`
+  // Use provided email or derive a guest email from phone
+  const guestEmail = providedEmail || `${phone.replace(/\D/g, "")}@guest.barber`
   const tempPassword = `Client${Math.random().toString(36).slice(2, 10)}!`
 
   // Create auth user
