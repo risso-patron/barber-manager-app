@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,18 +15,31 @@ import {
   Scissors, 
   User,
   Phone,
-  Mail,
   ArrowLeft,
   ArrowRight,
-  Check
+  Check,
+  Loader2
 } from "lucide-react"
-import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo-config"
 
 type Step = "service" | "barber" | "datetime" | "contact" | "confirmation"
 
+interface Service {
+  id: string
+  name: string
+  description?: string
+  price: number
+  duration: number
+}
+
+interface Employee {
+  id: string
+  name: string
+  specialty?: string
+}
+
 interface BookingData {
-  service?: typeof DEMO_SERVICES[0]
-  barber?: typeof DEMO_EMPLOYEES[0]
+  service?: Service
+  barber?: Employee
   date?: string
   time?: string
   name?: string
@@ -33,11 +47,36 @@ interface BookingData {
   email?: string
 }
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ReservarPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>("service")
   const [booking, setBooking] = useState<BookingData>({})
   const [showSignupModal, setShowSignupModal] = useState(false)
+  const [services, setServices] = useState<Service[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase
+      .from("services")
+      .select("id, name, description, price, duration")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => { if (data) setServices(data as Service[]) })
+
+    supabase
+      .from("users")
+      .select("id, name, specialty")
+      .eq("role", "employee")
+      .order("name")
+      .then(({ data }) => { if (data) setEmployees(data as Employee[]) })
+  }, [])
 
   // Generate available time slots
   const timeSlots = [
@@ -50,57 +89,58 @@ export default function ReservarPage() {
   const availableDates = Array.from({ length: 14 }, (_, i) => {
     const date = new Date()
     date.setDate(date.getDate() + i)
-    return date.toISOString().split('T')[0]
+    return date.toISOString().slice(0, 10)
   })
 
-  const handleServiceSelect = (service: typeof DEMO_SERVICES[0]) => {
-    setBooking({ ...booking, service })
-    setStep("barber")
-  }
-
-  const handleBarberSelect = (barber: typeof DEMO_EMPLOYEES[0]) => {
-    setBooking({ ...booking, barber })
-    setStep("datetime")
-  }
-
   const handleDateTimeSelect = (date: string, time: string) => {
-    setBooking({ ...booking, date, time })
+    setBooking(prev => ({ ...prev, date, time }))
     setStep("contact")
   }
 
-  const handleContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const phone = formData.get("phone") as string
     const email = formData.get("email") as string
 
-    setBooking({ ...booking, name, phone, email })
-    
-    // Save guest appointment to localStorage
-    const guestAppointments = JSON.parse(localStorage.getItem("guestAppointments") || "[]")
-    const newAppointment = {
-      id: `guest-${Date.now()}`,
-      ...booking,
-      name,
-      phone,
-      email,
-      status: "pending",
-      createdAt: new Date().toISOString()
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    const res = await fetch("/api/bookings/public", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        barbershop: "barber-manager",
+        clientName: name,
+        clientPhone: phone,
+        clientEmail: email || undefined,
+        serviceId: booking.service!.id,
+        serviceName: booking.service!.name,
+        employeeId: booking.barber!.id,
+        employeeName: booking.barber!.name,
+        date: booking.date,
+        time: booking.time,
+        duration: booking.service!.duration,
+        price: booking.service!.price,
+      }),
+    })
+
+    const result = await res.json()
+    setIsSubmitting(false)
+
+    if (!res.ok || !result.success) {
+      setSubmitError(result.error || "Error al guardar la reserva. Intenta nuevamente.")
+      return
     }
-    guestAppointments.push(newAppointment)
-    localStorage.setItem("guestAppointments", JSON.stringify(guestAppointments))
-    
+
+    setBooking(prev => ({ ...prev, name, phone, email }))
     setStep("confirmation")
-    
-    // Show signup modal after 2 seconds
-    setTimeout(() => {
-      setShowSignupModal(true)
-    }, 2000)
+    setTimeout(() => setShowSignupModal(true), 2000)
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString + "T12:00:00")
     return date.toLocaleDateString('es-ES', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -148,24 +188,32 @@ export default function ReservarPage() {
               <CardDescription>Elige el servicio que deseas</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {DEMO_SERVICES.map((service) => (
-                  <Card 
-                    key={service.id}
-                    className="cursor-pointer hover:border-blue-500 transition-colors"
-                    onClick={() => handleServiceSelect(service)}
-                  >
-                    <CardContent className="pt-6">
-                      <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
-                      <p className="text-sm text-gray-600 mb-4">{service.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-blue-600">${service.price}</span>
-                        <Badge variant="outline">{service.duration} min</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {services.length === 0 ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {services.map((service) => (
+                    <Card 
+                      key={service.id}
+                      className="cursor-pointer hover:border-blue-500 transition-colors"
+                      onClick={() => { setBooking(prev => ({ ...prev, service })); setStep("barber") }}
+                    >
+                      <CardContent className="pt-6">
+                        <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
+                        {service.description && (
+                          <p className="text-sm text-gray-600 mb-4">{service.description}</p>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl font-bold text-blue-600">${service.price}</span>
+                          <Badge variant="outline">{service.duration} min</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -183,26 +231,31 @@ export default function ReservarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {DEMO_EMPLOYEES.map((barber) => (
-                  <Card 
-                    key={barber.id}
-                    className="cursor-pointer hover:border-blue-500 transition-colors"
-                    onClick={() => handleBarberSelect(barber)}
-                  >
-                    <CardContent className="pt-6 text-center">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                        <User className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <h3 className="font-semibold mb-2">{barber.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {barber.specialties.join(", ")}
-                      </p>
-                      <Badge variant="outline">⭐ {barber.rating}</Badge>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {employees.length === 0 ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {employees.map((barber) => (
+                    <Card 
+                      key={barber.id}
+                      className="cursor-pointer hover:border-blue-500 transition-colors"
+                      onClick={() => { setBooking(prev => ({ ...prev, barber })); setStep("datetime") }}
+                    >
+                      <CardContent className="pt-6 text-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                          <User className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h3 className="font-semibold mb-2">{barber.name}</h3>
+                        {barber.specialty && (
+                          <p className="text-sm text-gray-600">{barber.specialty}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
               <Button 
                 variant="ghost" 
                 onClick={() => setStep("service")} 
@@ -233,15 +286,15 @@ export default function ReservarPage() {
                 <div>
                   <Label className="mb-2 block">Selecciona una fecha</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {availableDates.map((date) => (
+                    {availableDates.map((dateStr) => (
                       <Button
-                        key={date}
-                        variant={booking.date === date ? "default" : "outline"}
-                        onClick={() => setBooking({ ...booking, date })}
+                        key={dateStr}
+                        variant={booking.date === dateStr ? "default" : "outline"}
+                        onClick={() => setBooking(prev => ({ ...prev, date: dateStr }))}
                         className="flex flex-col h-auto py-3"
                       >
-                        <span className="text-xs">{formatDate(date).split(',')[0]}</span>
-                        <span className="font-bold">{new Date(date).getDate()}</span>
+                        <span className="text-xs">{formatDate(dateStr).split(',')[0]}</span>
+                        <span className="font-bold">{new Date(dateStr + "T12:00:00").getDate()}</span>
                       </Button>
                     ))}
                   </div>
@@ -354,11 +407,18 @@ export default function ReservarPage() {
                     <ArrowLeft className="h-4 w-4" />
                     Atrás
                   </Button>
-                  <Button type="submit" className="flex-1 gap-2">
-                    Confirmar Reserva
-                    <Check className="h-4 w-4" />
+                  <Button type="submit" className="flex-1 gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</>
+                    ) : (
+                      <>Confirmar Reserva <Check className="h-4 w-4" /></>
+                    )}
                   </Button>
                 </div>
+
+                {submitError && (
+                  <p className="text-sm text-red-600 text-center">{submitError}</p>
+                )}
               </form>
             </CardContent>
           </Card>
