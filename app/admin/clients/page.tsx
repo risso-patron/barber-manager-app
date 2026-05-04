@@ -90,7 +90,8 @@ export default function ClientsPage() {
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateClient = (updatedClient: Client) => {
+  const handleUpdateClient = (client: Client | Omit<Client, "id">) => {
+    const updatedClient = client as Client
     setClients(clients.map(c => 
       c.id === updatedClient.id ? updatedClient : c
     ))

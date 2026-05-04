@@ -127,7 +127,8 @@ export default function EmployeesPage() {
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateEmployee = async (updatedEmployee: Employee) => {
+  const handleUpdateEmployee = async (employee: Omit<Employee, "id"> | Employee) => {
+    const updatedEmployee = employee as Employee
     const { id, avatar, ...fields } = updatedEmployee as any
     const { data, error } = await supabase
       .from("users")

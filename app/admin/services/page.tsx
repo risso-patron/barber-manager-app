@@ -76,7 +76,8 @@ export default function ServicesPage() {
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateService = async (updatedService: Service) => {
+  const handleUpdateService = async (service: Service | Omit<Service, "id">) => {
+    const updatedService = service as Service
     const { id, ...fields } = updatedService
     const { data, error } = await supabase.from("services").update(fields).eq("id", id).select().single()
     if (!error && data) setServices(services.map(s => s.id === id ? data : s))
