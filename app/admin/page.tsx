@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors, LogOut } from "lucide-react"
@@ -18,26 +19,71 @@ interface DashboardStats {
   pendingAppointments: number
 }
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function AdminDashboard() {
   const router = useRouter()
   const user = useRequireAuth(["admin"])
   const [stats, setStats] = useState<DashboardStats>({
-    totalAppointments: 156,
-    todayAppointments: 12,
-    totalEmployees: 4,
-    activeEmployees: 3,
-    totalClients: 89,
-    newClientsMonth: 15,
-    monthlyRevenue: 12500,
-    pendingAppointments: 8,
+    totalAppointments: 0,
+    todayAppointments: 0,
+    totalEmployees: 0,
+    activeEmployees: 0,
+    totalClients: 0,
+    newClientsMonth: 0,
+    monthlyRevenue: 0,
+    pendingAppointments: 0,
   })
+
+  useEffect(() => {
+    const loadStats = async () => {
+      const today = new Date().toISOString().split("T")[0]
+      const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
+
+      const [
+        { count: totalAppointments },
+        { count: todayAppointments },
+        { count: pendingAppointments },
+        { count: totalEmployees },
+        { count: totalClients },
+        { count: newClientsMonth },
+        { data: revenueData },
+      ] = await Promise.all([
+        supabase.from("appointments").select("*", { count: "exact", head: true }),
+        supabase.from("appointments").select("*", { count: "exact", head: true }).eq("appointment_date", today),
+        supabase.from("appointments").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("users").select("*", { count: "exact", head: true }).in("role", ["employee", "barber"]),
+        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client"),
+        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client").gte("created_at", firstOfMonth),
+        supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
+      ])
+
+      const monthlyRevenue = (revenueData as any[])?.reduce((sum: number, a: any) => sum + (a.service?.price || 0), 0) || 0
+
+      setStats({
+        totalAppointments: totalAppointments || 0,
+        todayAppointments: todayAppointments || 0,
+        totalEmployees: totalEmployees || 0,
+        activeEmployees: totalEmployees || 0,
+        totalClients: totalClients || 0,
+        newClientsMonth: newClientsMonth || 0,
+        monthlyRevenue,
+        pendingAppointments: pendingAppointments || 0,
+      })
+    }
+
+    loadStats()
+  }, [])
 
   if (!user) {
     return null
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser")
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     router.push("/auth/login")
   }
 
