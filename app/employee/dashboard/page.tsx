@@ -107,7 +107,7 @@ export default function EmployeeDashboard() {
     return appointments
       .filter(apt => {
         const aptDate = new Date(apt.date)
-        const today = new Date(todayDate)
+        const today = new Date(todayDate!)
         return aptDate > today && apt.status !== "cancelled"
       })
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
@@ -292,7 +292,7 @@ export default function EmployeeDashboard() {
           <CardHeader>
             <CardTitle>Agenda de Hoy</CardTitle>
             <CardDescription>
-              {new Date(todayDate).toLocaleDateString('es-ES', { 
+              {new Date(todayDate!).toLocaleDateString('es-ES', { 
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 

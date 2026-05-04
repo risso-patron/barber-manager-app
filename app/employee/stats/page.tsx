@@ -61,42 +61,6 @@ export default function EmployeeStatsPage() {
     if (!user) return null
 
     const myAppointments = appointments
-  const user = useRequireAuth(["employee", "admin"])
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-
-  useEffect(() => {
-    if (!user) return
-    supabase
-      .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes, created_at,
-        client:users!appointments_client_id_fkey(id, name, phone),
-        service:services(id, name, price, duration)`)
-      .eq("barber_id", user.id)
-      .then(({ data }) => {
-        if (data) setAppointments((data as any[]).map(a => ({
-          id: a.id,
-          clientId: a.client?.id || "",
-          clientName: a.client?.name || "",
-          clientPhone: a.client?.phone || "",
-          employeeId: user.id,
-          employeeName: user.name,
-          serviceId: a.service?.id || "",
-          serviceName: a.service?.name || "",
-          date: a.appointment_date,
-          time: a.appointment_time,
-          duration: a.service?.duration || 0,
-          price: a.service?.price || 0,
-          status: a.status,
-          notes: a.notes || "",
-          createdAt: a.created_at,
-        })))
-      })
-  }, [user])
-
-  const stats = useMemo(() => {
-    if (!user) return null
-
-    const myAppointments = appointments
     const completed = myAppointments.filter(apt => apt.status === "completed")
     
     const today = new Date().toISOString().split('T')[0]
@@ -120,8 +84,8 @@ export default function EmployeeStatsPage() {
       if (!acc[apt.serviceName]) {
         acc[apt.serviceName] = { count: 0, revenue: 0 }
       }
-      acc[apt.serviceName].count++
-      acc[apt.serviceName].revenue += apt.price
+      acc[apt.serviceName]!.count++
+      acc[apt.serviceName]!.revenue += apt.price
       return acc
     }, {} as Record<string, { count: number; revenue: number }>)
     

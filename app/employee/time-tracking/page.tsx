@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,9 +25,15 @@ interface WorkSession {
   date: string
   clockIn: string
   clockOut?: string
-  breaks: { start: string; end?: string }[]
+  breakStart?: string
+  breakEnd?: string
   totalHours?: number
 }
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function TimeTrackingPage() {
   const user = useRequireAuth(["employee", "admin"])
@@ -34,55 +41,57 @@ export default function TimeTrackingPage() {
   const [isWorking, setIsWorking] = useState(false)
   const [currentSession, setCurrentSession] = useState<WorkSession | null>(null)
   const [onBreak, setOnBreak] = useState(false)
-  const [workHistory, setWorkHistory] = useState<WorkSession[]>([
-    {
-      id: "1",
-      date: "2024-11-27",
-      clockIn: "2024-11-27T09:00:00",
-      clockOut: "2024-11-27T18:00:00",
-      breaks: [
-        { start: "2024-11-27T13:00:00", end: "2024-11-27T14:00:00" }
-      ],
-      totalHours: 8
-    },
-    {
-      id: "2",
-      date: "2024-11-26",
-      clockIn: "2024-11-26T09:15:00",
-      clockOut: "2024-11-26T17:45:00",
-      breaks: [
-        { start: "2024-11-26T13:00:00", end: "2024-11-26T13:30:00" }
-      ],
-      totalHours: 8
-    },
-    {
-      id: "3",
-      date: "2024-11-25",
-      clockIn: "2024-11-25T09:00:00",
-      clockOut: "2024-11-25T18:30:00",
-      breaks: [
-        { start: "2024-11-25T13:00:00", end: "2024-11-25T14:00:00" }
-      ],
-      totalHours: 8.5
+  const [workHistory, setWorkHistory] = useState<WorkSession[]>([])
+
+  const loadHistory = async (employeeId: string) => {
+    const { data } = await supabase
+      .from("time_logs")
+      .select("id, date, time_in, time_out, break_start, break_end, total_hours")
+      .eq("employee_id", employeeId)
+      .not("time_out", "is", null)
+      .order("date", { ascending: false })
+      .limit(30)
+    if (data) {
+      setWorkHistory((data as any[]).map(r => ({
+        id: r.id,
+        date: r.date,
+        clockIn: `${r.date}T${r.time_in}`,
+        clockOut: r.time_out ? `${r.date}T${r.time_out}` : undefined,
+        breakStart: r.break_start ? `${r.date}T${r.break_start}` : undefined,
+        breakEnd: r.break_end ? `${r.date}T${r.break_end}` : undefined,
+        totalHours: r.total_hours,
+      })))
     }
-  ])
+  }
 
   useEffect(() => {
     if (!user) return
-    
-    // Check if there's an active session
-    const savedSession = localStorage.getItem(`work_session_${user.id}`)
-    if (savedSession) {
-      const session = JSON.parse(savedSession)
-      setCurrentSession(session)
-      setIsWorking(true)
-      
-      // Check if on break
-      const lastBreak = session.breaks[session.breaks.length - 1]
-      if (lastBreak && !lastBreak.end) {
-        setOnBreak(true)
-      }
-    }
+
+    // Check DB for active session today (time_in set, time_out null)
+    const today = new Date().toISOString().split('T')[0]
+    supabase
+      .from("time_logs")
+      .select("id, date, time_in, break_start, break_end")
+      .eq("employee_id", user.id)
+      .eq("date", today)
+      .is("time_out", null)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          const session: WorkSession = {
+            id: data.id,
+            date: data.date,
+            clockIn: `${data.date}T${data.time_in}`,
+            breakStart: data.break_start ? `${data.date}T${data.break_start}` : undefined,
+            breakEnd: data.break_end ? `${data.date}T${data.break_end}` : undefined,
+          }
+          setCurrentSession(session)
+          setIsWorking(true)
+          setOnBreak(!!data.break_start && !data.break_end)
+        }
+      })
+
+    loadHistory(user.id)
   }, [user])
 
   const stats = useMemo(() => {
@@ -111,13 +120,12 @@ export default function TimeTrackingPage() {
     const end = session.clockOut ? new Date(session.clockOut) : new Date()
     let totalMinutes = (end.getTime() - start.getTime()) / (1000 * 60)
     
-    // Subtract break time
-    session.breaks.forEach(brk => {
-      const breakStart = new Date(brk.start)
-      const breakEnd = brk.end ? new Date(brk.end) : new Date()
+    if (session.breakStart) {
+      const breakStart = new Date(session.breakStart)
+      const breakEnd = session.breakEnd ? new Date(session.breakEnd) : new Date()
       const breakMinutes = (breakEnd.getTime() - breakStart.getTime()) / (1000 * 60)
       totalMinutes -= breakMinutes
-    })
+    }
     
     return Math.max(0, totalMinutes / 60)
   }
@@ -135,78 +143,74 @@ export default function TimeTrackingPage() {
     })
   }
 
-  const handleClockIn = () => {
-    const now = new Date().toISOString()
+  const handleClockIn = async () => {
+    if (!user) return
+    const now = new Date()
+    const dateStr = now.toISOString().substring(0, 10)
+    const timeStr = now.toTimeString().split(' ')[0]
+
+    const { data, error } = await supabase
+      .from("time_logs")
+      .insert({ employee_id: user.id, date: dateStr, time_in: timeStr })
+      .select("id")
+      .single()
+
+    if (error || !data) return
+
     const session: WorkSession = {
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      clockIn: now,
-      breaks: []
+      id: data.id,
+      date: dateStr,
+      clockIn: now.toISOString(),
     }
-    
     setCurrentSession(session)
     setIsWorking(true)
-    
-    if (user) {
-      localStorage.setItem(`work_session_${user.id}`, JSON.stringify(session))
-    }
   }
 
-  const handleClockOut = () => {
-    if (!currentSession) return
+  const handleClockOut = async () => {
+    if (!currentSession || !user) return
     
-    const now = new Date().toISOString()
-    const updatedSession = {
-      ...currentSession,
-      clockOut: now,
-      totalHours: calculateHours({ ...currentSession, clockOut: now })
-    }
-    
-    setWorkHistory([updatedSession, ...workHistory])
+    const now = new Date()
+    const timeStr = now.toTimeString().split(' ')[0]
+    const totalHours = parseFloat(calculateHours({ ...currentSession, clockOut: now.toISOString() }).toFixed(2))
+
+    await supabase
+      .from("time_logs")
+      .update({ time_out: timeStr, total_hours: totalHours })
+      .eq("id", currentSession.id)
+
     setCurrentSession(null)
     setIsWorking(false)
     setOnBreak(false)
-    
-    if (user) {
-      localStorage.removeItem(`work_session_${user.id}`)
-    }
+    loadHistory(user.id)
   }
 
-  const handleStartBreak = () => {
+  const handleStartBreak = async () => {
     if (!currentSession) return
-    
-    const now = new Date().toISOString()
-    const updatedSession = {
-      ...currentSession,
-      breaks: [...currentSession.breaks, { start: now }]
-    }
-    
-    setCurrentSession(updatedSession)
+    const now = new Date()
+    const timeStr = now.toTimeString().split(' ')[0]
+
+    await supabase
+      .from("time_logs")
+      .update({ break_start: timeStr })
+      .eq("id", currentSession.id)
+
+    setCurrentSession({ ...currentSession, breakStart: now.toISOString() })
     setOnBreak(true)
-    
-    if (user) {
-      localStorage.setItem(`work_session_${user.id}`, JSON.stringify(updatedSession))
-    }
   }
 
-  const handleEndBreak = () => {
+  const handleEndBreak = async () => {
     if (!currentSession) return
     
-    const now = new Date().toISOString()
-    const breaks = [...currentSession.breaks]
-    breaks[breaks.length - 1].end = now
-    
-    const updatedSession = {
-      ...currentSession,
-      breaks
-    }
-    
-    setCurrentSession(updatedSession)
+    const now = new Date()
+    const timeStr = now.toTimeString().split(' ')[0]
+
+    await supabase
+      .from("time_logs")
+      .update({ break_end: timeStr })
+      .eq("id", currentSession.id)
+
+    setCurrentSession({ ...currentSession, breakEnd: now.toISOString() })
     setOnBreak(false)
-    
-    if (user) {
-      localStorage.setItem(`work_session_${user.id}`, JSON.stringify(updatedSession))
-    }
   }
 
   if (!user) return null
@@ -237,8 +241,8 @@ export default function TimeTrackingPage() {
                 {currentSession && (
                   <p className="text-sm text-muted-foreground">
                     Entrada: {formatTime(currentSession.clockIn)}
-                    {onBreak && currentSession.breaks.length > 0 && (
-                      <> • Pausa desde: {formatTime(currentSession.breaks[currentSession.breaks.length - 1].start)}</>
+                    {onBreak && currentSession.breakStart && (
+                      <> • Pausa desde: {formatTime(currentSession.breakStart)}</>
                     )}
                   </p>
                 )}
@@ -284,7 +288,7 @@ export default function TimeTrackingPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Pausas Tomadas</p>
-                  <p className="text-2xl font-bold">{currentSession.breaks.filter(b => b.end).length}</p>
+                  <p className="text-2xl font-bold">{currentSession.breakStart && currentSession.breakEnd ? 1 : 0}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Estado</p>
@@ -376,21 +380,19 @@ export default function TimeTrackingPage() {
                       {formatDuration(session.totalHours || 0)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {session.breaks.filter(b => b.end).length} pausa{session.breaks.filter(b => b.end).length !== 1 ? 's' : ''}
+                      {session.breakStart ? '1 pausa' : 'Sin pausas'}
                     </p>
                   </div>
                 </div>
                 
-                {session.breaks.length > 0 && (
+                {session.breakStart && (
                   <div className="mt-3 pt-3 border-t">
-                    <p className="text-sm font-medium mb-2">Pausas:</p>
+                    <p className="text-sm font-medium mb-2">Pausa:</p>
                     <div className="flex flex-wrap gap-2">
-                      {session.breaks.map((brk, idx) => (
-                        <Badge key={idx} variant="outline" className="bg-yellow-50">
-                          <Coffee className="h-3 w-3 mr-1" />
-                          {formatTime(brk.start)} - {brk.end ? formatTime(brk.end) : 'En curso'}
-                        </Badge>
-                      ))}
+                      <Badge variant="outline" className="bg-yellow-50">
+                        <Coffee className="h-3 w-3 mr-1" />
+                        {formatTime(session.breakStart)} - {session.breakEnd ? formatTime(session.breakEnd) : 'En curso'}
+                      </Badge>
                     </div>
                   </div>
                 )}

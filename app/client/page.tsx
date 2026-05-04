@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, User, Star, History, Settings, LogOut } from "lucide-react"
@@ -16,46 +17,46 @@ interface Appointment {
   status: "pending" | "confirmed" | "completed" | "cancelled"
 }
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ClientDashboard() {
   const router = useRouter()
   const user = useRequireAuth(["client", "admin"])
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: "1",
-      service: "Corte de cabello",
-      barber: "Carlos Martínez",
-      date: "2025-11-28",
-      time: "15:00",
-      status: "confirmed",
-    },
-    {
-      id: "2",
-      service: "Barba y bigote",
-      barber: "María García",
-      date: "2025-12-05",
-      time: "10:30",
-      status: "pending",
-    },
-  ])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [pastAppointments, setPastAppointments] = useState<Appointment[]>([])
 
-  const [pastAppointments] = useState<Appointment[]>([
-    {
-      id: "3",
-      service: "Corte + Barba",
-      barber: "Carlos Martínez",
-      date: "2025-11-15",
-      time: "14:00",
-      status: "completed",
-    },
-    {
-      id: "4",
-      service: "Corte de cabello",
-      barber: "Pedro López",
-      date: "2025-10-28",
-      time: "16:00",
-      status: "completed",
-    },
-  ])
+  useEffect(() => {
+    if (!user) return
+    const today = new Date().toISOString().substring(0, 10)
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status,
+        barber:users!appointments_barber_id_fkey(id, name),
+        service:services(id, name)`)
+      .eq("client_id", user.id)
+      .order("appointment_date", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (!data) return
+        const all = (data as any[]).map(a => ({
+          id: a.id,
+          service: a.service?.name || "",
+          barber: a.barber?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          status: a.status,
+        }))
+        setAppointments(all.filter(a =>
+          a.date >= today && a.status !== "cancelled" && a.status !== "completed"
+        ))
+        setPastAppointments(all.filter(a =>
+          a.date < today || a.status === "completed" || a.status === "cancelled"
+        ))
+      })
+  }, [user])
 
   if (!user) {
     return null

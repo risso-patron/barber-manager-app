@@ -336,7 +336,7 @@ export default function EmployeeSchedulePage() {
                         </div>
                         {aptsForDay.length > 0 && (
                           <div className="text-xs text-muted-foreground">
-                            {aptsForDay[0].time} - {aptsForDay[aptsForDay.length - 1].time}
+                            {aptsForDay[0]?.time} - {aptsForDay[aptsForDay.length - 1]?.time}
                           </div>
                         )}
                       </div>

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,15 +20,54 @@ import {
   History as HistoryIcon
 } from "lucide-react"
 
+interface Appointment {
+  id: string
+  serviceName: string
+  employeeName: string
+  date: string
+  time?: string
+  status: "pending" | "confirmed" | "completed" | "cancelled"
+  price: number
+  notes?: string
+}
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ClientHistoryPage() {
   const user = useRequireAuth(["client"])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes,
+        barber:users!appointments_barber_id_fkey(id, name),
+        service:services(id, name, price)`)
+      .eq("client_id", user.id)
+      .order("appointment_date", { ascending: false })
+      .then(({ data }) => {
+        if (data) setAllAppointments((data as any[]).map(a => ({
+          id: a.id,
+          serviceName: a.service?.name || "",
+          employeeName: a.barber?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          status: a.status,
+          price: a.service?.price || 0,
+          notes: a.notes || undefined,
+        })))
+      })
+  }, [user])
 
   const appointments = useMemo(() => {
-    if (!user) return []
-    return DEMO_APPOINTMENTS.filter(apt => apt.clientId === user.id)
-  }, [user])
+    return allAppointments
+  }, [allAppointments])
 
   const filteredAppointments = useMemo(() => {
     return appointments.filter(apt => {
@@ -39,7 +78,7 @@ export default function ClientHistoryPage() {
       const matchesStatus = filterStatus === "all" || apt.status === filterStatus
       
       return matchesSearch && matchesStatus
-    }).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+    }).sort((a, b) => b.date.localeCompare(a.date))
   }, [appointments, searchTerm, filterStatus])
 
   const stats = useMemo(() => {

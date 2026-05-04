@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,16 +21,53 @@ import {
   XCircle
 } from "lucide-react"
 
-type Appointment = typeof DEMO_APPOINTMENTS[0]
+interface Appointment {
+  id: string
+  serviceName: string
+  employeeName: string
+  date: string
+  time: string
+  status: "pending" | "confirmed" | "completed" | "cancelled"
+  duration: number
+  notes?: string
+}
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function ClientAppointmentsPage() {
   const router = useRouter()
   const user = useRequireAuth(["client"])
   const { toasts, removeToast, success, error } = useToast()
   
-  const [appointments, setAppointments] = useState(DEMO_APPOINTMENTS.filter(apt => apt.clientId === user?.id))
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes,
+        barber:users!appointments_barber_id_fkey(id, name),
+        service:services(id, name, price, duration)`)
+      .eq("client_id", user.id)
+      .order("appointment_date", { ascending: false })
+      .then(({ data }) => {
+        if (data) setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          serviceName: a.service?.name || "",
+          employeeName: a.barber?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          status: a.status,
+          duration: a.service?.duration || 0,
+          notes: a.notes || "",
+        })))
+      })
+  }, [user])
 
   const { upcoming, past } = useMemo(() => {
     const today = new Date()
