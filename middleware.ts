@@ -45,7 +45,15 @@ export async function middleware(request: NextRequest) {
 
   // Role-based route protection
   if (user && isProtectedRoute) {
-    const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
+    const { data: userData, error: roleError } = await supabase.from("users").select("role").eq("id", user.id).single()
+
+    // If role query fails, allow access to /dashboard only
+    if (roleError) {
+      if (!request.nextUrl.pathname.startsWith("/dashboard")) {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
+      return supabaseResponse
+    }
 
     const userRole = userData?.role
 

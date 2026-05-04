@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Footer } from "@/components/layout/footer"
 import { Loader2 } from "lucide-react"
@@ -17,22 +18,37 @@ export default function DashboardLayout({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const currentUserStr = localStorage.getItem("currentUser")
-    
-    if (!currentUserStr) {
-      router.replace("/login")
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      // Demo mode
+      const currentUserStr = localStorage.getItem("currentUser")
+      if (!currentUserStr) {
+        router.replace("/auth/login")
+        return
+      }
+      try {
+        const currentUser = JSON.parse(currentUserStr)
+        setUser(currentUser)
+        setIsLoading(false)
+      } catch {
+        localStorage.removeItem("currentUser")
+        router.replace("/auth/login")
+      }
       return
     }
 
-    try {
-      const currentUser = JSON.parse(currentUserStr)
-      setUser(currentUser)
+    // Supabase mode
+    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) {
+        router.replace("/auth/login")
+        return
+      }
+      setUser(authUser)
       setIsLoading(false)
-    } catch (error) {
-      console.error("Error parsing user data:", error)
-      localStorage.removeItem("currentUser")
-      router.replace("/login")
-    }
+    })
   }, [router])
 
   if (isLoading) {
