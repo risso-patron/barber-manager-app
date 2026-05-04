@@ -50,6 +50,7 @@ export default function InventoryPage() {
   useRequireAuth(["admin"])
   
   const [items, setItems] = useState<InventoryItem[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -87,6 +88,7 @@ export default function InventoryPage() {
   }, [items])
 
   const handleCreateItem = async (itemData: Partial<InventoryItem>) => {
+    setError(null)
     const qty = itemData.quantity!
     const min = itemData.minStock!
     const { data, error } = await supabase.from("inventory").insert({
@@ -97,12 +99,17 @@ export default function InventoryPage() {
       cost_per_unit: itemData.price,
       supplier: itemData.supplier,
     }).select().single()
-    if (!error && data) setItems([...items, mapDbToItem(data)])
+    if (error) {
+      setError(`Error al crear producto: ${error.message}`)
+      return
+    }
+    if (data) setItems([...items, mapDbToItem(data)])
     setIsModalOpen(false)
   }
 
   const handleUpdateItem = async (itemData: Partial<InventoryItem>) => {
     if (!selectedItem) return
+    setError(null)
     const qty = itemData.quantity ?? selectedItem.quantity
     const min = itemData.minStock ?? selectedItem.minStock
     const { data, error } = await supabase.from("inventory").update({
@@ -113,7 +120,11 @@ export default function InventoryPage() {
       cost_per_unit: itemData.price ?? selectedItem.price,
       supplier: itemData.supplier ?? selectedItem.supplier,
     }).eq("id", selectedItem.id).select().single()
-    if (!error && data) setItems(items.map(i => i.id === selectedItem.id ? mapDbToItem(data) : i))
+    if (error) {
+      setError(`Error al actualizar producto: ${error.message}`)
+      return
+    }
+    if (data) setItems(items.map(i => i.id === selectedItem.id ? mapDbToItem(data) : i))
     setIsModalOpen(false)
     setSelectedItem(null)
   }
@@ -173,6 +184,12 @@ export default function InventoryPage() {
 
   return (
     <div className="p-8">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="font-bold ml-4">✕</button>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
@@ -256,6 +273,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <select
+              aria-label="Filtrar por categoría"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-3 py-2 border rounded-md"
@@ -266,6 +284,7 @@ export default function InventoryPage() {
               <option value="suministro">Suministros</option>
             </select>
             <select
+              aria-label="Filtrar por estado"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 border rounded-md"

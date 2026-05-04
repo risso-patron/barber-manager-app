@@ -138,10 +138,29 @@ export default function AppointmentsPage() {
   }, [appointments])
 
   const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
+    let clientId = appointment.clientId
+
+    // Si es un cliente nuevo, crearlo primero
+    if (clientId === "__new__") {
+      const { data: newClient, error: clientError } = await supabase
+        .from("users")
+        .insert({
+          name: appointment.clientName,
+          phone: appointment.clientPhone,
+          role: "client",
+          email: `${appointment.clientPhone.replace(/\D/g, "")}@guest.barber`,
+        })
+        .select("id")
+        .single()
+      if (clientError || !newClient) return
+      clientId = newClient.id
+      setClients(prev => [...prev, { id: clientId, name: appointment.clientName, phone: appointment.clientPhone, email: "" }])
+    }
+
     const { data, error } = await supabase
       .from("appointments")
       .insert({
-        client_id: appointment.clientId,
+        client_id: clientId,
         barber_id: appointment.employeeId,
         service_id: appointment.serviceId,
         appointment_date: appointment.date,
@@ -152,7 +171,7 @@ export default function AppointmentsPage() {
       .select()
       .single()
     if (!error && data) {
-      setAppointments([{ ...appointment, id: data.id, createdAt: data.created_at }, ...appointments])
+      setAppointments([{ ...appointment, clientId, id: data.id, createdAt: data.created_at }, ...appointments])
     }
     setIsCreateModalOpen(false)
   }

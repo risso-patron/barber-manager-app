@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
+import { X, UserPlus, ChevronLeft } from "lucide-react"
 import type { Appointment, Service, Employee, Client } from "@/lib/demo-appointments"
 
 interface AppointmentModalProps {
@@ -26,7 +26,14 @@ export function AppointmentModal({
   employees,
   clients,
 }: AppointmentModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    clientId: string; clientName: string; clientPhone: string
+    employeeId: string; employeeName: string
+    serviceId: string; serviceName: string
+    date: string; time: string; duration: number; price: number
+    status: "pending" | "confirmed" | "completed" | "cancelled"
+    notes: string
+  }>({
     clientId: appointment?.clientId || "",
     clientName: appointment?.clientName || "",
     clientPhone: appointment?.clientPhone || "",
@@ -34,13 +41,17 @@ export function AppointmentModal({
     employeeName: appointment?.employeeName || "",
     serviceId: appointment?.serviceId || "",
     serviceName: appointment?.serviceName || "",
-    date: appointment?.date || new Date().toISOString().split('T')[0],
+    date: (appointment?.date || new Date().toISOString().split('T')[0]) as string,
     time: appointment?.time || "09:00",
     duration: appointment?.duration || 30,
     price: appointment?.price || 0,
-    status: appointment?.status || "pending" as const,
+    status: appointment?.status || "pending",
     notes: appointment?.notes || "",
   })
+
+  const [isNewClient, setIsNewClient] = useState(false)
+  const [newClientName, setNewClientName] = useState("")
+  const [newClientPhone, setNewClientPhone] = useState("")
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)
@@ -80,18 +91,30 @@ export function AppointmentModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    const clientId = isNewClient ? "__new__" : formData.clientId
+    const clientName = isNewClient ? newClientName : formData.clientName
+    const clientPhone = isNewClient ? newClientPhone : formData.clientPhone
+
+    const payload = {
+      ...formData,
+      date: formData.date,
+      clientId,
+      clientName,
+      clientPhone,
+    }
+
     if (appointment) {
-      onSave({ ...formData, id: appointment.id, createdAt: appointment.createdAt })
+      onSave({ ...payload, id: appointment.id, createdAt: appointment.createdAt })
     } else {
-      onSave(formData)
+      onSave(payload)
     }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">
@@ -105,21 +128,60 @@ export function AppointmentModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Client Selection */}
           <div className="space-y-2">
-            <Label htmlFor="clientId">Cliente *</Label>
-            <select
-              id="clientId"
-              required
-              value={formData.clientId}
-              onChange={(e) => handleClientChange(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="">Seleccionar cliente</option>
-              {clients.map(client => (
-                <option key={client.id} value={client.id}>
-                  {client.name} - {client.phone}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="clientId">Cliente *</Label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewClient(!isNewClient)
+                  setNewClientName("")
+                  setNewClientPhone("")
+                  setFormData({ ...formData, clientId: "", clientName: "", clientPhone: "" })
+                }}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+              >
+                {isNewClient ? (
+                  <><ChevronLeft className="h-3 w-3" /> Seleccionar existente</>
+                ) : (
+                  <><UserPlus className="h-3 w-3" /> Nuevo cliente</>
+                )}
+              </button>
+            </div>
+
+            {isNewClient ? (
+              <div className="space-y-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <p className="text-xs text-blue-700 font-medium">Se creará un cliente nuevo al guardar</p>
+                <Input
+                  placeholder="Nombre completo *"
+                  required
+                  value={newClientName}
+                  onChange={(e) => setNewClientName(e.target.value)}
+                />
+                <Input
+                  placeholder="Teléfono *"
+                  type="tel"
+                  required
+                  value={newClientPhone}
+                  onChange={(e) => setNewClientPhone(e.target.value)}
+                />
+              </div>
+            ) : (
+              <select
+                id="clientId"
+                aria-label="Cliente"
+                required
+                value={formData.clientId}
+                onChange={(e) => handleClientChange(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Seleccionar cliente</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.name} - {client.phone}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Service Selection */}
@@ -127,6 +189,7 @@ export function AppointmentModal({
             <Label htmlFor="serviceId">Servicio *</Label>
             <select
               id="serviceId"
+              aria-label="Servicio"
               required
               value={formData.serviceId}
               onChange={(e) => handleServiceChange(e.target.value)}
@@ -146,6 +209,7 @@ export function AppointmentModal({
             <Label htmlFor="employeeId">Barbero *</Label>
             <select
               id="employeeId"
+              aria-label="Barbero"
               required
               value={formData.employeeId}
               onChange={(e) => handleEmployeeChange(e.target.value)}
@@ -216,6 +280,7 @@ export function AppointmentModal({
               <Label htmlFor="status">Estado</Label>
               <select
                 id="status"
+                aria-label="Estado de la cita"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
