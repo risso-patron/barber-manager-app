@@ -19,7 +19,8 @@ import {
   UserCheck,
   UserX,
   Calendar,
-  ArrowLeft
+  ArrowLeft,
+  KeyRound
 } from "lucide-react"
 import { type Employee } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
@@ -42,6 +43,22 @@ export default function EmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
+
+  const handleResetPassword = async (employee: Employee) => {
+    setActiveDropdown(null)
+    const res = await fetch("/api/employees", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: employee.id }),
+    })
+    const json = await res.json()
+    if (res.ok) {
+      setResetPasswordResult({ name: employee.name, password: json.tempPassword })
+    } else {
+      setApiError(json.error || "Error al resetear contraseña")
+    }
+  }
 
   // Load employees from Supabase
   useEffect(() => {
@@ -161,6 +178,19 @@ export default function EmployeesPage() {
           </p>
           <p className="text-green-600 text-xs mt-1">Compartí esta contraseña con el empleado para que pueda iniciar sesión.</p>
           <button onClick={() => setNewEmployeePassword(null)} className="mt-2 text-xs text-green-700 underline">Cerrar</button>
+        </div>
+      )}
+
+      {/* Resultado de reset de contraseña */}
+      {resetPasswordResult && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm">
+          <p className="font-semibold text-blue-800 mb-1">🔑 Contraseña reseteada</p>
+          <p className="text-blue-700">
+            Nueva contraseña temporal de <strong>{resetPasswordResult.name}</strong>:{" "}
+            <code className="bg-blue-100 px-2 py-0.5 rounded font-mono">{resetPasswordResult.password}</code>
+          </p>
+          <p className="text-blue-600 text-xs mt-1">Compartí esta contraseña con el empleado. La anterior ya no sirve.</p>
+          <button onClick={() => setResetPasswordResult(null)} className="mt-2 text-xs text-blue-700 underline">Cerrar</button>
         </div>
       )}
 
@@ -316,6 +346,14 @@ export default function EmployeesPage() {
                           >
                             <Calendar className="h-4 w-4" />
                             Ver Agenda
+                          </button>
+
+                          <button
+                            onClick={() => handleResetPassword(employee)}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-yellow-50 flex items-center gap-2 text-yellow-700"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                            Resetear Clave
                           </button>
 
                           <div className="border-t my-1"></div>

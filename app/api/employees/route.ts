@@ -68,6 +68,30 @@ export async function POST(request: Request) {
   return NextResponse.json({ employee: profile, tempPassword })
 }
 
+export async function PATCH(request: Request) {
+  // Reset password for an employee
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll() } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+
+  const { data: caller } = await supabase.from("users").select("role").eq("id", user.id).single()
+  if (caller?.role !== "admin") return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
+
+  const { id } = await request.json()
+  if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
+
+  const newPassword = `Barber${Math.random().toString(36).slice(2, 10)}!`
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password: newPassword })
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  return NextResponse.json({ tempPassword: newPassword })
+}
+
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
