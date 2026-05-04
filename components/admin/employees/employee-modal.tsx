@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
+import { X, Check } from "lucide-react"
 import type { Employee } from "@/lib/demo-appointments"
 
 interface EmployeeModalProps {
@@ -14,23 +14,62 @@ interface EmployeeModalProps {
   employee?: Employee
 }
 
-export function EmployeeModal({
-  isOpen,
-  onClose,
-  onSave,
-  employee,
-}: EmployeeModalProps) {
+const SPECIALTIES = [
+  { label: "Barbero",        role: "barber"    as const, desc: "Cortes y servicios de barbería" },
+  { label: "Estilista",      role: "barber"    as const, desc: "Coloración, peinados y técnicas" },
+  { label: "Colorista",      role: "barber"    as const, desc: "Tintes, mechas y coloración" },
+  { label: "Manicurista",    role: "employee"  as const, desc: "Manicura y nail art" },
+  { label: "Pedicurista",    role: "employee"  as const, desc: "Pedicura y cuidado de pies" },
+  { label: "Masajista",      role: "employee"  as const, desc: "Masajes y terapias corporales" },
+  { label: "Cosmetóloga/o",  role: "employee"  as const, desc: "Tratamientos faciales y corporales" },
+  { label: "Depilación",     role: "employee"  as const, desc: "Depilación con cera, hilo o laser" },
+  { label: "Maquillador/a",  role: "employee"  as const, desc: "Maquillaje artístico y social" },
+  { label: "Recepcionista",  role: "employee"  as const, desc: "Atención al cliente y agenda" },
+  { label: "Cajero/a",       role: "employee"  as const, desc: "Gestión de cobros y caja" },
+  { label: "Vendedor/a",     role: "employee"  as const, desc: "Venta de productos y asesoría" },
+  { label: "Encargado/a",    role: "employee"  as const, desc: "Supervisión y coordinación" },
+  { label: "Asistente",      role: "employee"  as const, desc: "Apoyo general al equipo" },
+  { label: "Otro",           role: "employee"  as const, desc: "Otro puesto o especialidad" },
+]
+
+const PRESET_AVATARS = [
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Avery",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Destiny",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Felix",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Gabe",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Hunter",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Isabella",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Jordan",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Kate",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Liam",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Mia",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Nate",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Olivia",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Parker",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Quinn",
+  "https://api.dicebear.com/9.x/avataaars/svg?seed=Ryan",
+]
+
+export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
+  const defaultSpecialty = (employee as any)?.specialty || "Barbero"
+  const defaultRole = SPECIALTIES.find(s => s.label === defaultSpecialty)?.role || "barber"
+
   const [formData, setFormData] = useState({
     name: employee?.name || "",
     email: employee?.email || "",
     phone: employee?.phone || "",
-    role: employee?.role || "barber" as const,
+    role: defaultRole,
+    specialty: defaultSpecialty,
     avatar: employee?.avatar || "",
   })
 
+  const handleSpecialtyChange = (label: string) => {
+    const spec = SPECIALTIES.find(s => s.label === label)!
+    setFormData({ ...formData, specialty: label, role: spec.role })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (employee) {
       onSave({ ...formData, id: employee.id })
     } else {
@@ -40,10 +79,13 @@ export function EmployeeModal({
 
   if (!isOpen) return null
 
+  const selectedSpec = SPECIALTIES.find(s => s.label === formData.specialty)
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+      <div className="bg-white rounded-lg max-w-lg w-full flex flex-col max-h-[90vh]">
+        {/* Header fijo */}
+        <div className="border-b px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
           <h2 className="text-xl font-bold">
             {employee ? "Editar Empleado" : "Nuevo Empleado"}
           </h2>
@@ -52,88 +94,109 @@ export function EmployeeModal({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre Completo *</Label>
-            <Input
-              id="name"
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ej: Carlos Pérez"
-            />
-          </div>
+        {/* Scroll body */}
+        <div className="overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Nombre */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre Completo *</Label>
+              <Input
+                id="name"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ej: Carlos Pérez"
+              />
+            </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="carlos@barbershop.com"
-              autoComplete="email"
-            />
-          </div>
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="carlos@barbershop.com"
+                autoComplete="email"
+              />
+            </div>
 
-          {/* Phone */}
-          <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="555-0101"
-              autoComplete="tel"
-            />
-          </div>
+            {/* Teléfono */}
+            <div className="space-y-2">
+              <Label htmlFor="phone">Teléfono *</Label>
+              <Input
+                id="phone"
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="555-0101"
+                autoComplete="tel"
+              />
+            </div>
 
-          {/* Role */}
-          <div className="space-y-2">
-            <Label htmlFor="role">Rol *</Label>
-            <select
-              id="role"
-              required
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as "barber" | "employee" })}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="barber">Barbero</option>
-              <option value="employee">Staff</option>
-            </select>
-            <p className="text-xs text-gray-500">
-              {formData.role === "barber" ? "Puede atender clientes y gestionar su agenda" : "Personal administrativo o de apoyo"}
-            </p>
-          </div>
+            {/* Especialidad */}
+            <div className="space-y-2">
+              <Label htmlFor="specialty">Especialidad / Puesto *</Label>
+              <select
+                id="specialty"
+                aria-label="Especialidad"
+                required
+                value={formData.specialty}
+                onChange={(e) => handleSpecialtyChange(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {SPECIALTIES.map((s) => (
+                  <option key={s.label} value={s.label}>{s.label}</option>
+                ))}
+              </select>
+              {selectedSpec && (
+                <p className="text-xs text-gray-500">{selectedSpec.desc}</p>
+              )}
+            </div>
 
-          {/* Avatar URL (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="avatar">URL Avatar (opcional)</Label>
-            <Input
-              id="avatar"
-              type="url"
-              value={formData.avatar}
-              onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-              placeholder="https://ejemplo.com/avatar.jpg"
-            />
-          </div>
+            {/* Avatar — 15 presets */}
+            <div className="space-y-3">
+              <Label>Avatar</Label>
+              <div className="grid grid-cols-5 gap-3">
+                {PRESET_AVATARS.map((url, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, avatar: url })}
+                    className={`relative rounded-full overflow-hidden border-2 transition-all w-14 h-14 mx-auto block ${
+                      formData.avatar === url
+                        ? "border-black ring-2 ring-black ring-offset-2"
+                        : "border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    <img src={url} alt={`Avatar ${i + 1}`} className="w-full h-full object-cover bg-gray-100" />
+                    {formData.avatar === url && (
+                      <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                        <Check className="h-4 w-4 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {!formData.avatar && (
+                <p className="text-xs text-gray-400">Seleccioná un avatar (opcional)</p>
+              )}
+            </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {employee ? "Guardar Cambios" : "Crear Empleado"}
-            </Button>
-          </div>
-        </form>
+            {/* Footer */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {employee ? "Guardar Cambios" : "Crear Empleado"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

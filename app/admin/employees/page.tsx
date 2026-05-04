@@ -45,7 +45,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     supabase
       .from("users")
-      .select("id, name, email, phone, role, avatar_url")
+      .select("id, name, email, phone, role, avatar_url, specialty")
       .in("role", ["employee", "barber"])
       .order("name")
       .then(({ data }) => {
@@ -77,12 +77,20 @@ export default function EmployeesPage() {
   }, [employees])
 
   const handleCreateEmployee = async (employee: Omit<Employee, "id">) => {
+    const emp = employee as any
     const { data, error } = await supabase
       .from("users")
-      .insert({ name: employee.name, email: employee.email, phone: employee.phone, role: employee.role })
+      .insert({
+        name: emp.name,
+        email: emp.email,
+        phone: emp.phone,
+        role: emp.role,
+        specialty: emp.specialty || null,
+        avatar_url: emp.avatar || null,
+      })
       .select()
       .single()
-    if (!error && data) setEmployees([{ ...data, avatar: data.avatar_url }, ...employees])
+    if (!error && data) setEmployees([{ ...data, avatar: data.avatar_url, specialty: data.specialty }, ...employees])
     setIsCreateModalOpen(false)
   }
 
@@ -90,12 +98,19 @@ export default function EmployeesPage() {
     const { id, avatar, ...fields } = updatedEmployee as any
     const { data, error } = await supabase
       .from("users")
-      .update({ name: fields.name, email: fields.email, phone: fields.phone, role: fields.role })
+      .update({
+        name: fields.name,
+        email: fields.email,
+        phone: fields.phone,
+        role: fields.role,
+        specialty: fields.specialty || null,
+        avatar_url: avatar || null,
+      })
       .eq("id", id)
       .select()
       .single()
-    if (!error && data) setEmployees(employees.map(emp => 
-      emp.id === id ? { ...data, avatar: data.avatar_url } : emp
+    if (!error && data) setEmployees(employees.map(emp =>
+      emp.id === id ? { ...data, avatar: data.avatar_url, specialty: data.specialty } : emp
     ))
     setEditingEmployee(null)
   }
@@ -187,6 +202,7 @@ export default function EmployeesPage() {
             </div>
 
             <select
+              aria-label="Filtrar por rol"
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as "all" | "barber" | "employee")}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -212,16 +228,20 @@ export default function EmployeesPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {employee.name.charAt(0)}
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                      {employee.avatar ? (
+                        <img src={employee.avatar} alt={employee.name} className="w-full h-full object-cover" />
+                      ) : (
+                        employee.name.charAt(0)
+                      )}
                     </div>
                     <div>
                       <CardTitle className="text-lg">{employee.name}</CardTitle>
-                      <Badge 
+                      <Badge
                         variant={employee.role === "barber" ? "default" : "secondary"}
                         className="mt-1"
                       >
-                        {employee.role === "barber" ? "Barbero" : "Staff"}
+                        {(employee as any).specialty || (employee.role === "barber" ? "Barbero" : "Staff")}
                       </Badge>
                     </div>
                   </div>

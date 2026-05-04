@@ -52,6 +52,9 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
 export default function AppointmentsPage() {
   const user = useRequireAuth(["admin"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [services, setServices] = useState<any[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all")
   const [filterDate, setFilterDate] = useState("")
@@ -97,6 +100,13 @@ export default function AppointmentsPage() {
           })))
         }
       })
+    // Cargar servicios, empleados y clientes para los modales
+    supabase.from("services").select("id, name, price, duration").eq("is_active", true).order("name")
+      .then(({ data }) => { if (data) setServices(data) })
+    supabase.from("users").select("id, name, phone").in("role", ["barber", "employee"]).order("name")
+      .then(({ data }) => { if (data) setEmployees(data) })
+    supabase.from("users").select("id, name, phone").eq("role", "client").order("name")
+      .then(({ data }) => { if (data) setClients(data) })
   }, [])
 
   // Filter appointments
@@ -127,32 +137,61 @@ export default function AppointmentsPage() {
     }
   }, [appointments])
 
-  const handleCreateAppointment = (appointment: Omit<Appointment, "id" | "createdAt">) => {
-    const newAppointment: Appointment = {
-      ...appointment,
-      id: `a${Date.now()}`,
-      createdAt: new Date().toISOString(),
+  const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert({
+        client_id: appointment.clientId,
+        barber_id: appointment.employeeId,
+        service_id: appointment.serviceId,
+        appointment_date: appointment.date,
+        appointment_time: appointment.time,
+        status: appointment.status,
+        notes: appointment.notes || null,
+      })
+      .select()
+      .single()
+    if (!error && data) {
+      setAppointments([{ ...appointment, id: data.id, createdAt: data.created_at }, ...appointments])
     }
-    setAppointments([newAppointment, ...appointments])
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateAppointment = (updatedAppointment: Appointment) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === updatedAppointment.id ? updatedAppointment : apt
-    ))
+  const handleUpdateAppointment = async (appointment: Appointment | Omit<Appointment, "id" | "createdAt">) => {
+    const updatedAppointment = appointment as Appointment
+    const { error } = await supabase
+      .from("appointments")
+      .update({
+        client_id: updatedAppointment.clientId,
+        barber_id: updatedAppointment.employeeId,
+        service_id: updatedAppointment.serviceId,
+        appointment_date: updatedAppointment.date,
+        appointment_time: updatedAppointment.time,
+        status: updatedAppointment.status,
+        notes: updatedAppointment.notes || null,
+      })
+      .eq("id", updatedAppointment.id)
+    if (!error) {
+      setAppointments(appointments.map(apt =>
+        apt.id === updatedAppointment.id ? updatedAppointment : apt
+      ))
+    }
     setEditingAppointment(null)
   }
 
-  const handleDeleteAppointment = (id: string) => {
-    setAppointments(appointments.filter(apt => apt.id !== id))
+  const handleDeleteAppointment = async (id: string) => {
+    const { error } = await supabase.from("appointments").delete().eq("id", id)
+    if (!error) setAppointments(appointments.filter(apt => apt.id !== id))
     setDeletingAppointment(null)
   }
 
-  const handleStatusChange = (id: string, status: AppointmentStatus) => {
-    setAppointments(appointments.map(apt => 
-      apt.id === id ? { ...apt, status } : apt
-    ))
+  const handleStatusChange = async (id: string, status: AppointmentStatus) => {
+    const { error } = await supabase.from("appointments").update({ status }).eq("id", id)
+    if (!error) {
+      setAppointments(appointments.map(apt =>
+        apt.id === id ? { ...apt, status } : apt
+      ))
+    }
     setActiveDropdown(null)
   }
 
@@ -249,6 +288,7 @@ export default function AppointmentsPage() {
             </div>
 
             <select
+              aria-label="Filtrar por estado"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as AppointmentStatus | "all")}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -431,9 +471,9 @@ export default function AppointmentsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSave={handleCreateAppointment}
-          services={DEMO_SERVICES}
-          employees={DEMO_EMPLOYEES}
-          clients={DEMO_CLIENTS}
+          services={services}
+          employees={employees}
+          clients={clients}
         />
       )}
 
@@ -443,9 +483,9 @@ export default function AppointmentsPage() {
           onClose={() => setEditingAppointment(null)}
           onSave={handleUpdateAppointment}
           appointment={editingAppointment}
-          services={DEMO_SERVICES}
-          employees={DEMO_EMPLOYEES}
-          clients={DEMO_CLIENTS}
+          services={services}
+          employees={employees}
+          clients={clients}
         />
       )}
 
