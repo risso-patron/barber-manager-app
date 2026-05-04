@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { DEMO_SERVICES, DEMO_EMPLOYEES, type Service, type Employee } from "@/lib/demo-appointments"
+import { type Service, type Employee } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Footer } from "@/components/layout/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -69,8 +70,16 @@ export default function PublicBookingPage() {
   }
 
   useEffect(() => {
-    setServices(DEMO_SERVICES)
-    setEmployees(DEMO_EMPLOYEES)
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    supabase.from("services").select("*").eq("is_active", true).order("name").then(({ data }) => {
+      if (data) setServices(data)
+    })
+    supabase.from("users").select("id, name, email, phone, role, avatar_url").in("role", ["barber", "employee"]).order("name").then(({ data }) => {
+      if (data) setEmployees(data.map(u => ({ ...u, avatar: u.avatar_url })))
+    })
   }, [])
 
   const availableTimes = [

@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 /**
  * API Route para crear reservas desde el enlace público
@@ -49,29 +55,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear la reserva en la base de datos
-    // TODO: Integrar con Supabase o tu base de datos
-    const booking = {
-      id: `booking-${Date.now()}`,
-      barbershop: data.barbershop,
-      clientName: data.clientName,
-      clientEmail: data.clientEmail,
-      clientPhone: data.clientPhone,
-      serviceId: data.serviceId,
-      serviceName: data.serviceName,
-      employeeId: data.employeeId,
-      employeeName: data.employeeName,
-      date: data.date,
-      time: data.time,
-      duration: data.duration,
-      price: data.price,
-      notes: data.notes,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      source: "public_link"
+    // Buscar o crear cliente por teléfono/email
+    let clientId: string
+
+    // Buscar usuario existente por email o teléfono
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .or(
+        data.clientEmail
+          ? `phone.eq.${data.clientPhone},email.eq.${data.clientEmail}`
+          : `phone.eq.${data.clientPhone}`
+      )
+      .eq("role", "client")
+      .maybeSingle()
+
+    if (existingUser) {
+      clientId = existingUser.id
+    } else {
+      // Crear auth user + perfil para el cliente
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: data.clientEmail || `${data.clientPhone.replace(/\D/g, "")}@guest.barber`,
+        phone: data.clientPhone,
+        email_confirm: true,
+        user_metadata: { name: data.clientName },
+      })
+
+      if (authError || !authData.user) {
+        return NextResponse.json({ success: false, error: "Error creando cliente" }, { status: 500 })
+      }
+
+      const { error: profileError } = await supabase.from("users").insert({
+        id: authData.user.id,
+        name: data.clientName,
+        email: data.clientEmail || `${data.clientPhone.replace(/\D/g, "")}@guest.barber`,
+        phone: data.clientPhone,
+        role: "client",
+      })
+
+      if (profileError) {
+        return NextResponse.json({ success: false, error: "Error creando perfil" }, { status: 500 })
+      }
+
+      clientId = authData.user.id
     }
 
-    console.log("📝 Nueva reserva pública creada:", booking)
+    // Crear el appointment en Supabase
+    const { data: appointment, error: apptError } = await supabase
+      .from("appointments")
+      .insert({
+        client_id: clientId,
+        barber_id: data.employeeId,
+        service_id: data.serviceId,
+        appointment_date: data.date,
+        appointment_time: data.time,
+        status: "pending",
+        notes: data.notes || null,
+      })
+      .select()
+      .single()
+
+    if (apptError || !appointment) {
+      return NextResponse.json({ success: false, error: "Error guardando reserva" }, { status: 500 })
+    }
+
+    const booking = {
+      id: appointment.id,
+      ...data,
+      status: "pending",
+      createdAt: appointment.created_at,
+    }
 
     // Enviar notificaciones
     try {
@@ -128,23 +181,49 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // TODO: Consultar base de datos
-    const bookings = [
-      // Ejemplo de datos
-      {
-        id: "1",
-        serviceName: "Corte de Cabello",
-        employeeName: "Carlos Pérez",
-        date: "2024-12-01",
-        time: "15:00",
-        status: "confirmed",
-        price: 25
-      }
-    ]
+    // Buscar cliente por teléfono
+    const { data: client } = await supabase
+      .from("users")
+      .select("id")
+      .eq("phone", phone)
+      .eq("role", "client")
+      .maybeSingle()
+
+    if (!client) {
+      return NextResponse.json({ success: true, bookings: [] })
+    }
+
+    const { data: bookings, error } = await supabase
+      .from("appointments")
+      .select(`
+        id,
+        appointment_date,
+        appointment_time,
+        status,
+        notes,
+        services ( name, price ),
+        users!appointments_barber_id_fkey ( name )
+      `)
+      .eq("client_id", client.id)
+      .order("appointment_date", { ascending: false })
+
+    if (error) {
+      return NextResponse.json({ success: false, error: "Error consultando reservas" }, { status: 500 })
+    }
+
+    const formatted = (bookings || []).map((b: any) => ({
+      id: b.id,
+      serviceName: b.services?.name,
+      employeeName: b.users?.name,
+      date: b.appointment_date,
+      time: b.appointment_time,
+      status: b.status,
+      price: b.services?.price,
+    }))
 
     return NextResponse.json({
       success: true,
-      bookings
+      bookings: formatted
     })
 
   } catch (error) {
