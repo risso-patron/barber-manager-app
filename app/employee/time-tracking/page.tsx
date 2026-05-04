@@ -29,7 +29,7 @@ interface WorkSession {
 }
 
 export default function TimeTrackingPage() {
-  const user = useRequireAuth(["employee", "barber"])
+  const user = useRequireAuth(["employee", "admin"])
   
   const [isWorking, setIsWorking] = useState(false)
   const [currentSession, setCurrentSession] = useState<WorkSession | null>(null)

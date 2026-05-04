@@ -103,7 +103,7 @@ export default function AppointmentsPage() {
     // Cargar servicios, empleados y clientes para los modales
     supabase.from("services").select("id, name, price, duration").eq("is_active", true).order("name")
       .then(({ data }) => { if (data) setServices(data) })
-    supabase.from("users").select("id, name, phone").in("role", ["barber", "employee"]).order("name")
+    supabase.from("users").select("id, name, phone").neq("role", "client").order("name")
       .then(({ data }) => { if (data) setEmployees(data) })
     supabase.from("users").select("id, name, phone").eq("role", "client").order("name")
       .then(({ data }) => { if (data) setClients(data) })

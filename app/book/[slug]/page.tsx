@@ -77,7 +77,7 @@ export default function PublicBookingPage() {
     supabase.from("services").select("*").eq("is_active", true).order("name").then(({ data }) => {
       if (data) setServices(data)
     })
-    supabase.from("users").select("id, name, email, phone, role, avatar_url").in("role", ["barber", "employee"]).order("name").then(({ data }) => {
+    supabase.from("users").select("id, name, email, phone, role, avatar_url").in("role", ["employee", "admin"]).not("role", "eq", "client").order("name").then(({ data }) => {
       if (data) setEmployees(data.map(u => ({ ...u, avatar: u.avatar_url })))
     })
   }, [])

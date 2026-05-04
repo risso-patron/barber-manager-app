@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 
 export default function EmployeeStatsPage() {
-  const user = useRequireAuth(["employee", "barber"])
+  const user = useRequireAuth(["employee", "admin"])
 
   const stats = useMemo(() => {
     if (!user) return null

@@ -37,7 +37,7 @@ export default function EmployeesPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [newEmployeePassword, setNewEmployeePassword] = useState<{ name: string; password: string } | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterRole, setFilterRole] = useState<"all" | "barber" | "employee">("all")
+  const [filterRole, setFilterRole] = useState<"all" | "barberos" | "staff">("all")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
@@ -48,22 +48,28 @@ export default function EmployeesPage() {
     supabase
       .from("users")
       .select("id, name, email, phone, role, avatar_url, specialty")
-      .in("role", ["employee", "barber"])
+      .neq("role", "client")
+      .neq("role", "admin")
       .order("name")
       .then(({ data }) => {
         if (data) setEmployees(data.map(u => ({ ...u, avatar: u.avatar_url })))
       })
   }, [])
 
-  // Filter employees
+  const BARBER_SPECIALTIES = ["Barbero", "Estilista", "Colorista"]
+
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
-      const matchesSearch = 
+      const matchesSearch =
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.phone.includes(searchTerm)
-      
-      const matchesRole = filterRole === "all" || emp.role === filterRole
+
+      const specialty = (emp as any).specialty || ""
+      const matchesRole =
+        filterRole === "all" ||
+        (filterRole === "barberos" && BARBER_SPECIALTIES.includes(specialty)) ||
+        (filterRole === "staff" && !BARBER_SPECIALTIES.includes(specialty))
 
       return matchesSearch && matchesRole
     })
@@ -71,10 +77,11 @@ export default function EmployeesPage() {
 
   // Statistics
   const stats = useMemo(() => {
+    const barbers = employees.filter(emp => BARBER_SPECIALTIES.includes((emp as any).specialty || "")).length
     return {
       total: employees.length,
-      barbers: employees.filter(emp => emp.role === "barber").length,
-      employees: employees.filter(emp => emp.role === "employee").length,
+      barbers,
+      employees: employees.length - barbers,
     }
   }, [employees])
 
@@ -234,12 +241,12 @@ export default function EmployeesPage() {
             <select
               aria-label="Filtrar por rol"
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value as "all" | "barber" | "employee")}
+              onChange={(e) => setFilterRole(e.target.value as "all" | "barberos" | "staff")}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="all">Todos los roles</option>
-              <option value="barber">Barberos</option>
-              <option value="employee">Staff</option>
+              <option value="barberos">Barberos</option>
+              <option value="staff">Staff</option>
             </select>
           </div>
         </CardContent>
@@ -268,10 +275,10 @@ export default function EmployeesPage() {
                     <div>
                       <CardTitle className="text-lg">{employee.name}</CardTitle>
                       <Badge
-                        variant={employee.role === "barber" ? "default" : "secondary"}
+                        variant={(employee as any).specialty && ["Barbero","Estilista","Colorista"].includes((employee as any).specialty) ? "default" : "secondary"}
                         className="mt-1"
                       >
-                        {(employee as any).specialty || (employee.role === "barber" ? "Barbero" : "Staff")}
+                        {(employee as any).specialty || "Empleado"}
                       </Badge>
                     </div>
                   </div>

@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 
 export default function EmployeeSchedulePage() {
-  const user = useRequireAuth(["employee", "barber"])
+  const user = useRequireAuth(["employee", "admin"])
   const [selectedDate, setSelectedDate] = useState(new Date())
 
   const formattedDate = selectedDate.toISOString().split('T')[0]

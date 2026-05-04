@@ -15,9 +15,9 @@ interface EmployeeModalProps {
 }
 
 const SPECIALTIES = [
-  { label: "Barbero",        role: "barber"    as const, desc: "Cortes y servicios de barbería" },
-  { label: "Estilista",      role: "barber"    as const, desc: "Coloración, peinados y técnicas" },
-  { label: "Colorista",      role: "barber"    as const, desc: "Tintes, mechas y coloración" },
+  { label: "Barbero",        role: "employee"  as const, desc: "Cortes y servicios de barbería" },
+  { label: "Estilista",      role: "employee"  as const, desc: "Coloración, peinados y técnicas" },
+  { label: "Colorista",      role: "employee"  as const, desc: "Tintes, mechas y coloración" },
   { label: "Manicurista",    role: "employee"  as const, desc: "Manicura y nail art" },
   { label: "Pedicurista",    role: "employee"  as const, desc: "Pedicura y cuidado de pies" },
   { label: "Masajista",      role: "employee"  as const, desc: "Masajes y terapias corporales" },
@@ -52,7 +52,7 @@ const PRESET_AVATARS = [
 
 export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
   const defaultSpecialty = (employee as any)?.specialty || "Barbero"
-  const defaultRole = SPECIALTIES.find(s => s.label === defaultSpecialty)?.role || "barber"
+  const defaultRole = SPECIALTIES.find(s => s.label === defaultSpecialty)?.role || "employee"
 
   const [formData, setFormData] = useState({
     name: employee?.name || "",
