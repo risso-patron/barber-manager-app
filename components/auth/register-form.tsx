@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TermsModal } from "@/components/auth/terms-modal"
 import { Loader2, AlertCircle } from "lucide-react"
 
@@ -18,14 +17,12 @@ interface RegisterFormData {
   email: string
   password: string
   confirmPassword: string
-  role: "client" | "employee"
   phone?: string
 }
 
 export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedRole, setSelectedRole] = useState<"client" | "employee">("client")
   const [isNetworkError, setIsNetworkError] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [pendingFormData, setPendingFormData] = useState<RegisterFormData | null>(null)
@@ -104,7 +101,7 @@ export function RegisterForm() {
         options: {
           data: {
             name: data.name,
-            role: selectedRole,
+            role: "client",
             phone: data.phone || null,
           },
         },
@@ -125,7 +122,7 @@ export function RegisterForm() {
             id: authData.user.id,
             name: data.name,
             email: data.email,
-            role: selectedRole,
+            role: "client",
             phone: data.phone || null,
           })
 
@@ -217,19 +214,6 @@ export function RegisterForm() {
           <div className="space-y-2">
             <Label htmlFor="phone">Teléfono (Opcional)</Label>
             <Input id="phone" type="tel" placeholder="+1234567890" {...register("phone")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tipo de Usuario</Label>
-            <Select value={selectedRole} onValueChange={(value: "client" | "employee") => setSelectedRole(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">Cliente</SelectItem>
-                <SelectItem value="employee">Empleado</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">

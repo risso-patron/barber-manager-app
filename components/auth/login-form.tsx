@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { useAuth } from "@/hooks/useAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,15 +13,18 @@ import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
-  const { signIn } = useAuth()
 
-  // Get message from URL params after mount to avoid hydration mismatch
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const msg = params.get("message")
@@ -40,26 +43,19 @@ export function LoginForm() {
     setIsLoading(true)
     setError(null)
 
-    console.log("🔐 Intentando login con:", data)
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
 
-    try {
-      const success = await signIn(data)
-      console.log("✅ Resultado de signIn:", success)
-
-      if (success) {
-        console.log("🎉 Login exitoso, redirigiendo a dashboard")
-        router.push("/dashboard")
-        router.refresh()
-      } else {
-        console.log("❌ Login fallido")
-        setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
-      }
-    } catch (err) {
-      console.error("💥 Error durante login:", err)
-      setError("Error inesperado. Intenta nuevamente.")
-    } finally {
+    if (authError) {
+      setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
       setIsLoading(false)
+      return
     }
+
+    router.push("/dashboard")
+    router.refresh()
   }
 
   return (
