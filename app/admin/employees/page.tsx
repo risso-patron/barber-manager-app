@@ -21,12 +21,15 @@ import {
   Calendar,
   ArrowLeft
 } from "lucide-react"
-import {
-  DEMO_EMPLOYEES,
-  type Employee
-} from "@/lib/demo-appointments"
+import { type Employee } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
 import { DeleteConfirmModal } from "@/components/admin/employees/delete-confirm-modal"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function EmployeesPage() {
   const user = useRequireAuth(["admin"])
@@ -38,9 +41,16 @@ export default function EmployeesPage() {
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Initialize employees once on mount
+  // Load employees from Supabase
   useEffect(() => {
-    setEmployees(DEMO_EMPLOYEES)
+    supabase
+      .from("users")
+      .select("id, name, email, phone, role, avatar_url")
+      .in("role", ["employee", "barber"])
+      .order("name")
+      .then(({ data }) => {
+        if (data) setEmployees(data.map(u => ({ ...u, avatar: u.avatar_url })))
+      })
   }, [])
 
   // Filter employees
@@ -66,24 +76,33 @@ export default function EmployeesPage() {
     }
   }, [employees])
 
-  const handleCreateEmployee = (employee: Omit<Employee, "id">) => {
-    const newEmployee: Employee = {
-      ...employee,
-      id: `e${Date.now()}`,
-    }
-    setEmployees([newEmployee, ...employees])
+  const handleCreateEmployee = async (employee: Omit<Employee, "id">) => {
+    const { data, error } = await supabase
+      .from("users")
+      .insert({ name: employee.name, email: employee.email, phone: employee.phone, role: employee.role })
+      .select()
+      .single()
+    if (!error && data) setEmployees([{ ...data, avatar: data.avatar_url }, ...employees])
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateEmployee = (updatedEmployee: Employee) => {
-    setEmployees(employees.map(emp => 
-      emp.id === updatedEmployee.id ? updatedEmployee : emp
+  const handleUpdateEmployee = async (updatedEmployee: Employee) => {
+    const { id, avatar, ...fields } = updatedEmployee as any
+    const { data, error } = await supabase
+      .from("users")
+      .update({ name: fields.name, email: fields.email, phone: fields.phone, role: fields.role })
+      .eq("id", id)
+      .select()
+      .single()
+    if (!error && data) setEmployees(employees.map(emp => 
+      emp.id === id ? { ...data, avatar: data.avatar_url } : emp
     ))
     setEditingEmployee(null)
   }
 
-  const handleDeleteEmployee = (id: string) => {
-    setEmployees(employees.filter(emp => emp.id !== id))
+  const handleDeleteEmployee = async (id: string) => {
+    const { error } = await supabase.from("users").delete().eq("id", id)
+    if (!error) setEmployees(employees.filter(emp => emp.id !== id))
     setDeletingEmployee(null)
   }
 

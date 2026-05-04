@@ -23,13 +23,15 @@ import {
   ArrowLeft
 } from "lucide-react"
 import {
-  DEMO_APPOINTMENTS,
-  DEMO_SERVICES,
-  DEMO_EMPLOYEES,
-  DEMO_CLIENTS,
   type Appointment,
   type AppointmentStatus
 } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
 import { DeleteConfirmModal } from "@/components/admin/appointments/delete-confirm-modal"
 
@@ -58,9 +60,43 @@ export default function AppointmentsPage() {
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Initialize appointments once on mount
+  // Load appointments from Supabase
   useEffect(() => {
-    setAppointments(DEMO_APPOINTMENTS)
+    supabase
+      .from("appointments")
+      .select(`
+        id,
+        appointment_date,
+        appointment_time,
+        status,
+        notes,
+        created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        barber:users!appointments_barber_id_fkey(id, name),
+        service:services(id, name, price, duration)
+      `)
+      .order("appointment_date", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setAppointments(data.map((a: any) => ({
+            id: a.id,
+            clientId: a.client?.id || "",
+            clientName: a.client?.name || "",
+            clientPhone: a.client?.phone || "",
+            employeeId: a.barber?.id || "",
+            employeeName: a.barber?.name || "",
+            serviceId: a.service?.id || "",
+            serviceName: a.service?.name || "",
+            date: a.appointment_date,
+            time: a.appointment_time,
+            duration: a.service?.duration || 0,
+            price: a.service?.price || 0,
+            status: a.status,
+            notes: a.notes,
+            createdAt: a.created_at,
+          })))
+        }
+      })
   }, [])
 
   // Filter appointments

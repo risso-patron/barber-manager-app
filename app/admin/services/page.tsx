@@ -19,12 +19,15 @@ import {
   TrendingUp,
   ArrowLeft
 } from "lucide-react"
-import {
-  DEMO_SERVICES,
-  type Service
-} from "@/lib/demo-appointments"
+import { type Service } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { ServiceModal } from "@/components/admin/services/service-modal"
 import { DeleteConfirmModal } from "@/components/admin/services/delete-confirm-modal"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function ServicesPage() {
   const user = useRequireAuth(["admin"])
@@ -35,9 +38,11 @@ export default function ServicesPage() {
   const [deletingService, setDeletingService] = useState<Service | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Initialize services once on mount
+  // Load services from Supabase
   useEffect(() => {
-    setServices(DEMO_SERVICES)
+    supabase.from("services").select("*").order("name").then(({ data }) => {
+      if (data) setServices(data)
+    })
   }, [])
 
   // Filter services
@@ -65,24 +70,22 @@ export default function ServicesPage() {
     }
   }, [services])
 
-  const handleCreateService = (service: Omit<Service, "id">) => {
-    const newService: Service = {
-      ...service,
-      id: `s${Date.now()}`,
-    }
-    setServices([newService, ...services])
+  const handleCreateService = async (service: Omit<Service, "id">) => {
+    const { data, error } = await supabase.from("services").insert(service).select().single()
+    if (!error && data) setServices([data, ...services])
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateService = (updatedService: Service) => {
-    setServices(services.map(srv => 
-      srv.id === updatedService.id ? updatedService : srv
-    ))
+  const handleUpdateService = async (updatedService: Service) => {
+    const { id, ...fields } = updatedService
+    const { data, error } = await supabase.from("services").update(fields).eq("id", id).select().single()
+    if (!error && data) setServices(services.map(s => s.id === id ? data : s))
     setEditingService(null)
   }
 
-  const handleDeleteService = (id: string) => {
-    setServices(services.filter(srv => srv.id !== id))
+  const handleDeleteService = async (id: string) => {
+    const { error } = await supabase.from("services").delete().eq("id", id)
+    if (!error) setServices(services.filter(s => s.id !== id))
     setDeletingService(null)
   }
 

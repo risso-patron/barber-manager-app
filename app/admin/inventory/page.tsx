@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_INVENTORY, type InventoryItem } from "@/lib/demo-appointments"
+import { type InventoryItem } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +25,27 @@ import {
 import { InventoryModal } from "@/components/admin/inventory/inventory-modal"
 import { DeleteConfirmModal } from "@/components/admin/inventory/delete-confirm-modal"
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+function mapDbToItem(row: any): InventoryItem {
+  const qty = row.quantity
+  const min = row.min_stock
+  return {
+    id: row.id,
+    name: row.product_name,
+    category: row.category || 'suministro',
+    quantity: qty,
+    minStock: min,
+    price: row.cost_per_unit || 0,
+    supplier: row.supplier,
+    lastRestocked: row.updated_at?.split('T')[0],
+    status: qty === 0 ? 'agotado' : qty < min ? 'bajo' : 'disponible',
+  }
+}
+
 export default function InventoryPage() {
   useRequireAuth(["admin"])
   
@@ -37,7 +59,9 @@ export default function InventoryPage() {
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null)
 
   useEffect(() => {
-    setItems(DEMO_INVENTORY)
+    supabase.from("inventory").select("*").order("product_name").then(({ data }) => {
+      if (data) setItems(data.map(mapDbToItem))
+    })
   }, [])
 
   const filteredItems = useMemo(() => {
@@ -62,38 +86,42 @@ export default function InventoryPage() {
     return { totalItems, lowStock, outOfStock, totalValue }
   }, [items])
 
-  const handleCreateItem = (itemData: Partial<InventoryItem>) => {
-    const newItem: InventoryItem = {
-      id: `i${Date.now()}`,
-      name: itemData.name!,
-      category: itemData.category!,
-      quantity: itemData.quantity!,
-      minStock: itemData.minStock!,
-      price: itemData.price!,
+  const handleCreateItem = async (itemData: Partial<InventoryItem>) => {
+    const qty = itemData.quantity!
+    const min = itemData.minStock!
+    const { data, error } = await supabase.from("inventory").insert({
+      product_name: itemData.name!,
+      category: itemData.category,
+      quantity: qty,
+      min_stock: min,
+      cost_per_unit: itemData.price,
       supplier: itemData.supplier,
-      lastRestocked: new Date().toISOString().split('T')[0],
-      status: itemData.quantity! === 0 ? "agotado" : itemData.quantity! < itemData.minStock! ? "bajo" : "disponible"
-    }
-    setItems([...items, newItem])
+    }).select().single()
+    if (!error && data) setItems([...items, mapDbToItem(data)])
     setIsModalOpen(false)
   }
 
-  const handleUpdateItem = (itemData: Partial<InventoryItem>) => {
-    setItems(items.map(item => {
-      if (item.id === selectedItem?.id) {
-        const updatedItem = { ...item, ...itemData }
-        updatedItem.status = updatedItem.quantity === 0 ? "agotado" : updatedItem.quantity < updatedItem.minStock ? "bajo" : "disponible"
-        return updatedItem
-      }
-      return item
-    }))
+  const handleUpdateItem = async (itemData: Partial<InventoryItem>) => {
+    if (!selectedItem) return
+    const qty = itemData.quantity ?? selectedItem.quantity
+    const min = itemData.minStock ?? selectedItem.minStock
+    const { data, error } = await supabase.from("inventory").update({
+      product_name: itemData.name ?? selectedItem.name,
+      category: itemData.category ?? selectedItem.category,
+      quantity: qty,
+      min_stock: min,
+      cost_per_unit: itemData.price ?? selectedItem.price,
+      supplier: itemData.supplier ?? selectedItem.supplier,
+    }).eq("id", selectedItem.id).select().single()
+    if (!error && data) setItems(items.map(i => i.id === selectedItem.id ? mapDbToItem(data) : i))
     setIsModalOpen(false)
     setSelectedItem(null)
   }
 
-  const handleDeleteItem = () => {
+  const handleDeleteItem = async () => {
     if (itemToDelete) {
-      setItems(items.filter(item => item.id !== itemToDelete.id))
+      const { error } = await supabase.from("inventory").delete().eq("id", itemToDelete.id)
+      if (!error) setItems(items.filter(item => item.id !== itemToDelete.id))
       setIsDeleteModalOpen(false)
       setItemToDelete(null)
     }
