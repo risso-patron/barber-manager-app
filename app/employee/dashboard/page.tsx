@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS, type Appointment } from "@/lib/demo-appointments"
+import { type Appointment } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { createBrowserClient } from "@supabase/ssr"
 import { 
   Calendar, 
   Clock, 
@@ -20,6 +21,11 @@ import {
   LogOut as LogOutIcon
 } from "lucide-react"
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function EmployeeDashboard() {
   const user = useRequireAuth(["employee"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -28,11 +34,33 @@ export default function EmployeeDashboard() {
   const [workEndTime, setWorkEndTime] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user) {
-      // Filter appointments for current employee
-      const employeeAppts = DEMO_APPOINTMENTS.filter(apt => apt.employeeId === user.id)
-      setAppointments(employeeAppts)
-      
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes, created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        service:services(id, name, price, duration)`)
+      .eq("barber_id", user.id)
+      .order("appointment_date", { ascending: false })
+      .then(({ data }) => {
+        if (data) setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          clientId: a.client?.id || "",
+          clientName: a.client?.name || "",
+          clientPhone: a.client?.phone || "",
+          employeeId: user.id,
+          employeeName: user.name,
+          serviceId: a.service?.id || "",
+          serviceName: a.service?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          duration: a.service?.duration || 0,
+          price: a.service?.price || 0,
+          status: a.status,
+          notes: a.notes || "",
+          createdAt: a.created_at,
+        })))
+      })
       // Check if already working (from localStorage)
       const workStatus = localStorage.getItem(`work_status_${user.id}`)
       if (workStatus) {
@@ -40,7 +68,6 @@ export default function EmployeeDashboard() {
         setIsWorking(status.isWorking)
         setWorkStartTime(status.startTime)
       }
-    }
   }, [user])
 
   const todayDate = new Date().toISOString().split('T')[0]
@@ -109,13 +136,15 @@ export default function EmployeeDashboard() {
     }
   }
 
-  const handleCompleteAppointment = (id: string) => {
+  const handleCompleteAppointment = async (id: string) => {
+    await supabase.from("appointments").update({ status: "completed" }).eq("id", id)
     setAppointments(appointments.map(apt => 
       apt.id === id ? { ...apt, status: "completed" as const } : apt
     ))
   }
 
-  const handleCancelAppointment = (id: string) => {
+  const handleCancelAppointment = async (id: string) => {
+    await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id)
     setAppointments(appointments.map(apt => 
       apt.id === id ? { ...apt, status: "cancelled" as const } : apt
     ))

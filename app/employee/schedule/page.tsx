@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { type Appointment } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { createBrowserClient } from "@supabase/ssr"
 import { 
   Calendar, 
   Clock, 
@@ -19,37 +20,67 @@ import {
   AlertCircle
 } from "lucide-react"
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function EmployeeSchedulePage() {
   const user = useRequireAuth(["employee", "admin"])
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes, created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        service:services(id, name, price, duration)`)
+      .eq("barber_id", user.id)
+      .order("appointment_date")
+      .then(({ data }) => {
+        if (data) setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          clientId: a.client?.id || "",
+          clientName: a.client?.name || "",
+          clientPhone: a.client?.phone || "",
+          employeeId: user.id,
+          employeeName: user.name,
+          serviceId: a.service?.id || "",
+          serviceName: a.service?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          duration: a.service?.duration || 0,
+          price: a.service?.price || 0,
+          status: a.status,
+          notes: a.notes || "",
+          createdAt: a.created_at,
+        })))
+      })
+  }, [user])
 
   const formattedDate = selectedDate.toISOString().split('T')[0]
 
   const dayAppointments = useMemo(() => {
-    if (!user) return []
-    
-    return DEMO_APPOINTMENTS
-      .filter(apt => apt.employeeId === user.id && apt.date === formattedDate)
+    return appointments
+      .filter(apt => apt.date === formattedDate)
       .sort((a, b) => a.time.localeCompare(b.time))
-  }, [user, formattedDate])
+  }, [appointments, formattedDate])
 
   const weekAppointments = useMemo(() => {
-    if (!user) return []
-    
     const weekStart = new Date(selectedDate)
     weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
-    
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
-    
-    return DEMO_APPOINTMENTS
+
+    return appointments
       .filter(apt => {
-        if (apt.employeeId !== user.id) return false
         const aptDate = new Date(apt.date)
         return aptDate >= weekStart && aptDate <= weekEnd
       })
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
-  }, [user, selectedDate])
+  }, [appointments, selectedDate])
 
   const stats = useMemo(() => {
     const completed = dayAppointments.filter(apt => apt.status === "completed").length

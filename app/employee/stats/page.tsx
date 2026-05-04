@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { type Appointment } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createBrowserClient } from "@supabase/ssr"
 import { 
   BarChart3, 
   TrendingUp, 
@@ -18,13 +19,84 @@ import {
   Activity
 } from "lucide-react"
 
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function EmployeeStatsPage() {
   const user = useRequireAuth(["employee", "admin"])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes, created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        service:services(id, name, price, duration)`)
+      .eq("barber_id", user.id)
+      .then(({ data }) => {
+        if (data) setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          clientId: a.client?.id || "",
+          clientName: a.client?.name || "",
+          clientPhone: a.client?.phone || "",
+          employeeId: user.id,
+          employeeName: user.name,
+          serviceId: a.service?.id || "",
+          serviceName: a.service?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          duration: a.service?.duration || 0,
+          price: a.service?.price || 0,
+          status: a.status,
+          notes: a.notes || "",
+          createdAt: a.created_at,
+        })))
+      })
+  }, [user])
 
   const stats = useMemo(() => {
     if (!user) return null
 
-    const myAppointments = DEMO_APPOINTMENTS.filter(apt => apt.employeeId === user.id)
+    const myAppointments = appointments
+  const user = useRequireAuth(["employee", "admin"])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes, created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        service:services(id, name, price, duration)`)
+      .eq("barber_id", user.id)
+      .then(({ data }) => {
+        if (data) setAppointments((data as any[]).map(a => ({
+          id: a.id,
+          clientId: a.client?.id || "",
+          clientName: a.client?.name || "",
+          clientPhone: a.client?.phone || "",
+          employeeId: user.id,
+          employeeName: user.name,
+          serviceId: a.service?.id || "",
+          serviceName: a.service?.name || "",
+          date: a.appointment_date,
+          time: a.appointment_time,
+          duration: a.service?.duration || 0,
+          price: a.service?.price || 0,
+          status: a.status,
+          notes: a.notes || "",
+          createdAt: a.created_at,
+        })))
+      })
+  }, [user])
+
+  const stats = useMemo(() => {
+    if (!user) return null
+
+    const myAppointments = appointments
     const completed = myAppointments.filter(apt => apt.status === "completed")
     
     const today = new Date().toISOString().split('T')[0]
@@ -83,7 +155,7 @@ export default function EmployeeStatsPage() {
       bestDay,
       completionRate: myAppointments.length > 0 ? (completed.length / myAppointments.length) * 100 : 0
     }
-  }, [user])
+  }, [user, appointments])
 
   if (!user || !stats) return null
 
