@@ -34,6 +34,8 @@ const supabase = createBrowserClient(
 export default function EmployeesPage() {
   const user = useRequireAuth(["admin"])
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [newEmployeePassword, setNewEmployeePassword] = useState<{ name: string; password: string } | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState<"all" | "barber" | "employee">("all")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -77,20 +79,27 @@ export default function EmployeesPage() {
   }, [employees])
 
   const handleCreateEmployee = async (employee: Omit<Employee, "id">) => {
+    setApiError(null)
     const emp = employee as any
-    const { data, error } = await supabase
-      .from("users")
-      .insert({
+    const res = await fetch("/api/employees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         name: emp.name,
         email: emp.email,
         phone: emp.phone,
         role: emp.role,
         specialty: emp.specialty || null,
         avatar_url: emp.avatar || null,
-      })
-      .select()
-      .single()
-    if (!error && data) setEmployees([{ ...data, avatar: data.avatar_url, specialty: data.specialty }, ...employees])
+      }),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      setApiError(json.error || "Error al crear empleado")
+      return
+    }
+    setEmployees([{ ...json.employee, avatar: json.employee.avatar_url }, ...employees])
+    setNewEmployeePassword({ name: emp.name, password: json.tempPassword })
     setIsCreateModalOpen(false)
   }
 
@@ -116,8 +125,8 @@ export default function EmployeesPage() {
   }
 
   const handleDeleteEmployee = async (id: string) => {
-    const { error } = await supabase.from("users").delete().eq("id", id)
-    if (!error) setEmployees(employees.filter(emp => emp.id !== id))
+    const res = await fetch(`/api/employees?id=${id}`, { method: "DELETE" })
+    if (res.ok) setEmployees(employees.filter(emp => emp.id !== id))
     setDeletingEmployee(null)
   }
 
@@ -127,6 +136,27 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Error banner */}
+      {apiError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
+          <span>{apiError}</span>
+          <button onClick={() => setApiError(null)} className="font-bold ml-4">✕</button>
+        </div>
+      )}
+
+      {/* Contraseña temporal del nuevo empleado */}
+      {newEmployeePassword && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-md text-sm">
+          <p className="font-semibold text-green-800 mb-1">✓ Empleado creado exitosamente</p>
+          <p className="text-green-700">
+            Contraseña temporal de <strong>{newEmployeePassword.name}</strong>:{" "}
+            <code className="bg-green-100 px-2 py-0.5 rounded font-mono">{newEmployeePassword.password}</code>
+          </p>
+          <p className="text-green-600 text-xs mt-1">Compartí esta contraseña con el empleado para que pueda iniciar sesión.</p>
+          <button onClick={() => setNewEmployeePassword(null)} className="mt-2 text-xs text-green-700 underline">Cerrar</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
