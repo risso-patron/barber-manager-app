@@ -202,12 +202,32 @@ export default function AppointmentsPage() {
     setDeletingAppointment(null)
   }
 
-  const handleStatusChange = async (id: string, status: AppointmentStatus) => {
-    const { error } = await supabase.from("appointments").update({ status }).eq("id", id)
+  const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
+    const { error } = await supabase.from("appointments").update({ status: newStatus }).eq("id", id)
+
     if (!error) {
       setAppointments(appointments.map(apt =>
-        apt.id === id ? { ...apt, status } : apt
+        apt.id === id ? { ...apt, status: newStatus } : apt
       ))
+    } else {
+      // Puede ser condición de carrera (ej: cliente canceló mientras admin tenía la página abierta).
+      // Re-obtenemos el estado real desde la DB y actualizamos el estado local.
+      const { data: fresh } = await supabase
+        .from("appointments")
+        .select("status")
+        .eq("id", id)
+        .single()
+
+      if (fresh) {
+        setAppointments(prev =>
+          prev.map(apt => apt.id === id ? { ...apt, status: fresh.status as AppointmentStatus } : apt)
+        )
+        alert(
+          `No se pudo cambiar el estado.\n\n` +
+          `Esta cita ya fue marcada como "${fresh.status === "cancelled" ? "Cancelada" : fresh.status === "completed" ? "Completada" : fresh.status}" ` +
+          `(posiblemente por el cliente). El listado fue actualizado.`
+        )
+      }
     }
     setActiveDropdown(null)
   }

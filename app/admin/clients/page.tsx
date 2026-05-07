@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import Link from "next/link"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,7 +19,8 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  TrendingUp
+  TrendingUp,
+  Eye
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
 import { ClientModal } from "@/components/admin/clients/client-modal"
@@ -287,6 +289,15 @@ export default function ClientsPage() {
                     {activeDropdown === client.id && (
                       <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
                         <div className="py-1">
+                          <Link
+                            href={`/admin/clients/${client.id}`}
+                            onClick={() => setActiveDropdown(null)}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Ver perfil
+                          </Link>
+
                           <button
                             onClick={() => {
                               setEditingClient(client)

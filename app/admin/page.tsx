@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         supabase.from("appointments").select("*", { count: "exact", head: true }),
         supabase.from("appointments").select("*", { count: "exact", head: true }).eq("appointment_date", today),
         supabase.from("appointments").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("users").select("*", { count: "exact", head: true }).in("role", ["employee", "barber"]),
+        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "employee"),
         supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client"),
         supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client").gte("created_at", firstOfMonth),
         supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
