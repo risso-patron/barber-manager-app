@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import twilio from 'twilio';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const twilioClient = twilio(
@@ -17,21 +19,33 @@ export async function POST(
     const body = await request.json();
     const { reason, clientName, clientEmail, clientPhone, appointment } = body;
 
-    // En una app real, aquí actualizarías la base de datos
-    // await supabase
-    //   .from('appointments')
-    //   .update({ 
-    //     status: 'cancelled',
-    //     cancellation_reason: reason,
-    //     cancelled_at: new Date().toISOString()
-    //   })
-    //   .eq('id', id)
+    // Actualizar estado en la base de datos
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: () => {},
+        },
+      }
+    );
 
-    console.log('📅 Cancelando cita:', {
-      id,
-      reason: reason || 'Sin motivo especificado',
-      appointment
-    });
+    const { error: dbError } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('id', id);
+
+    if (dbError) {
+      console.error('❌ Error cancelando cita en DB:', dbError);
+      return NextResponse.json(
+        { success: false, error: dbError.message },
+        { status: 400 }
+      );
+    }
+
+    console.log('📅 Cita cancelada en DB:', { id, reason: reason || 'Sin motivo' });
 
     // Preparar detalles para las notificaciones
     const appointmentDate = new Date(appointment.date).toLocaleDateString('es-ES', {

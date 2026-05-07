@@ -18,7 +18,8 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  ArrowLeft
 } from "lucide-react"
 
 interface Appointment {
@@ -124,60 +125,65 @@ export default function ClientAppointmentsPage() {
   const handleCancelConfirm = async (reason: string) => {
     if (!appointmentToCancel || !user) return
 
-    try {
-      // Llamar a la API de cancelación
-      const response = await fetch(`/api/appointments/${appointmentToCancel.id}/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason,
-          clientName: user.name || user.email,
-          clientEmail: user.email,
-          clientPhone: user.phone || process.env.NEXT_PUBLIC_DEMO_PHONE,
-          appointment: {
-            date: appointmentToCancel.date,
-            time: appointmentToCancel.time,
-            serviceName: appointmentToCancel.serviceName,
-            employeeName: appointmentToCancel.employeeName
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error en la respuesta del servidor');
-      }
-
-      const result = await response.json();
-      
-      // Actualizar el estado local
-      const updatedAppointments = appointments.map(apt => 
-        apt.id === appointmentToCancel.id 
-          ? { ...apt, status: "cancelled" as const, cancellationReason: reason }
-          : apt
-      );
-      
-      setAppointments(updatedAppointments);
-
-      // Mensaje de éxito con detalles de notificaciones
-      const notifications = result.notifications;
-      let message = "Cita cancelada exitosamente.";
-      
-      if (notifications?.email) {
-        message += "\n📧 Confirmación enviada por email.";
-      }
-      if (notifications?.barberWhatsapp) {
-        message += "\n📱 Barbero notificado por WhatsApp.";
-      }
-      if (notifications?.clientWhatsapp) {
-        message += "\n📱 Confirmación enviada por WhatsApp.";
-      }
-      
-      success(message);
-      
-    } catch (err) {
-      console.error("Error cancelando la cita:", err);
-      error("Error al cancelar la cita. Por favor intenta de nuevo.");
+    // Verificar sesión activa antes de intentar actualizar
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) {
+      error("Tu sesión expiró. Por favor vuelve a iniciar sesión.")
+      setCancelModalOpen(false)
+      setAppointmentToCancel(null)
+      return
     }
+
+    // Cancelar directamente en Supabase — .select() permite detectar si actualizó 0 filas
+    const { data: updatedRows, error: dbError } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", appointmentToCancel.id)
+      .eq("client_id", authUser.id)
+      .select("id")
+
+    if (dbError) {
+      console.error("Error cancelando cita:", dbError)
+      error("No se pudo cancelar la cita. Intenta de nuevo.")
+      setCancelModalOpen(false)
+      setAppointmentToCancel(null)
+      return
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      console.error("RLS bloqueó la cancelación o la cita no existe. authUser.id:", authUser.id, "appointmentId:", appointmentToCancel.id)
+      error("No se pudo cancelar la cita. Verifica que la cita te pertenece.")
+      setCancelModalOpen(false)
+      setAppointmentToCancel(null)
+      return
+    }
+
+    // Actualizar estado local inmediatamente
+    setAppointments(prev =>
+      prev.map(apt =>
+        apt.id === appointmentToCancel.id ? { ...apt, status: "cancelled" as const } : apt
+      )
+    )
+    success("Cita cancelada exitosamente.")
+    setCancelModalOpen(false)
+    setAppointmentToCancel(null)
+
+    // Notificaciones en background (opcional, no bloquea si falla)
+    fetch(`/api/appointments/${appointmentToCancel.id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reason,
+        clientName: user.profile?.name || user.email,
+        clientEmail: user.email,
+        appointment: {
+          date: appointmentToCancel.date,
+          time: appointmentToCancel.time,
+          serviceName: appointmentToCancel.serviceName,
+          employeeName: appointmentToCancel.employeeName,
+        },
+      }),
+    }).catch(() => { /* notificaciones opcionales */ })
   }
 
   if (!user) return null
@@ -185,9 +191,14 @@ export default function ClientAppointmentsPage() {
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Mis Citas</h1>
-          <p className="text-muted-foreground">Gestiona tus citas próximas y pasadas</p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={() => router.push("/client")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Mis Citas</h1>
+            <p className="text-muted-foreground">Gestiona tus citas próximas y pasadas</p>
+          </div>
         </div>
         <Button onClick={() => router.push("/client/book")}>
           <Calendar className="mr-2 h-4 w-4" />
