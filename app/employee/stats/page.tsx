@@ -2,9 +2,17 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createBrowserClient } from "@supabase/ssr"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
 import { 
   BarChart3, 
   TrendingUp, 
@@ -24,15 +32,31 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+interface EmployeeAppointment {
+  id: string
+  clientId: string
+  clientName: string
+  serviceId: string
+  serviceName: string
+  date: string
+  time: string
+  duration: number
+  price: number
+  status: string
+  rating?: number
+  feedback?: string
+  createdAt: string
+}
+
 export default function EmployeeStatsPage() {
   const user = useRequireAuth(["employee", "admin"])
-  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [appointments, setAppointments] = useState<EmployeeAppointment[]>([])
 
   useEffect(() => {
     if (!user) return
     supabase
       .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes, created_at,
+      .select(`id, appointment_date, appointment_time, status, notes, rating, feedback, created_at,
         client:users!appointments_client_id_fkey(id, name, phone),
         service:services(id, name, price, duration)`)
       .eq("barber_id", user.id)
@@ -41,9 +65,6 @@ export default function EmployeeStatsPage() {
           id: a.id,
           clientId: a.client?.id || "",
           clientName: a.client?.name || "",
-          clientPhone: a.client?.phone || "",
-          employeeId: user.id,
-          employeeName: user.name,
           serviceId: a.service?.id || "",
           serviceName: a.service?.name || "",
           date: a.appointment_date,
@@ -51,7 +72,8 @@ export default function EmployeeStatsPage() {
           duration: a.service?.duration || 0,
           price: a.service?.price || 0,
           status: a.status,
-          notes: a.notes || "",
+          rating: a.rating ?? undefined,
+          feedback: a.feedback ?? undefined,
           createdAt: a.created_at,
         })))
       })
@@ -78,6 +100,12 @@ export default function EmployeeStatsPage() {
     const avgTicket = completed.length > 0 ? totalRevenue / completed.length : 0
     
     const uniqueClients = new Set(completed.map(apt => apt.clientId)).size
+
+    // Rating real desde BD
+    const rated = completed.filter(apt => apt.rating != null && apt.rating > 0)
+    const avgRating = rated.length > 0
+      ? rated.reduce((sum, apt) => sum + (apt.rating ?? 0), 0) / rated.length
+      : null
     
     // Service popularity
     const serviceStats = completed.reduce((acc, apt) => {
@@ -107,6 +135,14 @@ export default function EmployeeStatsPage() {
     const bestDay = Object.entries(dayStats)
       .sort((a, b) => b[1].revenue - a[1].revenue)[0]
     
+    // Datos para gráfico de barras
+    const chartData = topServices.map(([name, data]) => ({
+      name: name.length > 12 ? name.slice(0, 12) + "…" : name,
+      fullName: name,
+      servicios: data.count,
+      ingresos: data.revenue,
+    }))
+
     return {
       totalCompleted: completed.length,
       todayAppts: todayAppts.length,
@@ -116,7 +152,10 @@ export default function EmployeeStatsPage() {
       avgTicket,
       uniqueClients,
       topServices,
+      chartData,
       bestDay,
+      avgRating,
+      ratedCount: rated.length,
       completionRate: myAppointments.length > 0 ? (completed.length / myAppointments.length) * 100 : 0
     }
   }, [user, appointments])
@@ -168,6 +207,28 @@ export default function EmployeeStatsPage() {
             <p className="text-xs text-muted-foreground">
               Clientes únicos
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Calificación Promedio</CardTitle>
+            <Star className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            {stats.avgRating != null ? (
+              <>
+                <div className="text-2xl font-bold text-yellow-600">{stats.avgRating.toFixed(1)} ★</div>
+                <p className="text-xs text-muted-foreground">
+                  Basado en {stats.ratedCount} calificación{stats.ratedCount !== 1 ? "es" : ""}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-muted-foreground">—</div>
+                <p className="text-xs text-muted-foreground">Sin calificaciones aún</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -226,6 +287,35 @@ export default function EmployeeStatsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Gráfico de servicios */}
+      {stats.chartData.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Servicios por Ingresos
+            </CardTitle>
+            <CardDescription>Top servicios completados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={stats.chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
+                <Tooltip
+                  formatter={(value: number, name: string) =>
+                    name === "ingresos" ? [`$${value.toFixed(2)}`, "Ingresos"] : [value, "Servicios"]
+                  }
+                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName ?? label}
+                />
+                <Bar dataKey="ingresos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         {/* Top Services */}
@@ -377,6 +467,9 @@ export default function EmployeeStatsPage() {
               <li>✅ {stats.totalCompleted} servicios completados exitosamente</li>
               <li>✅ ${stats.totalRevenue} en ingresos generados</li>
               <li>✅ {stats.uniqueClients} clientes satisfechos</li>
+              {stats.avgRating != null && (
+                <li>⭐ Calificación promedio: {stats.avgRating.toFixed(1)}/5 ({stats.ratedCount} reseñas)</li>
+              )}
               {stats.completionRate >= 90 && (
                 <li>🏆 Excelente tasa de finalización ({stats.completionRate.toFixed(1)}%)</li>
               )}

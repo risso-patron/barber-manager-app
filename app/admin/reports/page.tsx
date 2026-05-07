@@ -5,6 +5,19 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts"
 import { 
   BarChart3, 
   TrendingUp, 
@@ -13,7 +26,7 @@ import {
   Calendar,
   Download,
   FileText,
-  PieChart,
+  PieChart as PieChartIcon,
   Activity,
   Clock,
   Target
@@ -178,6 +191,28 @@ export default function ReportsPage() {
     const bestDay = Object.entries(dailyRevenue)
       .sort((a, b) => b[1] - a[1])[0]
 
+    // Datos para gráfico de ingresos diarios (últimos 14 días del período)
+    const dailyMap = completed.reduce((acc, apt) => {
+      acc[apt.date] = (acc[apt.date] || 0) + apt.price
+      return acc
+    }, {} as Record<string, number>)
+
+    const dailyChartData = Object.entries(dailyMap)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-14)
+      .map(([date, revenue]) => ({
+        date: new Date(date).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" }),
+        fullDate: date,
+        ingresos: revenue,
+      }))
+
+    // Datos para gráfico de torta de servicios
+    const serviceChartData = topServices.map(([name, data], i) => ({
+      name: name.length > 14 ? name.slice(0, 14) + "…" : name,
+      value: data.revenue,
+      count: data.count,
+    }))
+
     return {
       totalAppointments: filteredAppointments.length,
       completed: completed.length,
@@ -193,16 +228,37 @@ export default function ReportsPage() {
       retentionRate: uniqueClients > 0 ? (clientsWithMultipleVisits / uniqueClients) * 100 : 0,
       completionRate: filteredAppointments.length > 0 ? (completed.length / filteredAppointments.length) * 100 : 0,
       cancellationRate: filteredAppointments.length > 0 ? (cancelled.length / filteredAppointments.length) * 100 : 0,
-      bestDay
+      bestDay,
+      dailyChartData,
+      serviceChartData,
     }
   }, [filteredAppointments])
 
-  const handleExportPDF = () => {
-    alert("Exportando reporte en PDF... (Función a implementar)")
+  const handleExportExcel = () => {
+    const rows = [
+      ["Fecha", "Estado", "Empleado", "Servicio", "Precio", "Duración (min)", "Cliente ID"],
+      ...filteredAppointments.map(apt => [
+        apt.date,
+        apt.status,
+        apt.employeeName,
+        apt.serviceName,
+        apt.price.toFixed(2),
+        apt.duration,
+        apt.clientId,
+      ]),
+    ]
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n")
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `reporte-${getPeriodLabel().toLowerCase().replace(/ /g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const handleExportExcel = () => {
-    alert("Exportando reporte en Excel... (Función a implementar)")
+  const handleExportPDF = () => {
+    window.print()
   }
 
   const getPeriodLabel = () => {
@@ -344,11 +400,74 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
+        {/* Gráfico ingresos diarios */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Ingresos Diarios
+            </CardTitle>
+            <CardDescription>Últimas fechas del período seleccionado</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.dailyChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={stats.dailyChartData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, "Ingresos"]} />
+                  <Bar dataKey="ingresos" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-12">Sin datos en este período</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Gráfico distribución servicios */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-blue-600" />
+              Distribución de Servicios
+            </CardTitle>
+            <CardDescription>Por ingresos generados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.serviceChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={stats.serviceChartData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {stats.serviceChartData.map((_, i) => (
+                      <Cell key={i} fill={["#6366f1","#22c55e","#f59e0b","#ef4444","#8b5cf6"][i % 5]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, "Ingresos"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-12">Sin datos en este período</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
         {/* Top Services */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-blue-600" />
+              <PieChartIcon className="h-5 w-5 text-blue-600" />
               Servicios Más Vendidos
             </CardTitle>
             <CardDescription>Por ingresos generados</CardDescription>
