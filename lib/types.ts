@@ -73,3 +73,21 @@ export interface TimeLog {
   total_hours?: number
   created_at: string
 }
+
+export type ReportStats = {
+  totalRevenue: number
+  completed: number
+  cancelled: number
+  pending: number
+  totalClients: number
+  totalAppointments: number
+  dailyChartData: Array<{ date: string; revenue: number; count: number }>
+  statusChartData: Array<{ name: string; value: number }>
+  employeeChartData: Array<{ name: string; revenue: number; count: number }>
+  serviceChartData: Array<{ name: string; value: number }>
+  trendData: Array<{ label: string; ingresos: number }>
+  previousTotalRevenue: number
+  revenueChange: number
+  previousCompleted: number
+  completedChange: number
+}

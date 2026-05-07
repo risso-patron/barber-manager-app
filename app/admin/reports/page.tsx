@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +17,8 @@ import {
   Pie,
   Cell,
   Legend,
+  LineChart,
+  Line,
 } from "recharts"
 import { 
   BarChart3, 
@@ -63,17 +65,31 @@ export default function ReportsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all")
   const [appointments, setAppointments] = useState<ReportAppointment[]>([])
   const [employees, setEmployees] = useState<ReportEmployee[]>([])
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
-  useEffect(() => {
-    supabase
-      .from("appointments")
-      .select(`id, appointment_date, status, client_id, barber_id,
-        service:services(name, price, duration),
-        barber:users!appointments_barber_id_fkey(id, name)`)
-      .order("appointment_date", { ascending: false })
-      .then(({ data }) => {
-        if (!data) return
-        setAppointments((data as any[]).map(a => ({
+  const fetchReportData = useCallback(async (backgroundSync = false) => {
+    if (!backgroundSync) {
+      setIsSyncing(true)
+    }
+
+    const [appointmentsResult, employeesResult] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select(`id, appointment_date, status, client_id, barber_id,
+          service:services(name, price, duration),
+          barber:users!appointments_barber_id_fkey(id, name)`)
+        .order("appointment_date", { ascending: false }),
+      supabase
+        .from("users")
+        .select("id, name")
+        .eq("role", "employee")
+        .order("name"),
+    ])
+
+    if (appointmentsResult.data) {
+      setAppointments(
+        (appointmentsResult.data as any[]).map((a) => ({
           id: a.id,
           date: a.appointment_date,
           status: a.status,
@@ -83,17 +99,41 @@ export default function ReportsPage() {
           serviceName: a.service?.name || "Sin servicio",
           price: a.service?.price || 0,
           duration: a.service?.duration || 0,
-        })))
-      })
-    supabase
-      .from("users")
-      .select("id, name")
-      .eq("role", "employee")
-      .order("name")
-      .then(({ data }) => {
-        if (data) setEmployees(data as ReportEmployee[])
-      })
+        }))
+      )
+    }
+
+    if (employeesResult.data) {
+      setEmployees(employeesResult.data as ReportEmployee[])
+    }
+
+    setLastSyncedAt(new Date())
+    setIsSyncing(false)
   }, [])
+
+  useEffect(() => {
+    void fetchReportData()
+
+    const channel = supabase
+      .channel("reports-admin-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => {
+          void fetchReportData(true)
+        }
+      )
+      .subscribe()
+
+    const syncInterval = setInterval(() => {
+      void fetchReportData(true)
+    }, 30000)
+
+    return () => {
+      clearInterval(syncInterval)
+      void supabase.removeChannel(channel)
+    }
+  }, [fetchReportData])
 
   const filteredAppointments = useMemo(() => {
     const now = new Date()
@@ -132,7 +172,78 @@ export default function ReportsPage() {
     return filtered
   }, [period, selectedEmployee, appointments])
 
+  // Helper para calcular rango de fechas según período
+  const getDateRange = (offset = 0) => {
+    const now = new Date()
+    let start = new Date()
+    let end = now
+
+    switch (period) {
+      case "today":
+        start = new Date(now)
+        start.setDate(now.getDate() - offset)
+        end = new Date(start)
+        break
+      case "week":
+        start.setDate(now.getDate() - 7 - offset * 7)
+        end.setDate(now.getDate() - offset * 7 - 1)
+        break
+      case "month":
+        start.setMonth(now.getMonth() - offset - 1)
+        start.setDate(1)
+        end.setDate(0)
+        break
+      case "year":
+        start.setFullYear(now.getFullYear() - offset - 1)
+        start.setMonth(0)
+        start.setDate(1)
+        end.setFullYear(now.getFullYear() - offset)
+        end.setMonth(0)
+        end.setDate(0)
+        break
+    }
+
+    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
+  }
+
+  // Calcular stats para período anterior
+  const previousPeriodAppointments = useMemo(() => {
+    const { start, end } = getDateRange(1)
+    return appointments.filter(apt => {
+      const aptDate = apt.date
+      const matchesEmployee = selectedEmployee === "all" || apt.employeeId === selectedEmployee
+      return aptDate >= start && aptDate <= end && matchesEmployee
+    })
+  }, [period, selectedEmployee, appointments])
+
   const stats = useMemo(() => {
+    // Función para calcular stats de un grupo de appointments
+    const calculateMetrics = (appts: ReportAppointment[]) => {
+      const completed = appts.filter(apt => apt.status === "completed")
+      const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
+      const averageTicket = completed.length > 0 ? totalRevenue / completed.length : 0
+      return {
+        completed: completed.length,
+        totalRevenue,
+        averageTicket,
+      }
+    }
+
+    // Stats período actual
+    const currentMetrics = calculateMetrics(filteredAppointments)
+
+    // Stats período anterior
+    const previousMetrics = calculateMetrics(previousPeriodAppointments)
+
+    // Calcular cambios %
+    const revenueChange = previousMetrics.totalRevenue > 0
+      ? ((currentMetrics.totalRevenue - previousMetrics.totalRevenue) / previousMetrics.totalRevenue) * 100
+      : 0
+    const completedChange = previousMetrics.completed > 0
+      ? ((currentMetrics.completed - previousMetrics.completed) / previousMetrics.completed) * 100
+      : 0
+
+    // Resto de stats
     const completed = filteredAppointments.filter(apt => apt.status === "completed")
     const cancelled = filteredAppointments.filter(apt => apt.status === "cancelled")
     const pending = filteredAppointments.filter(apt => apt.status === "pending")
@@ -157,6 +268,39 @@ export default function ReportsPage() {
     const topServices = Object.entries(serviceStats)
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .slice(0, 5)
+
+    // Gráfico de tendencia temporal (últimos N períodos)
+    const trendData = []
+    const numPeriods = period === "year" ? 12 : period === "month" ? 4 : period === "week" ? 4 : 7
+    for (let i = numPeriods - 1; i >= 0; i--) {
+      const { start, end } = getDateRange(i)
+      const periodAppts = appointments.filter(apt => {
+        const aptDate = apt.date
+        const matchesEmployee = selectedEmployee === "all" || apt.employeeId === selectedEmployee
+        return aptDate >= start && aptDate <= end && matchesEmployee
+      })
+      const periodCompleted = periodAppts.filter(apt => apt.status === "completed")
+      const periodRevenue = periodCompleted.reduce((sum, apt) => sum + apt.price, 0)
+      
+      let label = ""
+      if (period === "year") {
+        const year = new Date(start).getFullYear()
+        const month = new Date(start).getMonth() + 1
+        label = `${month.toString().padStart(2, "0")}/${year}`
+      } else if (period === "month") {
+        const date = new Date(start)
+        label = `Sem ${Math.ceil((date.getDate() + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7)}`
+      } else {
+        const date = new Date(start)
+        label = date.toLocaleDateString("es-ES", { month: "short", day: "2-digit" })
+      }
+
+      trendData.push({
+        label,
+        ingresos: periodRevenue,
+        citas: periodCompleted.length,
+      })
+    }
 
     // Employee performance
     const employeeStats = completed.reduce((acc, apt) => {
@@ -231,34 +375,71 @@ export default function ReportsPage() {
       bestDay,
       dailyChartData,
       serviceChartData,
+      trendData,
+      revenueChange,
+      completedChange,
+      previousTotalRevenue: previousMetrics.totalRevenue,
+      previousCompleted: previousMetrics.completed,
     }
-  }, [filteredAppointments])
+  }, [filteredAppointments, previousPeriodAppointments, period, selectedEmployee, appointments])
 
-  const handleExportExcel = () => {
-    const rows = [
-      ["Fecha", "Estado", "Empleado", "Servicio", "Precio", "Duración (min)", "Cliente ID"],
-      ...filteredAppointments.map(apt => [
+  const handleExportExcel = async () => {
+    const XLSX = await import("xlsx")
+
+    const reportRows = filteredAppointments.map((apt) => ({
+      Fecha: apt.date,
+      Estado: apt.status,
+      Empleado: apt.employeeName,
+      Servicio: apt.serviceName,
+      Precio: Number(apt.price.toFixed(2)),
+      "Duracion (min)": apt.duration,
+      "Cliente ID": apt.clientId,
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(reportRows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte")
+    XLSX.utils.sheet_add_aoa(
+      worksheet,
+      [["Periodo", getPeriodLabel()], ["Generado", new Date().toLocaleString("es-ES")]],
+      { origin: "J1" }
+    )
+
+    XLSX.writeFile(
+      workbook,
+      `reporte-${getPeriodLabel().toLowerCase().replace(/ /g, "-")}-${new Date().toISOString().slice(0, 10)}.xlsx`
+    )
+  }
+
+  const handleExportPDF = async () => {
+    const { jsPDF } = await import("jspdf")
+    const { default: autoTable } = await import("jspdf-autotable")
+
+    const doc = new jsPDF({ orientation: "landscape" })
+    doc.setFontSize(16)
+    doc.text("Reporte de Barber Manager", 14, 16)
+    doc.setFontSize(11)
+    doc.text(`Periodo: ${getPeriodLabel()}`, 14, 24)
+    doc.text(`Generado: ${new Date().toLocaleString("es-ES")}`, 14, 30)
+    doc.text(`Ingresos: $${stats.totalRevenue.toFixed(2)} | Completadas: ${stats.completed}`, 14, 36)
+
+    autoTable(doc, {
+      startY: 42,
+      head: [["Fecha", "Estado", "Empleado", "Servicio", "Precio", "Duracion (min)", "Cliente ID"]],
+      body: filteredAppointments.map((apt) => [
         apt.date,
         apt.status,
         apt.employeeName,
         apt.serviceName,
-        apt.price.toFixed(2),
-        apt.duration,
+        `$${apt.price.toFixed(2)}`,
+        String(apt.duration),
         apt.clientId,
       ]),
-    ]
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n")
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `reporte-${getPeriodLabel().toLowerCase().replace(/ /g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [34, 197, 94] },
+    })
 
-  const handleExportPDF = () => {
-    window.print()
+    doc.save(`reporte-${getPeriodLabel().toLowerCase().replace(/ /g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`)
   }
 
   const getPeriodLabel = () => {
@@ -276,6 +457,10 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-3xl font-bold">Reportes y Análisis</h1>
           <p className="text-muted-foreground">Visualiza métricas y estadísticas del negocio</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isSyncing ? "Sincronizando datos..." : "Actualización automática cada 30s"}
+            {lastSyncedAt ? ` • Última sincronización: ${lastSyncedAt.toLocaleTimeString("es-ES")}` : ""}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExportExcel}>
@@ -426,7 +611,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Gráfico distribución servicios */}
+        {/* Gráfico de distribución servicios */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -458,6 +643,90 @@ export default function ReportsPage() {
             ) : (
               <p className="text-center text-muted-foreground py-12">Sin datos en este período</p>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráfico de tendencia temporal */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            Tendencia de Ingresos
+          </CardTitle>
+          <CardDescription>Últimos períodos comparados</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={stats.trendData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, "Ingresos"]} />
+                <Legend />
+                <Line type="monotone" dataKey="ingresos" stroke="#22c55e" strokeWidth={2} dot={{ fill: "#22c55e", r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Sin datos en este período</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Comparativas período anterior */}
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Comparativa de Ingresos
+            </CardTitle>
+            <CardDescription>Actual vs. período anterior</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Período actual</p>
+                <p className="text-3xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Período anterior</p>
+                <p className="text-3xl font-bold text-gray-600">${stats.previousTotalRevenue.toFixed(2)}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${stats.revenueChange >= 0 ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                <p className={`text-sm font-semibold ${stats.revenueChange >= 0 ? "text-green-900" : "text-red-900"}`}>
+                  {stats.revenueChange >= 0 ? "📈" : "📉"} Cambio: {stats.revenueChange.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Comparativa de Citas
+            </CardTitle>
+            <CardDescription>Actual vs. período anterior</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Citas completadas</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.completed}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Período anterior</p>
+                <p className="text-3xl font-bold text-gray-600">{stats.previousCompleted}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${stats.completedChange >= 0 ? "bg-blue-50 border border-blue-200" : "bg-orange-50 border border-orange-200"}`}>
+                <p className={`text-sm font-semibold ${stats.completedChange >= 0 ? "text-blue-900" : "text-orange-900"}`}>
+                  {stats.completedChange >= 0 ? "📈" : "📉"} Cambio: {stats.completedChange.toFixed(1)}%
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { type Appointment } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Users,
   Star,
+  Bell,
   LogIn,
   LogOut as LogOutIcon
 } from "lucide-react"
@@ -32,35 +33,79 @@ export default function EmployeeDashboard() {
   const [isWorking, setIsWorking] = useState(false)
   const [workStartTime, setWorkStartTime] = useState<string | null>(null)
   const [workEndTime, setWorkEndTime] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; createdAt: string }>>([])
+
+  const loadAppointments = useCallback(async (employeeId: string, employeeName?: string) => {
+    const { data } = await supabase
+      .from("appointments")
+      .select(`id, appointment_date, appointment_time, status, notes, rating, feedback, created_at,
+        client:users!appointments_client_id_fkey(id, name, phone),
+        service:services(id, name, price, duration)`)
+      .eq("barber_id", employeeId)
+      .order("appointment_date", { ascending: false })
+
+    if (data) {
+      setAppointments((data as any[]).map(a => ({
+        id: a.id,
+        clientId: a.client?.id || "",
+        clientName: a.client?.name || "",
+        clientPhone: a.client?.phone || "",
+        employeeId,
+        employeeName: employeeName || "Empleado",
+        serviceId: a.service?.id || "",
+        serviceName: a.service?.name || "",
+        date: a.appointment_date,
+        time: a.appointment_time,
+        duration: a.service?.duration || 0,
+        price: a.service?.price || 0,
+        status: a.status,
+        notes: a.notes || "",
+        rating: a.rating ?? undefined,
+        feedback: a.feedback ?? undefined,
+        createdAt: a.created_at,
+      })))
+    }
+  }, [])
 
   useEffect(() => {
     if (!user) return
-    supabase
-      .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes, created_at,
-        client:users!appointments_client_id_fkey(id, name, phone),
-        service:services(id, name, price, duration)`)
-      .eq("barber_id", user.id)
-      .order("appointment_date", { ascending: false })
-      .then(({ data }) => {
-        if (data) setAppointments((data as any[]).map(a => ({
-          id: a.id,
-          clientId: a.client?.id || "",
-          clientName: a.client?.name || "",
-          clientPhone: a.client?.phone || "",
-          employeeId: user.id,
-          employeeName: user.name,
-          serviceId: a.service?.id || "",
-          serviceName: a.service?.name || "",
-          date: a.appointment_date,
-          time: a.appointment_time,
-          duration: a.service?.duration || 0,
-          price: a.service?.price || 0,
-          status: a.status,
-          notes: a.notes || "",
-          createdAt: a.created_at,
-        })))
-      })
+    void loadAppointments(user.id, (user as any).name)
+
+    const channel = supabase
+      .channel(`employee-appointments-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointments",
+          filter: `barber_id=eq.${user.id}`,
+        },
+        (payload) => {
+          let message = "Tu agenda fue actualizada"
+          if (payload.eventType === "INSERT") message = "Nueva cita asignada"
+          if (payload.eventType === "DELETE") message = "Se eliminó una cita"
+          if (payload.eventType === "UPDATE") {
+            const newStatus = (payload.new as any)?.status
+            message = newStatus
+              ? `Estado actualizado: ${newStatus}`
+              : "Una cita fue actualizada"
+          }
+
+          setNotifications((prev) => [
+            {
+              id: `${Date.now()}-${payload.eventType}`,
+              message,
+              createdAt: new Date().toISOString(),
+            },
+            ...prev,
+          ].slice(0, 8))
+
+          void loadAppointments(user.id, (user as any).name)
+        }
+      )
+      .subscribe()
+
       // Check if already working (from localStorage)
       const workStatus = localStorage.getItem(`work_status_${user.id}`)
       if (workStatus) {
@@ -68,7 +113,11 @@ export default function EmployeeDashboard() {
         setIsWorking(status.isWorking)
         setWorkStartTime(status.startTime)
       }
-  }, [user])
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [user, loadAppointments])
 
   const todayDate = new Date().toISOString().split('T')[0]
   
@@ -81,6 +130,10 @@ export default function EmployeeDashboard() {
       return aptDate >= weekStart
     })
     const completed = appointments.filter(apt => apt.status === "completed")
+    const rated = completed.filter((apt: any) => apt.rating != null && apt.rating > 0)
+    const avgRating = rated.length > 0
+      ? rated.reduce((sum: number, apt: any) => sum + (apt.rating || 0), 0) / rated.length
+      : null
     const pending = today.filter(apt => apt.status === "pending")
     const confirmed = today.filter(apt => apt.status === "confirmed")
     const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
@@ -93,7 +146,9 @@ export default function EmployeeDashboard() {
       weekAppointments: thisWeek.length,
       totalCompleted: completed.length,
       totalRevenue,
-      todayRevenue
+      todayRevenue,
+      avgRating,
+      ratedCount: rated.length,
     }
   }, [appointments, todayDate])
 
@@ -234,6 +289,33 @@ export default function EmployeeDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Real-time Notifications */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-blue-600" />
+            Notificaciones en Tiempo Real
+          </CardTitle>
+          <CardDescription>Cambios recientes en tus citas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {notifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin notificaciones recientes</p>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((item) => (
+                <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                  <p className="text-sm font-medium">{item.message}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(item.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
@@ -436,8 +518,14 @@ export default function EmployeeDashboard() {
                 <Star className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">4.8</p>
-                <p className="text-sm text-muted-foreground">Calificación Promedio</p>
+                <p className="text-2xl font-bold">
+                  {stats.avgRating != null ? stats.avgRating.toFixed(1) : "—"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.avgRating != null
+                    ? `Calificación Promedio (${stats.ratedCount})`
+                    : "Sin calificaciones aún"}
+                </p>
               </div>
             </div>
           </div>

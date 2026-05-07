@@ -24,7 +24,8 @@ import {
   CheckCircle,
   Clock,
   Target,
-  Activity
+  Activity,
+  MessageSquare
 } from "lucide-react"
 
 const supabase = createBrowserClient(
@@ -106,6 +107,12 @@ export default function EmployeeStatsPage() {
     const avgRating = rated.length > 0
       ? rated.reduce((sum, apt) => sum + (apt.rating ?? 0), 0) / rated.length
       : null
+
+    const feedbackEntries = completed
+      .filter((apt) => typeof apt.feedback === "string" && apt.feedback.trim().length > 0)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    const positiveFeedbackCount = feedbackEntries.filter((apt) => (apt.rating ?? 0) >= 4).length
     
     // Service popularity
     const serviceStats = completed.reduce((acc, apt) => {
@@ -156,6 +163,10 @@ export default function EmployeeStatsPage() {
       bestDay,
       avgRating,
       ratedCount: rated.length,
+      feedbackCount: feedbackEntries.length,
+      positiveFeedbackRate:
+        feedbackEntries.length > 0 ? (positiveFeedbackCount / feedbackEntries.length) * 100 : 0,
+      recentFeedbacks: feedbackEntries.slice(0, 5),
       completionRate: myAppointments.length > 0 ? (completed.length / myAppointments.length) * 100 : 0
     }
   }, [user, appointments])
@@ -400,6 +411,43 @@ export default function EmployeeStatsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Feedback Reciente */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-indigo-600" />
+            Feedback de Clientes
+          </CardTitle>
+          <CardDescription>
+            {stats.feedbackCount} comentario{stats.feedbackCount !== 1 ? "s" : ""} registrado{stats.feedbackCount !== 1 ? "s" : ""}
+            {stats.feedbackCount > 0 && ` • ${stats.positiveFeedbackRate.toFixed(1)}% positivo`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.recentFeedbacks.length > 0 ? (
+            <div className="space-y-3">
+              {stats.recentFeedbacks.map((apt) => (
+                <div key={apt.id} className="rounded-lg border p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <p className="font-medium">{apt.clientName || "Cliente"}</p>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(apt.date).toLocaleDateString("es-ES")}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">{apt.serviceName}</p>
+                  <p className="text-sm">{apt.feedback}</p>
+                  {apt.rating != null && apt.rating > 0 && (
+                    <p className="text-xs text-yellow-700 mt-2">⭐ {apt.rating.toFixed(1)} / 5</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No hay feedback registrado todavía</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Performance Overview */}
       <Card>

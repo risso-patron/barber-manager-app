@@ -30,6 +30,14 @@ interface WorkSession {
   totalHours?: number
 }
 
+const calculateBreakHours = (session: WorkSession) => {
+  if (!session.breakStart) return 0
+  const breakStart = new Date(session.breakStart)
+  const breakEnd = session.breakEnd ? new Date(session.breakEnd) : new Date()
+  const breakMinutes = (breakEnd.getTime() - breakStart.getTime()) / (1000 * 60)
+  return Math.max(0, breakMinutes / 60)
+}
+
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -105,13 +113,17 @@ export default function TimeTrackingPage() {
     const totalHoursWeek = thisWeek.reduce((sum, session) => sum + (session.totalHours || 0), 0)
     const totalHoursMonth = workHistory.reduce((sum, session) => sum + (session.totalHours || 0), 0)
     const avgHoursPerDay = workHistory.length > 0 ? totalHoursMonth / workHistory.length : 0
+    const breakHoursWeek = thisWeek.reduce((sum, session) => sum + calculateBreakHours(session), 0)
+    const breakHoursMonth = workHistory.reduce((sum, session) => sum + calculateBreakHours(session), 0)
 
     return {
       hoursToday: currentSession ? calculateHours(currentSession) : 0,
       hoursWeek: totalHoursWeek,
       hoursMonth: totalHoursMonth,
       avgHours: avgHoursPerDay,
-      daysWorked: workHistory.length
+      daysWorked: workHistory.length,
+      breakHoursWeek,
+      breakHoursMonth,
     }
   }, [workHistory, currentSession])
 
@@ -288,7 +300,7 @@ export default function TimeTrackingPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Pausas Tomadas</p>
-                  <p className="text-2xl font-bold">{currentSession.breakStart && currentSession.breakEnd ? 1 : 0}</p>
+                  <p className="text-2xl font-bold">{currentSession.breakStart ? 1 : 0}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Estado</p>
@@ -303,7 +315,7 @@ export default function TimeTrackingPage() {
       </Card>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-5 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Hoy</CardTitle>
@@ -341,6 +353,19 @@ export default function TimeTrackingPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatDuration(stats.avgHours)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pausas (Mes)</CardTitle>
+            <PauseCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatDuration(stats.breakHoursMonth)}</div>
+            <p className="text-xs text-muted-foreground">
+              Semana: {formatDuration(stats.breakHoursWeek)}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -386,13 +411,29 @@ export default function TimeTrackingPage() {
                 </div>
                 
                 {session.breakStart && (
-                  <div className="mt-3 pt-3 border-t">
-                    <p className="text-sm font-medium mb-2">Pausa:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-yellow-50">
-                        <Coffee className="h-3 w-3 mr-1" />
-                        {formatTime(session.breakStart)} - {session.breakEnd ? formatTime(session.breakEnd) : 'En curso'}
+                  <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50/70 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <PauseCircle className="h-4 w-4 text-yellow-700" />
+                        Historial de pausa
+                      </p>
+                      <Badge variant="outline" className="bg-white text-yellow-800 border-yellow-300">
+                        {formatDuration(calculateBreakHours(session))}
                       </Badge>
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-3 text-sm">
+                      <div className="rounded bg-white/80 p-2 border border-yellow-100">
+                        <p className="text-xs text-muted-foreground">Inicio</p>
+                        <p className="font-medium">{formatTime(session.breakStart)}</p>
+                      </div>
+                      <div className="rounded bg-white/80 p-2 border border-yellow-100">
+                        <p className="text-xs text-muted-foreground">Fin</p>
+                        <p className="font-medium">{session.breakEnd ? formatTime(session.breakEnd) : 'En curso'}</p>
+                      </div>
+                      <div className="rounded bg-white/80 p-2 border border-yellow-100">
+                        <p className="text-xs text-muted-foreground">Duración</p>
+                        <p className="font-medium">{formatDuration(calculateBreakHours(session))}</p>
+                      </div>
                     </div>
                   </div>
                 )}

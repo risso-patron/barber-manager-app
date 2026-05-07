@@ -106,7 +106,40 @@ export async function POST(request: NextRequest) {
     }
     }
 
-    // Crear el appointment en Supabase
+    // Validar que la fecha/hora es futura
+    const appointmentDateTime = new Date(`${data.date}T${data.time}`)
+    const now = new Date()
+    if (appointmentDateTime <= now) {
+      return NextResponse.json(
+        { success: false, error: "La fecha y hora deben ser futuras" },
+        { status: 400 }
+      )
+    }
+
+    // Validar conflictos de horarios (no puede existir otro appointment para el mismo empleado, fecha y hora)
+    const { data: conflictingAppointment } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("barber_id", data.employeeId)
+      .eq("appointment_date", data.date)
+      .eq("appointment_time", data.time)
+      .maybeSingle()
+
+    if (conflictingAppointment) {
+      return NextResponse.json(
+        { success: false, error: "Este horario ya está reservado. Por favor elige otro." },
+        { status: 409 }
+      )
+    }
+
+    // Obtener teléfono de barbershop desde business_settings
+    const { data: settings } = await supabase
+      .from("business_settings")
+      .select("setting_value")
+      .eq("setting_key", "barbershop_phone")
+      .maybeSingle()
+
+    const barbershopPhone = settings?.setting_value || "+1 (555) 123-4567"
     const { data: appointment, error: apptError } = await supabase
       .from("appointments")
       .insert({
@@ -148,7 +181,7 @@ export async function POST(request: NextRequest) {
           time: data.time,
           price: data.price,
           barbershopName: data.barbershop.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
-          barbershopPhone: "+1 (555) 123-4567" // TODO: Obtener de la BD
+          barbershopPhone: barbershopPhone
         })
       })
     } catch (error) {
