@@ -13,6 +13,7 @@ const supabase = createClient(
 
 interface PublicBookingRequest {
   barbershop: string
+  clientId?: string
   clientName: string
   clientEmail?: string
   clientPhone: string
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest) {
     // Buscar o crear cliente por teléfono/email
     let clientId: string
 
+    // Si viene un clientId (usuario logueado), usarlo directamente
+    if (data.clientId) {
+      clientId = data.clientId
+    } else {
     // Buscar usuario existente por email o teléfono
     const { data: existingUser } = await supabase
       .from("users")
@@ -98,6 +103,7 @@ export async function POST(request: NextRequest) {
       }
 
       clientId = authData.user.id
+    }
     }
 
     // Crear el appointment en Supabase

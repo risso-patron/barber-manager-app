@@ -2,12 +2,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { User, Mail, Lock, Gift, Star, History, X } from "lucide-react"
+import { User, Gift, Star, History, X, Loader2, CheckCircle, Bell } from "lucide-react"
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface SignupPromptModalProps {
   isOpen: boolean
@@ -21,16 +26,24 @@ interface SignupPromptModalProps {
 
 export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptModalProps) {
   const router = useRouter()
-  const [isCreating, setIsCreating] = useState(false)
+  const [email, setEmail] = useState(guestData.email || "")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
 
-  const handleCreateAccount = async (e: React.FormEvent) => {
+  const isFakeEmail = !guestData.email
+
+  const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Validations
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Ingresa un email válido")
+      return
+    }
+
     if (password.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres")
       return
@@ -41,60 +54,66 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
       return
     }
 
-    if (!guestData.email) {
-      setError("Necesitas un email para crear una cuenta")
+    setIsLoading(true)
+
+    // 1. Activar la cuenta (poner contraseña, actualizar email si era el fake)
+    const res = await fetch("/api/auth/activate-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: guestData.phone, email, password }),
+    })
+
+    const result = await res.json()
+
+    if (!res.ok || !result.success) {
+      setError(result.error || "Error al crear la cuenta. Intenta nuevamente.")
+      setIsLoading(false)
       return
     }
 
-    setIsCreating(true)
+    // 2. Auto-login
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: result.email,
+      password,
+    })
 
-    try {
-      // TODO: Integrar con Supabase cuando esté configurado
-      // Por ahora, simular registro en modo demo
-      
-      const newUser = {
-        id: `user-${Date.now()}`,
-        email: guestData.email,
-        name: guestData.name,
-        phone: guestData.phone,
-        role: "client",
-        profile: {
-          name: guestData.name,
-          role: "client",
-          phone: guestData.phone,
-          avatar_url: null,
-        }
-      }
-
-      // Guardar usuario en localStorage (demo mode)
-      localStorage.setItem("currentUser", JSON.stringify(newUser))
-
-      // Migrar citas de invitado a cuenta
-      const guestAppointments = JSON.parse(localStorage.getItem("guestAppointments") || "[]")
-      const userAppointments = guestAppointments.filter((apt: any) => 
-        apt.phone === guestData.phone || apt.email === guestData.email
-      )
-      localStorage.setItem("userAppointments", JSON.stringify(userAppointments))
-
-      // Limpiar citas de invitado migradas
-      const remainingGuest = guestAppointments.filter((apt: any) => 
-        apt.phone !== guestData.phone && apt.email !== guestData.email
-      )
-      localStorage.setItem("guestAppointments", JSON.stringify(remainingGuest))
-
-      // Redirigir al dashboard del cliente
-      router.push("/client")
-    } catch (err) {
-      setError("Error al crear la cuenta. Intenta nuevamente.")
-    } finally {
-      setIsCreating(false)
+    if (loginError) {
+      setError("Cuenta activada, pero hubo un problema al iniciar sesión. Intenta desde la pantalla de login.")
+      setIsLoading(false)
+      return
     }
+
+    setSuccess(true)
+    setIsLoading(false)
+
+    // 3. Redirigir al dashboard del cliente
+    setTimeout(() => {
+      router.push("/client")
+    }, 1500)
   }
 
   const handleSkip = () => {
     onClose()
-    // Opcional: redirigir a inicio
     router.push("/")
+  }
+
+  if (success) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md text-center py-10">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle className="h-9 w-9 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold">¡Bienvenido, {guestData.name.split(" ")[0]}!</h2>
+            <p className="text-muted-foreground text-sm">
+              Tu cuenta está activa. Redirigiendo a tu panel…
+            </p>
+            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
@@ -103,66 +122,71 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Gift className="h-6 w-6 text-blue-600" />
-            ¡Crea tu cuenta y obtén beneficios!
+            ¡Tu cita está confirmada!
           </DialogTitle>
           <DialogDescription>
-            Convierte tu reserva en una cuenta y disfruta de estas ventajas
+            Crea tu cuenta gratis y gestiona todo desde tu panel
           </DialogDescription>
         </DialogHeader>
 
-        {/* Benefits */}
-        <div className="bg-blue-50 rounded-lg p-4 space-y-2 mb-4">
-          <div className="flex items-start gap-2">
-            <History className="h-5 w-5 text-blue-600 mt-0.5" />
+        {/* Benefits — el pitch de ventas */}
+        <div className="bg-blue-50 rounded-lg p-4 space-y-3 mb-2">
+          <div className="flex items-start gap-3">
+            <History className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Historial de citas</p>
-              <p className="text-xs text-gray-600">Ve todas tus citas pasadas y futuras</p>
+              <p className="font-semibold text-sm">Ve todas tus citas</p>
+              <p className="text-xs text-gray-600">Historial completo, próximas reservas y cancelaciones fáciles</p>
             </div>
           </div>
-          <div className="flex items-start gap-2">
-            <Star className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div className="flex items-start gap-3">
+            <Bell className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Programa de puntos</p>
-              <p className="text-xs text-gray-600">Acumula puntos y obtén descuentos</p>
+              <p className="font-semibold text-sm">Notificaciones y recordatorios</p>
+              <p className="text-xs text-gray-600">Te avisamos antes de tu cita para que no la olvides</p>
             </div>
           </div>
-          <div className="flex items-start gap-2">
-            <User className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div className="flex items-start gap-3">
+            <Star className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Perfil personalizado</p>
-              <p className="text-xs text-gray-600">Guarda tus preferencias y datos</p>
+              <p className="font-semibold text-sm">Ofertas exclusivas</p>
+              <p className="text-xs text-gray-600">Accede a promociones y descuentos solo para clientes registrados</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <User className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-sm">Reserva en segundos</p>
+              <p className="text-xs text-gray-600">Tus datos guardados, próxima cita con un clic</p>
             </div>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleCreateAccount} className="space-y-4">
-          {/* Pre-filled data */}
+        <form onSubmit={handleActivate} className="space-y-3">
           <div>
             <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
               value={guestData.name}
               disabled
-              className="bg-gray-50"
+              className="bg-gray-50 mt-1"
             />
           </div>
 
           <div>
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">
+              Email{isFakeEmail && <span className="text-red-500 ml-0.5">*</span>}
+            </Label>
             <Input
               id="email"
               type="email"
-              value={guestData.email || ""}
-              disabled={!!guestData.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!isFakeEmail}
               required
-              className={guestData.email ? "bg-gray-50" : ""}
+              placeholder="tu@email.com"
+              className={`mt-1 ${!isFakeEmail ? "bg-gray-50" : ""}`}
             />
-            {!guestData.email && (
-              <p className="text-xs text-red-600 mt-1">
-                Necesitas agregar un email para crear tu cuenta
-              </p>
-            )}
           </div>
 
           <div>
@@ -175,6 +199,7 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
               placeholder="Mínimo 8 caracteres"
               required
               minLength={8}
+              className="mt-1"
             />
           </div>
 
@@ -187,6 +212,7 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repite tu contraseña"
               required
+              className="mt-1"
             />
           </div>
 
@@ -196,22 +222,20 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
             </div>
           )}
 
-          {/* Buttons */}
-          <div className="flex flex-col gap-2">
-            <Button 
-              type="submit" 
-              disabled={isCreating || !guestData.email}
-              className="w-full gap-2"
-            >
-              <User className="h-4 w-4" />
-              {isCreating ? "Creando cuenta..." : "Crear mi cuenta gratis"}
+          <div className="flex flex-col gap-2 pt-1">
+            <Button type="submit" disabled={isLoading} className="w-full gap-2">
+              {isLoading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Creando cuenta…</>
+              ) : (
+                <><User className="h-4 w-4" />Activar mi cuenta gratis</>
+              )}
             </Button>
-            
-            <Button 
+
+            <Button
               type="button"
-              variant="ghost" 
+              variant="ghost"
               onClick={handleSkip}
-              className="w-full gap-2 text-gray-600"
+              className="w-full gap-2 text-gray-500"
             >
               <X className="h-4 w-4" />
               Tal vez después
@@ -219,8 +243,9 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
           </div>
         </form>
 
-        <p className="text-xs text-gray-500 text-center">
-          Al crear una cuenta aceptas nuestros términos y condiciones
+        <p className="text-xs text-gray-400 text-center">
+          Al crear una cuenta aceptas nuestros{" "}
+          <a href="/terms" className="underline">términos y condiciones</a>
         </p>
       </DialogContent>
     </Dialog>

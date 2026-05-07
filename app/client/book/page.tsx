@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,8 +16,28 @@ import {
   DollarSign,
   CheckCircle,
   ArrowLeft,
-  Scissors
+  Scissors,
+  Loader2
 } from "lucide-react"
+
+interface Service {
+  id: string
+  name: string
+  description?: string
+  price: number
+  duration: number
+}
+
+interface Employee {
+  id: string
+  name: string
+  role?: string
+}
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 type BookingStep = "service" | "barber" | "datetime" | "confirm"
 
@@ -31,10 +51,65 @@ export default function BookAppointmentPage() {
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
   const [notes, setNotes] = useState("")
+  const [services, setServices] = useState<Service[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const handleSubmit = () => {
-    // In a real app, save to database
-    alert("¡Cita reservada exitosamente!")
+  useEffect(() => {
+    Promise.all([
+      supabase
+        .from("services")
+        .select("id, name, description, price, duration")
+        .eq("is_active", true)
+        .order("name"),
+      supabase
+        .from("users")
+        .select("id, name, role")
+        .eq("role", "employee")
+        .order("name")
+    ]).then(([servicesRes, employeesRes]) => {
+      if (servicesRes.data) setServices(servicesRes.data as Service[])
+      if (employeesRes.data) setEmployees(employeesRes.data as Employee[])
+      setIsLoading(false)
+    })
+  }, [])
+
+  const handleSubmit = async () => {
+    if (!user || !service || !barber) return
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    const res = await fetch("/api/bookings/public", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        barbershop: "barber-manager",
+        clientId: user.id,
+        clientName: user.profile?.name || user.email,
+        clientPhone: user.profile?.phone || "",
+        clientEmail: user.email,
+        serviceId: service.id,
+        serviceName: service.name,
+        employeeId: barber.id,
+        employeeName: barber.name,
+        date: selectedDate,
+        time: selectedTime,
+        duration: service.duration,
+        price: service.price,
+        notes: notes || undefined,
+      }),
+    })
+
+    const result = await res.json()
+    setIsSubmitting(false)
+
+    if (!res.ok || !result.success) {
+      setSubmitError(result.error || "Error al crear la cita. Intenta nuevamente.")
+      return
+    }
+
     router.push("/client/appointments")
   }
 
@@ -48,8 +123,8 @@ export default function BookAppointmentPage() {
     }
   }
 
-  const service = DEMO_SERVICES.find(s => s.id === selectedService)
-  const barber = DEMO_EMPLOYEES.find(e => e.id === selectedBarber)
+  const service = services.find(s => s.id === selectedService)
+  const barber = employees.find(e => e.id === selectedBarber)
 
   const timeSlots = [
     "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -129,8 +204,15 @@ export default function BookAppointmentPage() {
         {step === "service" && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold mb-4">Selecciona un Servicio</h2>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : services.length === 0 ? (
+              <p className="text-muted-foreground text-center py-12">No hay servicios disponibles.</p>
+            ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {DEMO_SERVICES.map((service) => (
+              {services.map((service) => (
                 <Card
                   key={service.id}
                   className={`cursor-pointer transition-all ${
@@ -166,6 +248,7 @@ export default function BookAppointmentPage() {
                 </Card>
               ))}
             </div>
+            )}
           </div>
         )}
 
@@ -173,8 +256,15 @@ export default function BookAppointmentPage() {
         {step === "barber" && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold mb-4">Elige tu Barbero</h2>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : employees.length === 0 ? (
+              <p className="text-muted-foreground text-center py-12">No hay barberos disponibles. Pide al administrador que agregue empleados.</p>
+            ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {DEMO_EMPLOYEES.map((employee) => (
+              {employees.map((employee) => (
                 <Card
                   key={employee.id}
                   className={`cursor-pointer transition-all ${
@@ -207,6 +297,7 @@ export default function BookAppointmentPage() {
                 </Card>
               ))}
             </div>
+            )}
           </div>
         )}
 
@@ -223,7 +314,7 @@ export default function BookAppointmentPage() {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={new Date().toISOString().slice(0, 10)}
                     className="mt-2"
                   />
                 </div>
@@ -284,7 +375,7 @@ export default function BookAppointmentPage() {
                   <div>
                     <p className="font-medium">Fecha y Hora</p>
                     <p className="text-sm text-muted-foreground">
-                      {selectedDate && new Date(selectedDate).toLocaleDateString('es-ES', {
+                      {selectedDate && new Date(selectedDate + "T12:00:00").toLocaleDateString('es-ES', {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',
@@ -339,12 +430,19 @@ export default function BookAppointmentPage() {
                 }
               }
             }}
-            disabled={!canContinue()}
+            disabled={!canContinue() || isSubmitting}
             className="flex-1"
           >
-            {step === "confirm" ? "Confirmar Reserva" : "Continuar"}
+            {isSubmitting ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</>
+            ) : (
+              step === "confirm" ? "Confirmar Reserva" : "Continuar"
+            )}
           </Button>
         </div>
+        {submitError && (
+          <p className="text-sm text-red-600 text-center mt-3">{submitError}</p>
+        )}
       </div>
     </div>
   )
