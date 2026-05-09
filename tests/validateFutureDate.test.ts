@@ -15,13 +15,15 @@ describe('validateFutureDate', () => {
   });
 
   it('devuelve inválido si la fecha es hoy y minDaysFromNow > 0', () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const result = validateFutureDate(today, 1);
     expect(result.valid).toBe(false);
   });
 
   it('devuelve válido si la fecha es hoy y minDaysFromNow = 0', () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const result = validateFutureDate(today, 0);
     expect(result.valid).toBe(true);
   });

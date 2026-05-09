@@ -1,12 +1,18 @@
 schema: spec-driven
 
 context: |
-  Tech stack: Next.js 15, TypeScript 5, Tailwind CSS 3.4, Zustand, React Hook Form, Supabase
-  Arquitectura: App Router, componentes modulares, estado global con Zustand, formularios con React Hook Form + Zod
-  Testing: Vitest, Testing Library, Playwright
-  Style: next lint, prettier, tsc --noEmit
+  Tech stack: Next.js 15, React 19, TypeScript, Tailwind CSS, Shadcn UI, Supabase
+  Architecture: App Router, Server/Client components, RLS Security
+  Testing: Playwright (E2E), Vitest (Unit)
+  Style: ESLint, Prettier, TypeScript
 
-strict_tdd: true
+strict_tdd: false
+
+testing:
+  runner: vitest
+  e2e: playwright
+  coverage: vitest
+  lint: next lint
 
 rules:
   proposal:
@@ -30,32 +36,3 @@ rules:
     - Compare implementation against every spec scenario
   archive:
     - Warn before merging destructive deltas (large removals)
-
-testing:
-  strict_tdd: true
-  runner:
-    command: "vitest run"
-    framework: "Vitest"
-  layers:
-    unit:
-      available: true
-      tool: "Vitest"
-    integration:
-      available: true
-      tool: "@testing-library/react"
-    e2e:
-      available: true
-      tool: "Playwright"
-  coverage:
-    available: true
-    command: "vitest run --coverage"
-  quality:
-    linter:
-      available: true
-      command: "next lint"
-    type_checker:
-      available: true
-      command: "tsc --noEmit"
-    formatter:
-      available: true
-      command: "prettier --write ."

@@ -13,7 +13,7 @@
   - Forms via React Hook Form + Zod.
 
 ### Persistence Strategy
-- **Mode**: engram
+- **Mode**: hybrid
 - **Topic Keys**:
   - Init: `sdd-init/barber-manager-app`
   - Testing: `sdd/barber-manager-app/testing-capabilities`

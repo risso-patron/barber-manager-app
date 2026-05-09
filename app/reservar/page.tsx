@@ -59,23 +59,46 @@ export default function ReservarPage() {
   const [showSignupModal, setShowSignupModal] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [isLoading, setIsLoading] = useState({ services: true, employees: true })
+  const [availableDates, setAvailableDates] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase
-      .from("services")
-      .select("id, name, description, price, duration")
-      .eq("is_active", true)
-      .order("name")
-      .then(({ data }) => { if (data) setServices(data as Service[]) })
+    // Generar fechas en el cliente para evitar hidratación mismatch
+    const dates = Array.from({ length: 14 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() + i)
+      return date.toISOString().slice(0, 10)
+    })
+    setAvailableDates(dates)
 
-    supabase
-      .from("users")
-      .select("id, name, specialty")
-      .eq("role", "employee")
-      .order("name")
-      .then(({ data }) => { if (data) setEmployees(data as Employee[]) })
+    const fetchInitialData = async () => {
+      try {
+        const { data: servicesData } = await supabase
+          .from("services")
+          .select("id, name, description, price, duration")
+          .eq("is_active", true)
+          .order("name")
+        
+        if (servicesData) setServices(servicesData as Service[])
+        setIsLoading(prev => ({ ...prev, services: false }))
+
+        const { data: employeesData } = await supabase
+          .from("users")
+          .select("id, name, specialty")
+          .eq("role", "employee")
+          .order("name")
+        
+        if (employeesData) setEmployees(employeesData as Employee[])
+        setIsLoading(prev => ({ ...prev, employees: false }))
+      } catch (error) {
+        console.error("Error fetching data:", error)
+        setIsLoading({ services: false, employees: false })
+      }
+    }
+
+    fetchInitialData()
   }, [])
 
   // Generate available time slots
@@ -84,13 +107,6 @@ export default function ReservarPage() {
     "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
     "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
   ]
-
-  // Generate next 14 days
-  const availableDates = Array.from({ length: 14 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-    return date.toISOString().slice(0, 10)
-  })
 
   const handleDateTimeSelect = (date: string, time: string) => {
     setBooking(prev => ({ ...prev, date, time }))
@@ -188,9 +204,13 @@ export default function ReservarPage() {
               <CardDescription>Elige el servicio que deseas</CardDescription>
             </CardHeader>
             <CardContent>
-              {services.length === 0 ? (
+              {isLoading.services ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : services.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No hay servicios disponibles en este momento.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -231,9 +251,19 @@ export default function ReservarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {employees.length === 0 ? (
+              {isLoading.employees ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+              ) : employees.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="mb-4">No hay barberos disponibles para este servicio.</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setStep("service")}
+                  >
+                    Volver a servicios
+                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
