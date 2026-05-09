@@ -1,0 +1,81 @@
+(node:26756) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e\employee.e2e.spec.ts:81:7 › Flujo de Empleado - E2E › Empleado puede iniciar sesión, ver dashboard y completar una cita
+[1A[2K[chromium] › e2e\employee.e2e.spec.ts:81:7 › Flujo de Empleado - E2E › Empleado puede iniciar sesión, ver dashboard y completar una cita
+(node:26812) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2KError inserting employee_service: {
+  code: [32m'PGRST205'[39m,
+  details: [1mnull[22m,
+  hint: [32m"Perhaps you meant the table 'public.services'"[39m,
+  message: [32m"Could not find the table 'public.employee_services' in the schema cache"[39m
+}
+
+[1A[2K[2m[WebServer] [22m(node:27188) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[2m[WebServer] [22m(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2KURL AFTER 5s: http://localhost:3000/auth/login
+
+[1A[2KPAGE TEXT: Barber Manager
+Inicia sesión en tu cuenta
+Email
+Contraseña
+Iniciar Sesión
+
+¿No tienes cuenta? Regístrate aquí
+
+💡 Usuario demo: admin@demo.com / Demo1234
+
+Barber Manager
+
+Sistema de gestión profesional para barberías modernas.
+
+Producto
+Dashboard
+Reservar Cita
+Legal
+Términos de Servicio
+Política de Privacidad
+Contacto
+luisrissopa@gmail.com
+Soporte 24/7
+
+© 2026 Barber Manager. Todos los derechos reservados.
+
+Desarrollado por Jorge Luis Risso Patron
+
+[1A[2K  1) [chromium] › e2e\employee.e2e.spec.ts:81:7 › Flujo de Empleado - E2E › Empleado puede iniciar sesión, ver dashboard y completar una cita 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Mi Espacio de Trabajo')
+    Expected: visible
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Mi Espacio de Trabajo')[22m
+
+
+      100 |
+      101 |     // 2. Redirección automática al dashboard (/barber)
+    > 102 |     await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 10000 });
+          |                                                           ^
+      103 |     await expect(page.getByText('Empleado Test')).toBeVisible();
+      104 |
+      105 |     // 3. Gestión de Jornada (Clock in / Clock out)
+        at E:\Dev\@Personales\barber-manager-app\e2e\employee.e2e.spec.ts:102:59
+
+    Error Context: test-results\employee.e2e-Flujo-de-Empl-e79cb-hboard-y-completar-una-cita-chromium\error-context.md
+
+    Error Context: test-results\employee.e2e-Flujo-de-Empl-e79cb-hboard-y-completar-una-cita-chromium\error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] › e2e\employee.e2e.spec.ts:81:7 › Flujo de Empleado - E2E › Empleado puede iniciar sesión, ver dashboard y completar una cita 
