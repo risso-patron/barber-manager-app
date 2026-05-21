@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Scissors, Calendar, Users, BarChart3, Clock } from "lucide-react"
+import { Scissors, Package, Users, BarChart3, Clock } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -9,8 +9,8 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-white mb-6">Barber Manager</h1>
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-6">Barber Manager</h1>
+          <p className="text-lg sm:text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
             La solución completa para gestionar tu barbería. Administra citas, empleados, inventario y más desde una
             sola plataforma.
           </p>
@@ -21,7 +21,7 @@ export default function HomePage() {
                 Reservar Cita
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-slate-900 bg-transparent w-full sm:w-auto">
+            <Button asChild size="lg" variant="outline" className="text-white border-white/80 hover:bg-white hover:text-slate-900 bg-white/5 backdrop-blur-sm w-full sm:w-auto">
               <Link href="/auth/login">Iniciar Sesión</Link>
             </Button>
             <Button
@@ -66,7 +66,7 @@ export default function HomePage() {
 
           <Card className="bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader>
-              <Calendar className="h-8 w-8 text-purple-400 mb-2" />
+              <Package className="h-8 w-8 text-purple-400 mb-2" />
               <CardTitle className="text-white">Inventario</CardTitle>
             </CardHeader>
             <CardContent>

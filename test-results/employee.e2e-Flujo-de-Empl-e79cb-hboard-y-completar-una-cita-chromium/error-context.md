@@ -12,13 +12,22 @@
 # Error details
 
 ```
-Error: LOGIN FAILED: Credenciales inválidas
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByText('Mi Espacio de Trabajo')
+Expected: visible
+Timeout: 10000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 10000ms
+  - waiting for getByText('Mi Espacio de Trabajo')
+
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
   2   | import { createClient } from '@supabase/supabase-js';
   3   | 
   4   | // Setup Supabase client for DB operations (bypass UI)
@@ -115,12 +124,12 @@ Error: LOGIN FAILED: Credenciales inválidas
   95  |     console.log("PAGE TEXT:", pageText);
   96  | 
   97  |     if (pageText.includes('Credenciales inválidas')) {
-> 98  |       throw new Error("LOGIN FAILED: Credenciales inválidas");
-      |             ^ Error: LOGIN FAILED: Credenciales inválidas
+  98  |       throw new Error("LOGIN FAILED: Credenciales inválidas");
   99  |     }
   100 | 
   101 |     // 2. Redirección automática al dashboard (/barber)
-  102 |     await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 10000 });
+> 102 |     await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 10000 });
+      |                                                           ^ Error: expect(locator).toBeVisible() failed
   103 |     await expect(page.getByText('Empleado Test')).toBeVisible();
   104 | 
   105 |     // 3. Gestión de Jornada (Clock in / Clock out)

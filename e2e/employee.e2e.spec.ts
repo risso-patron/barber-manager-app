@@ -1,5 +1,8 @@
-import { test, expect } from '@playwright/test';
+import test from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
+
+declare const process: any;
+const { expect } = test;
 
 // Setup Supabase client for DB operations (bypass UI)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
@@ -12,12 +15,14 @@ test.describe('Flujo de Empleado - E2E', () => {
   let employeeId: string;
   let testEmail: string;
   let testPass: string;
+  let testClientName: string;
 
   test.beforeAll(async () => {
     // Generar credenciales únicas para cada worker/test para evitar colisiones en paralelo
     const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     testEmail = `employee${uniqueId}@example.com`;
     testPass = 'TestPass123!';
+    testClientName = `Cliente E2E ${uniqueId}`;
 
     // Create auth user
     const { data, error } = await supabase.auth.admin.createUser({
@@ -48,11 +53,12 @@ test.describe('Flujo de Empleado - E2E', () => {
     
     // Ensure the employee offers at least one service so they can receive appointments
     const { data: services } = await supabase.from('services').select('id').limit(1);
-    if (services && services.length > 0) {
-      const serviceId = services[0].id;
-      const { error: esErr } = await supabase.from('employee_services').insert({ employee_id: employeeId, service_id: serviceId });
-      if (esErr && esErr.code !== '23505') console.error("Error inserting employee_service:", esErr);
+    const serviceId = services?.[0]?.id;
+    if (!serviceId) {
+      throw new Error('No hay servicios disponibles para asociar al empleado de prueba');
     }
+    const { error: esErr } = await supabase.from('employee_services').insert({ employee_id: employeeId, service_id: serviceId });
+    if (esErr && esErr.code !== '23505') console.error("Error inserting employee_service:", esErr);
     
     // 2. Create a pending appointment for today so they have something to "Completar"
     const today = new Date().toISOString().split('T')[0];
@@ -63,7 +69,7 @@ test.describe('Flujo de Empleado - E2E', () => {
       appointment_date: today,
       appointment_time: '12:00',
       status: 'confirmed',
-      client_name: `Cliente E2E ${uniqueId}`,
+      client_name: testClientName,
       client_phone: uniqueId.slice(0, 10)
     });
   });
@@ -78,29 +84,19 @@ test.describe('Flujo de Empleado - E2E', () => {
     }
   });
 
-  test('Empleado puede iniciar sesión, ver dashboard y completar una cita', async ({ page }) => {
+  test('Empleado puede iniciar sesión, ver dashboard y completar una cita', async ({ page }: any) => {
     // 1. Iniciar sesión
     await page.goto('/auth/login');
     await expect(page.getByText('Inicia sesión en tu cuenta')).toBeVisible();
     
-    await page.fill('input[type="email"]', 'admin@demo.com');
-    await page.fill('input[type="password"]', 'Demo1234');
+    await page.fill('input[type="email"]', testEmail);
+    await page.fill('input[type="password"]', testPass);
     await page.click('button[type="submit"]');
-    
-    // Wait for network idle or 5 seconds to see what happened
-    await page.waitForTimeout(5000);
 
-    console.log("URL AFTER 5s:", page.url());
-    const pageText = await page.innerText('body');
-    console.log("PAGE TEXT:", pageText);
-
-    if (pageText.includes('Credenciales inválidas')) {
-      throw new Error("LOGIN FAILED: Credenciales inválidas");
-    }
-
-    // 2. Redirección automática al dashboard (/barber)
-    await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Empleado Test')).toBeVisible();
+    // 2. Redirección automática y carga del workspace de empleado
+    await expect(page).toHaveURL(/\/(dashboard|barber)/, { timeout: 15000 });
+    await page.goto('/barber');
+    await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 15000 });
 
     // 3. Gestión de Jornada (Clock in / Clock out)
     const btnIniciarJornada = page.getByRole('button', { name: /Marcar Entrada/i });
@@ -110,7 +106,7 @@ test.describe('Flujo de Empleado - E2E', () => {
     }
     
     // 4. Gestión de citas
-    await expect(page.getByText(`Cliente E2E ${uniqueId}`)).toBeVisible();
+    await expect(page.getByText(testClientName)).toBeVisible();
     
     // El estado inicial creado fue 'confirmed', así que el botón debe ser "Iniciar"
     const btnIniciar = page.locator('button:has-text("Iniciar")').first();

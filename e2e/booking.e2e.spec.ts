@@ -1,7 +1,9 @@
-import { test, expect } from '@playwright/test';
+import test from '@playwright/test';
+
+const { expect } = test;
 
 test.describe('Reserva de cita - E2E', () => {
-  test('Cliente puede completar el flujo de reserva exitosamente', async ({ page }) => {
+  test('Cliente puede completar el flujo de reserva exitosamente', async ({ page }: any) => {
     // 1. Navegar a la página de reserva
     await page.goto('/reservar');
     
@@ -42,11 +44,19 @@ test.describe('Reserva de cita - E2E', () => {
     await page.fill('input[name="phone"]', `+1555${uniqueId}`);
     
     // 6. Confirmar reserva
+    const bookingResponsePromise = page.waitForResponse(
+      (response: any) =>
+        response.url().includes('/api/bookings/public') &&
+        response.request().method() === 'POST',
+      { timeout: 20000 }
+    );
+
     await page.click('button:has-text("Confirmar Reserva")');
+    const bookingResponse = await bookingResponsePromise;
+    expect(bookingResponse.ok()).toBeTruthy();
     
     // 7. Verificar éxito
-    // Esperamos a que la petición a la API termine (puede tardar un par de segundos)
-    await expect(page.getByText(/¡Reserva Confirmada!/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /¡Reserva Confirmada!/i })).toBeVisible({ timeout: 20000 });
   });
 });
 

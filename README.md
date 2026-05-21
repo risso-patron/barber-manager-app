@@ -45,29 +45,29 @@ Sistema de gestión profesional para barberías modernas. Administra citas, empl
 - **Backend**: Supabase (PostgreSQL, Auth, Real-time)
 - **UI**: Tailwind CSS, shadcn/ui
 - **Estado**: Zustand
-- **Formularios**: React Hook Form
+pnpm install
 - **Despliegue**: Vercel
 
 ## Instalación
 
 1. Clona el repositorio:
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd barber-manager
-\`\`\`
+```
 
 2. Instala las dependencias:
-\`\`\`bash
-npm install
-\`\`\`
+```bash
+pnpm install
+```
 
 3. Configura las variables de entorno:
-\`\`\`bash
+```bash
 # Copia el archivo de ejemplo
 cp .env.local.example .env.local
 
 # Edita .env.local con tus credenciales de Supabase
-\`\`\`
+```
 
 4. Configura tu proyecto de Supabase:
    - Crea un nuevo proyecto en [Supabase](https://supabase.com)
@@ -79,9 +79,9 @@ cp .env.local.example .env.local
    - Actualiza `.env.local` con tus credenciales
 
 5. Ejecuta el proyecto:
-\`\`\`bash
-npm run dev
-\`\`\`
+```bash
+pnpm dev
+```
 
 6. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
 
@@ -99,13 +99,13 @@ Este proyecto implementa múltiples capas de seguridad:
 ### Scripts de Seguridad
 ```bash
 # Validar variables de entorno
-npm run validate-env
+pnpm validate-env
 
 # Verificar seguridad del código
-npm run security-check
+pnpm security-check
 
 # Configurar git hooks
-npm run setup-hooks
+pnpm setup-hooks
 ```
 
 ### Documentación de Seguridad
@@ -119,25 +119,25 @@ npm run setup-hooks
 
 ```bash
 # Desarrollo
-npm run dev          # Inicia el servidor de desarrollo
-npm run build        # Genera build de producción
-npm run start        # Inicia servidor de producción
+pnpm dev          # Inicia el servidor de desarrollo
+pnpm build        # Genera build de producción
+pnpm start        # Inicia servidor de producción
 
 # Calidad de código
-npm run lint         # Ejecuta ESLint
-npm run type-check   # Verifica tipos TypeScript
-npm run format       # Formatea código con Prettier
+pnpm lint         # Ejecuta ESLint
+pnpm type-check   # Verifica tipos TypeScript
+pnpm format       # Formatea código con Prettier
 
 # Seguridad
-npm run validate-env # Valida variables de entorno
-npm run security-check # Verifica seguridad antes de commit
-npm run setup-hooks  # Configura git hooks de seguridad
-npm run predeploy    # Checklist pre-deployment
+pnpm validate-env # Valida variables de entorno
+pnpm security-check # Verifica seguridad antes de commit
+pnpm setup-hooks  # Configura git hooks de seguridad
+pnpm predeploy    # Checklist pre-deployment
 ```
 
 ## Estructura del Proyecto
 
-\`\`\`
+```
 ├── app/                    # App Router de Next.js
 │   ├── auth/              # Páginas de autenticación
 │   ├── dashboard/         # Dashboard principal
@@ -156,7 +156,7 @@ npm run predeploy    # Checklist pre-deployment
 │   └── types.ts           # Tipos de TypeScript
 ├── scripts/               # Scripts SQL para la base de datos
 └── middleware.ts          # Middleware de Next.js
-\`\`\`
+```
 
 ## Base de Datos
 
@@ -184,10 +184,10 @@ Todas las tablas implementan Row Level Security para garantizar que los usuarios
 
 ### Variables de Entorno Requeridas
 
-\`\`\`env
+```env
 NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
-\`\`\`
+```
 
 ## Funcionalidades por Rol
 
