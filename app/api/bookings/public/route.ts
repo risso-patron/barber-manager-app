@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseServiceKey)
+const supabase = hasSupabaseConfig
+  ? createClient(supabaseUrl!, supabaseServiceKey!)
+  : null
 
 /**
  * API Route para crear reservas desde el enlace público
@@ -54,6 +56,15 @@ export async function POST(request: NextRequest) {
         { success: false, error: "Formato de email inválido" },
         { status: 400 }
       )
+    }
+
+    // Demo mode: sin Supabase, devolver reserva simulada exitosa
+    if (!supabase) {
+      return NextResponse.json({
+        success: true,
+        appointmentId: `demo-${Date.now()}`,
+        message: "Reserva registrada en modo demo",
+      })
     }
 
     // Buscar o crear cliente por teléfono/email
@@ -250,7 +261,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error consultando reservas" }, { status: 500 })
     }
 
-    const formatted = (bookings || []).map((b: any) => ({
+    const formatted = (bookings || []).map((b: { id: string; services?: { name?: string }; users?: { name?: string }; appointment_date: string; appointment_time: string; status: string }) => ({
       id: b.id,
       serviceName: b.services?.name,
       employeeName: b.users?.name,

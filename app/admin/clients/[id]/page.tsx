@@ -15,10 +15,10 @@ import {
   Clock, Send, Gift, CheckCircle2, Sparkles,
 } from "lucide-react"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 interface ClientProfile {
   id: string
@@ -104,6 +104,13 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
   useEffect(() => {
     if (!adminUser) return
 
+    if (!supabase) {
+      // Demo mode: build a placeholder profile from params.id
+      setClient({ id: params.id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null })
+      setIsLoading(false)
+      return
+    }
+
     const loadProfile = async () => {
       const [
         { data: profile },
@@ -148,14 +155,16 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
       setIsLoading(false)
     }
 
-    loadProfile()
+    void loadProfile()
   }, [adminUser, params.id])
 
   const handleSaveNotes = async () => {
     if (!client) return
     setIsSaving(true)
     setSaveSuccess(false)
-    await supabase.from("users").update({ admin_notes: notes || null }).eq("id", client.id)
+    if (supabase) {
+      await supabase.from("users").update({ admin_notes: notes || null }).eq("id", client.id)
+    }
     setIsSaving(false)
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 2500)
@@ -163,6 +172,14 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
 
   const handleSendMessage = async () => {
     if (!adminUser || !msgText.trim()) return
+    if (!supabase) {
+      setMessages(prev => [{ id: `demo-${Date.now()}`, subject: msgSubject.trim() || null, message: msgText.trim(), is_read: false, created_at: new Date().toISOString() }, ...prev])
+      setMsgText("")
+      setMsgSubject("")
+      setMsgSuccess(true)
+      setTimeout(() => setMsgSuccess(false), 2500)
+      return
+    }
     setIsSendingMsg(true)
     const { data } = await supabase
       .from("client_messages")
@@ -371,7 +388,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                             })} · {appt.appointment_time.slice(0, 5)} · {appt.barber?.name ?? "—"}
                           </p>
                         </div>
-                        {appt.service?.price != null && (
+                        {(appt.service?.price !== null && appt.service?.price !== undefined) && (
                           <span className="text-sm font-semibold text-green-700 ml-4">
                             ${appt.service.price}
                           </span>
@@ -568,7 +585,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
                     </div>
                     <p className="text-gray-500 mt-0.5">
                       {GIFT_TYPE_LABEL[g.gift_type]?.label ?? g.gift_type}
-                      {g.value != null && ` · ${g.gift_type === "discount_pct" ? `${g.value}%` : `$${g.value}`}`}
+                      {g.value !== null && g.value !== undefined && ` · ${g.gift_type === "discount_pct" ? `${g.value}%` : `$${g.value}`}`}
                       {g.is_redeemed && <span className="ml-1 text-green-600">· Canjeado</span>}
                     </p>
                   </div>

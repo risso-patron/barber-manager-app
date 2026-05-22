@@ -13,7 +13,6 @@ import {
   User,
   Search,
   CheckCircle,
-  XCircle,
   DollarSign,
   TrendingUp,
   Star,
@@ -31,10 +30,19 @@ interface Appointment {
   notes?: string
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+interface AppointmentRow {
+  id: string
+  appointment_date: string
+  appointment_time?: string | null
+  status: Appointment["status"]
+  notes?: string | null
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string; price?: number } | null
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function ClientHistoryPage() {
   const user = useRequireAuth(["client"])
@@ -44,6 +52,11 @@ export default function ClientHistoryPage() {
 
   useEffect(() => {
     if (!user) return
+    if (!supabase) {
+      setAllAppointments([])
+      return
+    }
+
     supabase
       .from("appointments")
       .select(`id, appointment_date, appointment_time, status, notes,
@@ -52,7 +65,7 @@ export default function ClientHistoryPage() {
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .then(({ data }) => {
-        if (data) setAllAppointments((data as any[]).map(a => ({
+        if (data) setAllAppointments((data as AppointmentRow[]).map((a) => ({
           id: a.id,
           serviceName: a.service?.name || "",
           employeeName: a.barber?.name || "",
@@ -262,6 +275,7 @@ export default function ClientHistoryPage() {
               </div>
             </div>
             <select
+              aria-label="Filtrar citas por estado"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-2 border rounded-md"

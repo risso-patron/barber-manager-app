@@ -6,7 +6,7 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, Package, BarChart3, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors, LogOut } from "lucide-react"
+import { Calendar, Users, Package, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors, LogOut } from "lucide-react"
 
 interface DashboardStats {
   totalAppointments: number
@@ -19,10 +19,27 @@ interface DashboardStats {
   pendingAppointments: number
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+interface RevenueAppointment {
+  service: {
+    price: number | null
+  } | null
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
+
+const DEMO_STATS: DashboardStats = {
+  totalAppointments: 14,
+  todayAppointments: 3,
+  totalEmployees: 3,
+  activeEmployees: 3,
+  totalClients: 24,
+  newClientsMonth: 6,
+  monthlyRevenue: 840,
+  pendingAppointments: 2,
+}
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -40,39 +57,50 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const loadStats = async () => {
+      if (!supabase) {
+        setStats(DEMO_STATS)
+        return
+      }
+
       const today = new Date().toISOString().split("T")[0]
       const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
 
-      const [
-        { count: totalAppointments },
-        { count: todayAppointments },
-        { count: pendingAppointments },
-        { count: totalEmployees },
-        { count: totalClients },
-        { count: newClientsMonth },
-        { data: revenueData },
-      ] = await Promise.all([
-        supabase.from("appointments").select("*", { count: "exact", head: true }),
-        supabase.from("appointments").select("*", { count: "exact", head: true }).eq("appointment_date", today),
-        supabase.from("appointments").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "employee"),
-        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client"),
-        supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client").gte("created_at", firstOfMonth),
-        supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
-      ])
+      try {
+        const [
+          { count: totalAppointments },
+          { count: todayAppointments },
+          { count: pendingAppointments },
+          { count: totalEmployees },
+          { count: totalClients },
+          { count: newClientsMonth },
+          { data: revenueData },
+        ] = await Promise.all([
+          supabase.from("appointments").select("*", { count: "exact", head: true }),
+          supabase.from("appointments").select("*", { count: "exact", head: true }).eq("appointment_date", today),
+          supabase.from("appointments").select("*", { count: "exact", head: true }).eq("status", "pending"),
+          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "employee"),
+          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client"),
+          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client").gte("created_at", firstOfMonth),
+          supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
+        ])
 
-      const monthlyRevenue = (revenueData as any[])?.reduce((sum: number, a: any) => sum + (a.service?.price || 0), 0) || 0
+        const revenueRows = (revenueData ?? []) as RevenueAppointment[]
+        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.price ?? 0), 0)
 
-      setStats({
-        totalAppointments: totalAppointments || 0,
-        todayAppointments: todayAppointments || 0,
-        totalEmployees: totalEmployees || 0,
-        activeEmployees: totalEmployees || 0,
-        totalClients: totalClients || 0,
-        newClientsMonth: newClientsMonth || 0,
-        monthlyRevenue,
-        pendingAppointments: pendingAppointments || 0,
-      })
+        setStats({
+          totalAppointments: totalAppointments || 0,
+          todayAppointments: todayAppointments || 0,
+          totalEmployees: totalEmployees || 0,
+          activeEmployees: totalEmployees || 0,
+          totalClients: totalClients || 0,
+          newClientsMonth: newClientsMonth || 0,
+          monthlyRevenue,
+          pendingAppointments: pendingAppointments || 0,
+        })
+      } catch (error) {
+        console.warn("No se pudieron cargar estadísticas admin, usando datos demo:", error)
+        setStats(DEMO_STATS)
+      }
     }
 
     loadStats()
@@ -83,7 +111,12 @@ export default function AdminDashboard() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("currentUser")
+    }
     router.push("/auth/login")
   }
 

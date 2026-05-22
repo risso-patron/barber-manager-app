@@ -5,7 +5,6 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { 
   Scissors, 
@@ -24,12 +23,12 @@ import { createBrowserClient } from "@supabase/ssr"
 import { ServiceModal } from "@/components/admin/services/service-modal"
 import { DeleteConfirmModal } from "@/components/admin/services/delete-confirm-modal"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function ServicesPage() {
+  const router = useRouter()
   const user = useRequireAuth(["admin"])
   const [services, setServices] = useState<Service[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -40,6 +39,7 @@ export default function ServicesPage() {
 
   // Load services from Supabase
   useEffect(() => {
+    if (!supabase) return
     supabase.from("services").select("*").order("name").then(({ data }) => {
       if (data) setServices(data)
     })
@@ -91,8 +91,6 @@ export default function ServicesPage() {
   }
 
   if (!user) return null
-
-  const router = useRouter()
 
   return (
     <div className="space-y-6">

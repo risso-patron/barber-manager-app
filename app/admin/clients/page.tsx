@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -23,13 +23,14 @@ import {
   Eye
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
+import { DEMO_CLIENTS } from "@/lib/demo-appointments"
 import { ClientModal } from "@/components/admin/clients/client-modal"
 import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 export default function ClientsPage() {
   const user = useRequireAuth(["admin"])
@@ -40,9 +41,13 @@ export default function ClientsPage() {
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Load clients from Supabase
+  // Load clients from Supabase (or demo data)
   useEffect(() => {
     if (!user) return
+    if (!supabase) {
+      setClients(DEMO_CLIENTS.map(c => ({ ...c, email: c.email ?? "", isActive: true })))
+      return
+    }
     supabase
       .from("users")
       .select("id, name, email, phone, created_at")
@@ -50,7 +55,7 @@ export default function ClientsPage() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (!data) return
-        setClients(data.map((u: any) => ({
+        setClients(data.map((u: { id: string; name: string; email: string; phone: string | null; created_at: string }) => ({
           id: u.id,
           name: u.name,
           email: u.email,
@@ -122,6 +127,11 @@ export default function ClientsPage() {
 
   const handleUpdateClient = async (client: Client | Omit<Client, "id">) => {
     const updatedClient = client as Client
+    if (!supabase) {
+      setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+      setEditingClient(null)
+      return
+    }
     await supabase
       .from("users")
       .update({ name: updatedClient.name, email: updatedClient.email, phone: updatedClient.phone })
@@ -131,6 +141,11 @@ export default function ClientsPage() {
   }
 
   const handleDeleteClient = async (id: string) => {
+    if (!supabase) {
+      setClients(clients.filter(c => c.id !== id))
+      setDeletingClient(null)
+      return
+    }
     await supabase.from("users").delete().eq("id", id)
     setClients(clients.filter(c => c.id !== id))
     setDeletingClient(null)

@@ -13,7 +13,6 @@ import {
   Calendar, 
   Clock, 
   User,
-  MapPin,
   Edit,
   X,
   CheckCircle,
@@ -33,10 +32,19 @@ interface Appointment {
   notes?: string
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+interface AppointmentRow {
+  id: string
+  appointment_date: string
+  appointment_time: string
+  status: Appointment["status"]
+  notes?: string | null
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string; duration?: number } | null
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function ClientAppointmentsPage() {
   const router = useRouter()
@@ -49,6 +57,11 @@ export default function ClientAppointmentsPage() {
 
   useEffect(() => {
     if (!user) return
+    if (!supabase) {
+      setAppointments([])
+      return
+    }
+
     supabase
       .from("appointments")
       .select(`id, appointment_date, appointment_time, status, notes,
@@ -57,7 +70,7 @@ export default function ClientAppointmentsPage() {
       .eq("client_id", user.id)
       .order("appointment_date", { ascending: false })
       .then(({ data }) => {
-        if (data) setAppointments((data as any[]).map(a => ({
+        if (data) setAppointments((data as AppointmentRow[]).map((a) => ({
           id: a.id,
           serviceName: a.service?.name || "",
           employeeName: a.barber?.name || "",
@@ -123,7 +136,7 @@ export default function ClientAppointmentsPage() {
   }
 
   const handleCancelConfirm = async (reason: string) => {
-    if (!appointmentToCancel || !user) return
+    if (!appointmentToCancel || !user || !supabase) return
 
     // Verificar sesión activa antes de intentar actualizar
     const { data: { user: authUser } } = await supabase.auth.getUser()

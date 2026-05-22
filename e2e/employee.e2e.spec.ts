@@ -5,11 +5,12 @@ declare const process: any;
 const { expect } = test;
 
 // Setup Supabase client for DB operations (bypass UI)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false }
-});
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
+const supabase = hasSupabaseConfig
+  ? createClient(supabaseUrl!, supabaseKey!, { auth: { persistSession: false } })
+  : null;
 
 test.describe('Flujo de Empleado - E2E', () => {
   let employeeId: string;
@@ -17,7 +18,11 @@ test.describe('Flujo de Empleado - E2E', () => {
   let testPass: string;
   let testClientName: string;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ }, testInfo) => {
+    if (!hasSupabaseConfig) {
+      testInfo.skip(true, 'Supabase credentials not configured — skipping employee E2E');
+      return;
+    }
     // Generar credenciales únicas para cada worker/test para evitar colisiones en paralelo
     const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     testEmail = `employee${uniqueId}@example.com`;

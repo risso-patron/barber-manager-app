@@ -61,6 +61,15 @@ interface ClientGift {
   created_at: string
 }
 
+interface AppointmentRow {
+  id: string
+  appointment_date: string
+  appointment_time: string
+  status: Appointment["status"]
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string } | null
+}
+
 const GIFT_LABEL: Record<string, string> = {
   discount_pct:   "% Descuento",
   discount_fixed: "Descuento fijo",
@@ -68,10 +77,9 @@ const GIFT_LABEL: Record<string, string> = {
   free_product:   "Producto gratis",
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   confirmed: { label: "Confirmada",  color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -91,6 +99,15 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     if (!user) return
+    if (!supabase) {
+      setAppointments([])
+      setPastAppointments([])
+      setProducts([])
+      setMessages([])
+      setGifts([])
+      return
+    }
+
     const today = new Date().toISOString().substring(0, 10)
 
     supabase
@@ -103,7 +120,7 @@ export default function ClientDashboard() {
       .limit(20)
       .then(({ data }) => {
         if (!data) return
-        const all = (data as any[]).map(a => ({
+        const all = (data as AppointmentRow[]).map((a) => ({
           id: a.id,
           service: a.service?.name || "",
           barber: a.barber?.name || "",
@@ -154,12 +171,16 @@ export default function ClientDashboard() {
 
   const handleLogout = async () => {
     localStorage.removeItem("currentUser")
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     router.push("/auth/login")
   }
 
   const handleMarkRead = async (id: string) => {
-    await supabase.from("client_messages").update({ is_read: true }).eq("id", id)
+    if (supabase) {
+      await supabase.from("client_messages").update({ is_read: true }).eq("id", id)
+    }
     setMessages(prev => prev.map(m => m.id === id ? { ...m, is_read: true } : m))
   }
 
@@ -491,7 +512,7 @@ export default function ClientDashboard() {
                       {g.description && <p className="text-xs text-gray-600 mt-0.5">{g.description}</p>}
                       <p className="text-xs text-gray-500 mt-0.5">
                         {GIFT_LABEL[g.gift_type] ?? g.gift_type}
-                        {g.value != null && ` · ${g.gift_type === "discount_pct" ? `${g.value}% off` : `$${g.value}`}`}
+                        {g.value !== null && g.value !== undefined && ` · ${g.gift_type === "discount_pct" ? `${g.value}% off` : `$${g.value}`}`}
                         {(g.service_name || g.product_name) && ` · ${g.service_name || g.product_name}`}
                       </p>
                       {g.is_redeemed ? (

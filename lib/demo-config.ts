@@ -203,9 +203,9 @@ Estás usando Barber Manager en modo demostración.
 Los datos se guardan localmente y no requieren base de datos.
 
 Usuarios de prueba:
-• Admin: admin@demo.com / demo123
-• Barbero: barber@demo.com / demo123
-• Cliente: client@demo.com / demo123
+• Admin: admin@demo.com / Demo1234
+• Barbero: barber@demo.com / Demo1234
+• Cliente: client@demo.com / Demo1234
 
 Para usar en producción, configura Supabase en .env.local
 `;

@@ -12,11 +12,41 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { DEMO_USERS } from "@/lib/demo-config"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
+
+function tryDemoLogin(data: LoginInput): { ok: boolean; userName?: string } {
+  const demoUser = Object.values(DEMO_USERS).find(
+    (user) => user.email.toLowerCase() === data.email.toLowerCase() && user.password === data.password,
+  )
+
+  if (!demoUser) {
+    return { ok: false }
+  }
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify({
+        id: demoUser.id,
+        email: demoUser.email,
+        role: demoUser.role,
+        profile: {
+          name: demoUser.name,
+          role: demoUser.role,
+          phone: demoUser.phone,
+          avatar_url: demoUser.avatar_url,
+        },
+      }),
+    )
+  }
+
+  return { ok: true, userName: demoUser.name }
+}
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -43,12 +73,34 @@ export function LoginForm() {
     setIsLoading(true)
     setError(null)
 
+    if (!supabase) {
+      const demoLogin = tryDemoLogin(data)
+      if (demoLogin.ok) {
+        router.push("/dashboard")
+        router.refresh()
+        setIsLoading(false)
+        return
+      }
+
+      setError("Credenciales inválidas para modo demo. Revisa email y contraseña.")
+      setIsLoading(false)
+      return
+    }
+
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     })
 
     if (authError) {
+      const demoLogin = tryDemoLogin(data)
+      if (demoLogin.ok) {
+        router.push("/dashboard")
+        router.refresh()
+        setIsLoading(false)
+        return
+      }
+
       setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
       setIsLoading(false)
       return
@@ -66,6 +118,15 @@ export function LoginForm() {
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
         </CardHeader>
         <CardContent>
+          {!hasSupabaseConfig && (
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Entorno sin Supabase configurado. Ajusta las variables para habilitar login real.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {message && (
             <Alert className="mb-4">
               <CheckCircle className="h-4 w-4" />
@@ -142,9 +203,11 @@ export function LoginForm() {
                 Regístrate aquí
               </Button>
             </p>
-            <p className="text-xs text-gray-500 mt-4">
-              💡 <strong>Usuario demo:</strong> admin@demo.com / Demo1234
-            </p>
+            <div className="text-xs text-gray-500 mt-4 space-y-1">
+              <p>💡 <strong>Credenciales demo:</strong></p>
+              <p>Admin: admin@demo.com / Demo1234</p>
+              <p>Cliente: client@demo.com / Demo1234</p>
+            </div>
           </div>
         </CardContent>
       </Card>

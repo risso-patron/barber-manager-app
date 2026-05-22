@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,10 +34,9 @@ interface Employee {
   role?: string
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 type BookingStep = "service" | "barber" | "datetime" | "confirm"
 
@@ -58,6 +57,12 @@ export default function BookAppointmentPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false)
+      setSubmitError("Entorno sin Supabase configurado. Configura variables para reservar en modo real.")
+      return
+    }
+
     Promise.all([
       supabase
         .from("services")
@@ -77,7 +82,7 @@ export default function BookAppointmentPage() {
   }, [])
 
   const handleSubmit = async () => {
-    if (!user || !service || !barber) return
+    if (!user || !service || !barber || !supabase) return
     setIsSubmitting(true)
     setSubmitError(null)
 

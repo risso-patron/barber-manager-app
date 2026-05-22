@@ -8,13 +8,22 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { Footer } from "@/components/layout/footer"
 import { Loader2 } from "lucide-react"
 
+interface DashboardUser {
+  role?: string
+  name?: string
+  profile?: {
+    role?: string
+    name?: string
+  }
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<DashboardUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +38,7 @@ export default function DashboardLayout({
         return
       }
       try {
-        const currentUser = JSON.parse(currentUserStr)
+        const currentUser = JSON.parse(currentUserStr) as DashboardUser
         setUser(currentUser)
         setIsLoading(false)
       } catch {
@@ -65,7 +74,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar userRole={user.role || "client"} userName={user.name} />
+      <Sidebar userRole={user.profile?.role || user.role || "client"} userName={user.profile?.name || user.name} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6">{children}</div>
         <Footer />

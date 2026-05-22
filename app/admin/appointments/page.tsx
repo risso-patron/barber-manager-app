@@ -11,7 +11,6 @@ import {
   Calendar, 
   Plus, 
   Search, 
-  Filter, 
   Clock, 
   User, 
   Scissors,
@@ -24,14 +23,19 @@ import {
 } from "lucide-react"
 import {
   type Appointment,
-  type AppointmentStatus
+  type AppointmentStatus,
+  type Service,
+  type Employee,
+  type Client,
 } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
+import { DEMO_APPOINTMENTS, DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_CLIENTS } from "@/lib/demo-appointments"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
+
 import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
 import { DeleteConfirmModal } from "@/components/admin/appointments/delete-confirm-modal"
 
@@ -49,12 +53,25 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   cancelled: "Cancelada",
 }
 
+interface AppointmentRow {
+  id: string
+  appointment_date: string
+  appointment_time: string
+  status: AppointmentStatus
+  notes?: string | null
+  created_at: string
+  client?: Array<{ id: string; name: string; phone?: string | null }>
+  barber?: Array<{ id: string; name: string; phone?: string | null }>
+  service?: Array<{ id: string; name: string; price?: number; duration?: number }>
+}
+
 export default function AppointmentsPage() {
+  const router = useRouter()
   const user = useRequireAuth(["admin"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [services, setServices] = useState<any[]>([])
-  const [employees, setEmployees] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all")
   const [filterDate, setFilterDate] = useState("")
@@ -63,8 +80,16 @@ export default function AppointmentsPage() {
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Load appointments from Supabase
+  // Load appointments from Supabase (or demo data)
   useEffect(() => {
+    if (!supabase) {
+      setAppointments(DEMO_APPOINTMENTS)
+      setServices(DEMO_SERVICES)
+      setEmployees(DEMO_EMPLOYEES)
+      setClients(DEMO_CLIENTS.map(c => ({ ...c, email: c.email ?? "" })))
+      return
+    }
+
     supabase
       .from("appointments")
       .select(`
@@ -81,32 +106,62 @@ export default function AppointmentsPage() {
       .order("appointment_date", { ascending: false })
       .then(({ data }) => {
         if (data) {
-          setAppointments(data.map((a: any) => ({
-            id: a.id,
-            clientId: a.client?.id || "",
-            clientName: a.client?.name || "",
-            clientPhone: a.client?.phone || "",
-            employeeId: a.barber?.id || "",
-            employeeName: a.barber?.name || "",
-            serviceId: a.service?.id || "",
-            serviceName: a.service?.name || "",
-            date: a.appointment_date,
-            time: a.appointment_time,
-            duration: a.service?.duration || 0,
-            price: a.service?.price || 0,
-            status: a.status,
-            notes: a.notes,
-            createdAt: a.created_at,
-          })))
+          setAppointments((data as AppointmentRow[]).map((raw) => {
+            const client = raw.client?.[0]
+            const barber = raw.barber?.[0]
+            const service = raw.service?.[0]
+            return {
+              id: raw.id,
+              clientId: client?.id || "",
+              clientName: client?.name || "",
+              clientPhone: client?.phone || "",
+              employeeId: barber?.id || "",
+              employeeName: barber?.name || "",
+              serviceId: service?.id || "",
+              serviceName: service?.name || "",
+              date: raw.appointment_date,
+              time: raw.appointment_time,
+              duration: service?.duration || 0,
+              price: service?.price || 0,
+              status: raw.status,
+              notes: raw.notes || undefined,
+              createdAt: raw.created_at,
+            }
+          }))
         }
       })
     // Cargar servicios, empleados y clientes para los modales
     supabase.from("services").select("id, name, price, duration").eq("is_active", true).order("name")
-      .then(({ data }) => { if (data) setServices(data) })
+      .then(({ data }) => {
+        if (!data) return
+        setServices(data.map((s) => ({
+          id: s.id,
+          name: s.name,
+          price: s.price,
+          duration: s.duration,
+        })))
+      })
     supabase.from("users").select("id, name, phone").eq("role", "employee").order("name")
-      .then(({ data }) => { if (data) setEmployees(data) })
+      .then(({ data }) => {
+        if (!data) return
+        setEmployees(data.map((e) => ({
+          id: e.id,
+          name: e.name,
+          email: "",
+          phone: e.phone || "",
+          role: "employee" as const,
+        })))
+      })
     supabase.from("users").select("id, name, phone").eq("role", "client").order("name")
-      .then(({ data }) => { if (data) setClients(data) })
+      .then(({ data }) => {
+        if (!data) return
+        setClients(data.map((c) => ({
+          id: c.id,
+          name: c.name,
+          email: "",
+          phone: c.phone || "",
+        })))
+      })
   }, [])
 
   // Filter appointments
@@ -138,6 +193,18 @@ export default function AppointmentsPage() {
   }, [appointments])
 
   const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
+    // Demo mode: crear cita local
+    if (!supabase) {
+      const newAppt: Appointment = {
+        ...appointment,
+        id: `demo-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      }
+      setAppointments(prev => [newAppt, ...prev])
+      setIsCreateModalOpen(false)
+      return
+    }
+
     let clientId = appointment.clientId
 
     // Si es un cliente nuevo, crearlo vía API (service role para evitar RLS)
@@ -176,6 +243,13 @@ export default function AppointmentsPage() {
 
   const handleUpdateAppointment = async (appointment: Appointment | Omit<Appointment, "id" | "createdAt">) => {
     const updatedAppointment = appointment as Appointment
+    if (!supabase) {
+      setAppointments(appointments.map(apt =>
+        apt.id === updatedAppointment.id ? updatedAppointment : apt
+      ))
+      setEditingAppointment(null)
+      return
+    }
     const { error } = await supabase
       .from("appointments")
       .update({
@@ -197,12 +271,25 @@ export default function AppointmentsPage() {
   }
 
   const handleDeleteAppointment = async (id: string) => {
+    if (!supabase) {
+      setAppointments(appointments.filter(apt => apt.id !== id))
+      setDeletingAppointment(null)
+      return
+    }
     const { error } = await supabase.from("appointments").delete().eq("id", id)
     if (!error) setAppointments(appointments.filter(apt => apt.id !== id))
     setDeletingAppointment(null)
   }
 
   const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
+    if (!supabase) {
+      setAppointments(appointments.map(apt =>
+        apt.id === id ? { ...apt, status: newStatus } : apt
+      ))
+      setActiveDropdown(null)
+      return
+    }
+
     const { error } = await supabase.from("appointments").update({ status: newStatus }).eq("id", id)
 
     if (!error) {
@@ -210,8 +297,6 @@ export default function AppointmentsPage() {
         apt.id === id ? { ...apt, status: newStatus } : apt
       ))
     } else {
-      // Puede ser condición de carrera (ej: cliente canceló mientras admin tenía la página abierta).
-      // Re-obtenemos el estado real desde la DB y actualizamos el estado local.
       const { data: fresh } = await supabase
         .from("appointments")
         .select("status")
@@ -222,10 +307,8 @@ export default function AppointmentsPage() {
         setAppointments(prev =>
           prev.map(apt => apt.id === id ? { ...apt, status: fresh.status as AppointmentStatus } : apt)
         )
-        alert(
-          `No se pudo cambiar el estado.\n\n` +
-          `Esta cita ya fue marcada como "${fresh.status === "cancelled" ? "Cancelada" : fresh.status === "completed" ? "Completada" : fresh.status}" ` +
-          `(posiblemente por el cliente). El listado fue actualizado.`
+        console.warn(
+          `No se pudo cambiar el estado. La cita ya fue marcada como "${fresh.status}" y el listado fue actualizado.`
         )
       }
     }
@@ -233,8 +316,6 @@ export default function AppointmentsPage() {
   }
 
   if (!user) return null
-
-  const router = useRouter()
 
   return (
     <div className="space-y-6">

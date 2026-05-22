@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
+import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,10 +48,9 @@ interface BookingData {
   email?: string
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function ReservarPage() {
   const router = useRouter()
@@ -72,6 +72,13 @@ export default function ReservarPage() {
       return date.toISOString().slice(0, 10)
     })
     setAvailableDates(dates)
+
+    if (!supabase) {
+      setServices(DEMO_SERVICES.map(s => ({ id: s.id, name: s.name, description: s.description, price: s.price, duration: s.duration })))
+      setEmployees(DEMO_EMPLOYEES.map(e => ({ id: e.id, name: e.name })))
+      setIsLoading({ services: false, employees: false })
+      return
+    }
 
     const fetchInitialData = async () => {
       try {

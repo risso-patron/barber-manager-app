@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { User, Gift, Star, History, X, Loader2, CheckCircle, Bell } from "lucide-react"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 interface SignupPromptModalProps {
   isOpen: boolean
@@ -71,16 +71,18 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
       return
     }
 
-    // 2. Auto-login
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: result.email,
-      password,
-    })
+    // 2. Auto-login (si hay Supabase configurado)
+    if (supabase) {
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: result.email,
+        password,
+      })
 
-    if (loginError) {
-      setError("Cuenta activada, pero hubo un problema al iniciar sesión. Intenta desde la pantalla de login.")
-      setIsLoading(false)
-      return
+      if (loginError) {
+        setError("Cuenta activada, pero hubo un problema al iniciar sesión. Intenta desde la pantalla de login.")
+        setIsLoading(false)
+        return
+      }
     }
 
     setSuccess(true)

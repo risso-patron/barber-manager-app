@@ -53,10 +53,20 @@ interface ReportEmployee {
   name: string
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+interface DbAppointmentRow {
+  id: string
+  appointment_date: string
+  status: string
+  client_id: string
+  barber_id: string
+  service: { name: string; price: number; duration: number } | null
+  barber: { name: string } | null
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 export default function ReportsPage() {
   useRequireAuth(["admin"])
@@ -69,6 +79,11 @@ export default function ReportsPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
   const fetchReportData = useCallback(async (backgroundSync = false) => {
+    if (!supabase) {
+      setLastSyncedAt(new Date())
+      return
+    }
+
     if (!backgroundSync) {
       setIsSyncing(true)
     }
@@ -89,7 +104,7 @@ export default function ReportsPage() {
 
     if (appointmentsResult.data) {
       setAppointments(
-        (appointmentsResult.data as any[]).map((a) => ({
+        (appointmentsResult.data as DbAppointmentRow[]).map((a) => ({
           id: a.id,
           date: a.appointment_date,
           status: a.status,
@@ -113,6 +128,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     void fetchReportData()
+    if (!supabase) return
 
     const channel = supabase
       .channel("reports-admin-live")
@@ -214,7 +230,7 @@ export default function ReportsPage() {
       const matchesEmployee = selectedEmployee === "all" || apt.employeeId === selectedEmployee
       return aptDate >= start && aptDate <= end && matchesEmployee
     })
-  }, [period, selectedEmployee, appointments])
+  }, [period, selectedEmployee, appointments]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stats = useMemo(() => {
     // Función para calcular stats de un grupo de appointments
@@ -351,7 +367,7 @@ export default function ReportsPage() {
       }))
 
     // Datos para gráfico de torta de servicios
-    const serviceChartData = topServices.map(([name, data], i) => ({
+    const serviceChartData = topServices.map(([name, data], _i) => ({
       name: name.length > 14 ? name.slice(0, 14) + "…" : name,
       value: data.revenue,
       count: data.count,
@@ -381,7 +397,7 @@ export default function ReportsPage() {
       previousTotalRevenue: previousMetrics.totalRevenue,
       previousCompleted: previousMetrics.completed,
     }
-  }, [filteredAppointments, previousPeriodAppointments, period, selectedEmployee, appointments])
+  }, [filteredAppointments, previousPeriodAppointments, period, selectedEmployee, appointments]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleExportExcel = async () => {
     const XLSX = await import("xlsx")

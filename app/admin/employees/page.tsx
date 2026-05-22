@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -17,31 +17,35 @@ import {
   Edit,
   Trash2,
   UserCheck,
-  UserX,
   Calendar,
   ArrowLeft,
   KeyRound
 } from "lucide-react"
-import { type Employee } from "@/lib/demo-appointments"
+import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
 import { DeleteConfirmModal } from "@/components/admin/employees/delete-confirm-modal"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
+
+const BARBER_SPECIALTIES = ["Barbero", "Estilista", "Colorista"]
+
+type EmployeeWithSpecialty = Employee & { specialty?: string | null }
 
 export default function EmployeesPage() {
+  const router = useRouter()
   const user = useRequireAuth(["admin"])
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const [employees, setEmployees] = useState<EmployeeWithSpecialty[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
   const [newEmployeePassword, setNewEmployeePassword] = useState<{ name: string; password: string } | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState<"all" | "barberos" | "staff">("all")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeWithSpecialty | null>(null)
+  const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithSpecialty | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
 
@@ -60,8 +64,11 @@ export default function EmployeesPage() {
     }
   }
 
-  // Load employees from Supabase
   useEffect(() => {
+    if (!supabase) {
+      setEmployees(DEMO_EMPLOYEES)
+      return
+    }
     supabase
       .from("users")
       .select("id, name, email, phone, role, avatar_url, specialty")
@@ -73,8 +80,6 @@ export default function EmployeesPage() {
       })
   }, [])
 
-  const BARBER_SPECIALTIES = ["Barbero", "Estilista", "Colorista"]
-
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       const matchesSearch =
@@ -82,7 +87,7 @@ export default function EmployeesPage() {
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.phone.includes(searchTerm)
 
-      const specialty = (emp as any).specialty || ""
+      const specialty = emp.specialty || ""
       const matchesRole =
         filterRole === "all" ||
         (filterRole === "barberos" && BARBER_SPECIALTIES.includes(specialty)) ||
@@ -94,7 +99,7 @@ export default function EmployeesPage() {
 
   // Statistics
   const stats = useMemo(() => {
-    const barbers = employees.filter(emp => BARBER_SPECIALTIES.includes((emp as any).specialty || "")).length
+    const barbers = employees.filter(emp => BARBER_SPECIALTIES.includes(emp.specialty || "")).length
     return {
       total: employees.length,
       barbers,
@@ -102,19 +107,18 @@ export default function EmployeesPage() {
     }
   }, [employees])
 
-  const handleCreateEmployee = async (employee: Omit<Employee, "id">) => {
+  const handleCreateEmployee = async (employee: Omit<EmployeeWithSpecialty, "id">) => {
     setApiError(null)
-    const emp = employee as any
     const res = await fetch("/api/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: emp.name,
-        email: emp.email,
-        phone: emp.phone,
-        role: emp.role,
-        specialty: emp.specialty || null,
-        avatar_url: emp.avatar || null,
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        role: employee.role,
+        specialty: employee.specialty || null,
+        avatar_url: employee.avatar || null,
       }),
     })
     const json = await res.json()
@@ -123,21 +127,26 @@ export default function EmployeesPage() {
       return
     }
     setEmployees([{ ...json.employee, avatar: json.employee.avatar_url }, ...employees])
-    setNewEmployeePassword({ name: emp.name, password: json.tempPassword })
+    setNewEmployeePassword({ name: employee.name, password: json.tempPassword })
     setIsCreateModalOpen(false)
   }
 
-  const handleUpdateEmployee = async (employee: Omit<Employee, "id"> | Employee) => {
-    const updatedEmployee = employee as Employee
-    const { id, avatar, ...fields } = updatedEmployee as any
+  const handleUpdateEmployee = async (employee: Omit<EmployeeWithSpecialty, "id"> | EmployeeWithSpecialty) => {
+    const updatedEmployee = employee as EmployeeWithSpecialty
+    const { id, avatar, specialty, role, name, email, phone } = updatedEmployee
+    if (!supabase) {
+      setEmployees(employees.map(emp => emp.id === id ? { ...updatedEmployee } : emp))
+      setEditingEmployee(null)
+      return
+    }
     const { data, error } = await supabase
       .from("users")
       .update({
-        name: fields.name,
-        email: fields.email,
-        phone: fields.phone,
-        role: fields.role,
-        specialty: fields.specialty || null,
+        name,
+        email,
+        phone,
+        role,
+        specialty: specialty || null,
         avatar_url: avatar || null,
       })
       .eq("id", id)
@@ -156,8 +165,6 @@ export default function EmployeesPage() {
   }
 
   if (!user) return null
-
-  const router = useRouter()
 
   return (
     <div className="space-y-6">
@@ -298,6 +305,7 @@ export default function EmployeesPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                       {employee.avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={employee.avatar} alt={employee.name} className="w-full h-full object-cover" />
                       ) : (
                         employee.name.charAt(0)
@@ -306,10 +314,10 @@ export default function EmployeesPage() {
                     <div>
                       <CardTitle className="text-lg">{employee.name}</CardTitle>
                       <Badge
-                        variant={(employee as any).specialty && ["Barbero","Estilista","Colorista"].includes((employee as any).specialty) ? "default" : "secondary"}
+                        variant={employee.specialty && ["Barbero","Estilista","Colorista"].includes(employee.specialty) ? "default" : "secondary"}
                         className="mt-1"
                       >
-                        {(employee as any).specialty || "Empleado"}
+                        {employee.specialty || "Empleado"}
                       </Badge>
                     </div>
                   </div>
