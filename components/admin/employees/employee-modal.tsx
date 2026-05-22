@@ -51,7 +51,7 @@ const PRESET_AVATARS = [
 ]
 
 export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
-  const defaultSpecialty = (employee as any)?.specialty || "Barbero"
+  const defaultSpecialty = (employee as { specialty?: string } | undefined)?.specialty || "Barbero"
   const defaultRole = SPECIALTIES.find(s => s.label === defaultSpecialty)?.role || "employee"
 
   const [formData, setFormData] = useState({

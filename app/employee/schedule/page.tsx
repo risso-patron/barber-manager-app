@@ -40,7 +40,9 @@ export default function EmployeeSchedulePage() {
       .eq("barber_id", user.id)
       .order("appointment_date")
       .then(({ data }) => {
-        if (data) setAppointments((data as any[]).map(a => ({
+        if (data) setAppointments(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data as any[]).map(a => ({
           id: a.id,
           clientId: a.client?.id || "",
           clientName: a.client?.name || "",

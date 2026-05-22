@@ -60,6 +60,7 @@ export default function TimeTrackingPage() {
       .order("date", { ascending: false })
       .limit(30)
     if (data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setWorkHistory((data as any[]).map(r => ({
         id: r.id,
         date: r.date,

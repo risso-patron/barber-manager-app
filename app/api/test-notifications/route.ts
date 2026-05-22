@@ -4,8 +4,8 @@ import { Twilio } from 'twilio';
 
 export async function GET() {
   const results = {
-    email: { success: false, message: '', data: null as any },
-    whatsapp: { success: false, message: '', data: null as any },
+    email: { success: false, message: '', data: null as Record<string, string | undefined> | null },
+    whatsapp: { success: false, message: '', data: null as Record<string, string | undefined> | null },
   };
 
   // Prueba de Email
@@ -92,9 +92,10 @@ Este mensaje fue enviado automáticamente desde Barber Manager App.`
         status: message.status,
       };
     }
-  } catch (error: any) {
-    results.whatsapp.message = error.message || 'Error desconocido';
-    if (error.code) results.whatsapp.data = { code: error.code };
+  } catch (error: unknown) {
+    const twilioError = error as { message?: string; code?: string }
+    results.whatsapp.message = twilioError.message || 'Error desconocido';
+    if (twilioError.code) results.whatsapp.data = { code: twilioError.code };
   }
 
   return NextResponse.json({

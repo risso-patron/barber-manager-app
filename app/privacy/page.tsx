@@ -151,7 +151,7 @@ export default function PrivacyPage() {
               </div>
 
               <div className="border-l-4 border-red-500 pl-4">
-                <h3 className="font-medium text-slate-800 dark:text-slate-200">Eliminación ("Derecho al Olvido")</h3>
+                <h3 className="font-medium text-slate-800 dark:text-slate-200">Eliminación (&quot;Derecho al Olvido&quot;)</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   • Clientes: Pueden solicitar borrado total 30 días después de última cita<br />
                   • Empleados: Datos laborales retenidos 7 años (obligación fiscal)<br />
@@ -312,7 +312,7 @@ export default function PrivacyPage() {
             </h2>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
               Notificaremos cambios significativos con 30 días de anticipación. Cambios menores se 
-              actualizan sin aviso previo. Consulta la fecha "Última actualización" al inicio de esta página.
+              actualizan sin aviso previo. Consulta la fecha &quot;Última actualización&quot; al inicio de esta página.
             </p>
           </section>
 

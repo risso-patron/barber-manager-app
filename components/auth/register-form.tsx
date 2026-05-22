@@ -137,10 +137,10 @@ export function RegisterForm() {
         // Show success message and redirect
         router.push("/auth/login?message=Registro exitoso. Revisa tu email para confirmar tu cuenta.")
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Registration error:", err)
-
-      if (err.message === "NETWORK_ERROR" || err.message?.includes("Failed to fetch")) {
+      const errMsg = err instanceof Error ? err.message : undefined
+      if (errMsg === "NETWORK_ERROR" || errMsg?.includes("Failed to fetch")) {
         setIsNetworkError(true)
         setError(
           "Error de conexión. Esto puede ocurrir en el modo de vista previa. En producción, la aplicación funcionará correctamente.",

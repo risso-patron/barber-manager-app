@@ -45,6 +45,7 @@ export default function EmployeeDashboard() {
       .order("appointment_date", { ascending: false })
 
     if (data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setAppointments((data as any[]).map(a => ({
         id: a.id,
         clientId: a.client?.id || "",
@@ -69,7 +70,7 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     if (!user) return
-    void loadAppointments(user.id, (user as any).name)
+    void loadAppointments(user.id, (user as { name?: string }).name)
 
     const channel = supabase
       .channel(`employee-appointments-${user.id}`)
@@ -86,7 +87,7 @@ export default function EmployeeDashboard() {
           if (payload.eventType === "INSERT") message = "Nueva cita asignada"
           if (payload.eventType === "DELETE") message = "Se eliminó una cita"
           if (payload.eventType === "UPDATE") {
-            const newStatus = (payload.new as any)?.status
+            const newStatus = (payload.new as { status?: string })?.status
             message = newStatus
               ? `Estado actualizado: ${newStatus}`
               : "Una cita fue actualizada"
@@ -101,7 +102,7 @@ export default function EmployeeDashboard() {
             ...prev,
           ].slice(0, 8))
 
-          void loadAppointments(user.id, (user as any).name)
+          void loadAppointments(user.id, (user as { name?: string }).name)
         }
       )
       .subscribe()
@@ -130,9 +131,9 @@ export default function EmployeeDashboard() {
       return aptDate >= weekStart
     })
     const completed = appointments.filter(apt => apt.status === "completed")
-    const rated = completed.filter((apt: any) => apt.rating != null && apt.rating > 0)
+    const rated = completed.filter((apt) => apt.rating !== null && apt.rating !== undefined && apt.rating > 0)
     const avgRating = rated.length > 0
-      ? rated.reduce((sum: number, apt: any) => sum + (apt.rating || 0), 0) / rated.length
+      ? rated.reduce((sum: number, apt) => sum + (apt.rating || 0), 0) / rated.length
       : null
     const pending = today.filter(apt => apt.status === "pending")
     const confirmed = today.filter(apt => apt.status === "confirmed")
@@ -519,11 +520,10 @@ export default function EmployeeDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {stats.avgRating != null ? stats.avgRating.toFixed(1) : "—"}
+                  {stats.avgRating !== null ? stats.avgRating.toFixed(1) : "—"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {stats.avgRating != null
-                    ? `Calificación Promedio (${stats.ratedCount})`
+                  {stats.avgRating !== null                    ? `Calificación Promedio (${stats.ratedCount})`
                     : "Sin calificaciones aún"}
                 </p>
               </div>

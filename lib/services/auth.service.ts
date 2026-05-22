@@ -27,7 +27,7 @@ export interface SignInData {
 export interface AuthResponse {
   success: boolean
   error?: string
-  data?: any
+  data?: unknown
 }
 
 /**
@@ -451,6 +451,7 @@ export async function resetPassword(email: string): Promise<AuthResponse> {
 /**
  * Subscribe to auth changes
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function onAuthStateChange(callback: (user: any | null) => void) {
   // Demo mode - no real-time auth changes
   if (isDemoMode) {

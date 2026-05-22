@@ -84,6 +84,7 @@ export default function BarberDashboard() {
     ])
 
     if (todayResult.data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped = (todayResult.data as any[]).map((a) => ({
         id: a.id,
         client: a.users?.name ?? "Cliente",
@@ -93,7 +94,9 @@ export default function BarberDashboard() {
         status: a.status as TodayAppointment["status"],
       }))
       setAppointments(mapped)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const monthRevenue = (monthResult.data as any[] ?? []).reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (sum: number, a: any) => sum + (a.services?.price ?? 0), 0
       )
       setStats({

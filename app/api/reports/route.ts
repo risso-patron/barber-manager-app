@@ -3,6 +3,21 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { ReportStats } from "@/lib/types"
 
+interface AppointmentRow {
+  status: string
+  appointment_date: string
+  service_id: string
+  client_id?: string | null
+  services?: { price?: number | null } | null
+  users?: { name?: string | null } | null
+}
+
+interface ServiceRow {
+  id: string
+  name: string
+  price?: number | null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
@@ -80,21 +95,23 @@ export async function GET(request: NextRequest) {
       .lte("appointment_date", prevEndDate)
 
     // Calcular estadísticas básicas
-    const completed = (appointments || []).filter((a) => a.status === "completed").length
-    const cancelled = (appointments || []).filter((a) => a.status === "cancelled").length
-    const pending = (appointments || []).filter((a) => a.status === "pending").length
-    const confirmed = (appointments || []).filter((a) => a.status === "confirmed").length
+    const appts = (appointments ?? []) as AppointmentRow[]
+    const prevAppts = (prevAppointments ?? []) as AppointmentRow[]
+    const completed = appts.filter((a) => a.status === "completed").length
+    const cancelled = appts.filter((a) => a.status === "cancelled").length
+    const pending = appts.filter((a) => a.status === "pending").length
+    const confirmed = appts.filter((a) => a.status === "confirmed").length
 
-    const totalRevenue = (appointments || [])
+    const totalRevenue = appts
       .filter((a) => a.status === "completed")
-      .reduce((sum: number, a: any) => sum + (a.services?.price || 0), 0)
+      .reduce((sum: number, a) => sum + (a.services?.price || 0), 0)
 
-    const totalClients = new Set((appointments || []).map((a) => a.client_id)).size
+    const totalClients = new Set(appts.map((a) => a.client_id)).size
     const totalAppointments = appointments?.length || 0
 
     // Calcular datos para gráfico diario
     const dailyData: Record<string, { revenue: number; count: number }> = {}
-    ;(appointments || []).forEach((apt: any) => {
+    ;appts.forEach((apt) => {
       const date = apt.appointment_date
       if (!dailyData[date]) {
         dailyData[date] = { revenue: 0, count: 0 }
@@ -122,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     // Calcular datos para gráfico de empleados
     const employeeData: Record<string, { revenue: number; count: number }> = {}
-    ;(appointments || []).forEach((apt: any) => {
+    ;appts.forEach((apt) => {
       const barberName = apt.users?.name || "Sin asignar"
       if (!employeeData[barberName]) {
         employeeData[barberName] = { revenue: 0, count: 0 }
@@ -145,8 +162,9 @@ export async function GET(request: NextRequest) {
     const { data: services } = await supabase.from("services").select("id, name, price")
 
     const serviceData: Record<string, number> = {}
-    ;(appointments || []).forEach((apt: any) => {
-      const service = services?.find((s: any) => s.id === apt.service_id)
+    const serviceItems = (services ?? []) as ServiceRow[]
+    ;appts.forEach((apt) => {
+      const service = serviceItems.find((s) => s.id === apt.service_id)
       const serviceName = service?.name || "Desconocido"
       if (apt.status === "completed") {
         serviceData[serviceName] = (serviceData[serviceName] || 0) + (service?.price || 0)
@@ -165,7 +183,7 @@ export async function GET(request: NextRequest) {
     const trendData: Array<{ label: string; ingresos: number }> = []
     const weeks: Record<string, number> = {}
 
-    ;(appointments || []).forEach((apt: any) => {
+    ;appts.forEach((apt) => {
       const date = new Date(apt.appointment_date)
       const weekNum = Math.ceil((date.getDate() - date.getDay()) / 7)
       const monthYear = date.toLocaleDateString("es-ES", { month: "short", year: "2-digit" })
@@ -181,12 +199,12 @@ export async function GET(request: NextRequest) {
     })
 
     // Calcular estadísticas del período anterior
-    const previousCompleted = (prevAppointments || []).filter(
+    const previousCompleted = prevAppts.filter(
       (a) => a.status === "completed"
     ).length
-    const previousRevenue = (prevAppointments || [])
+    const previousRevenue = prevAppts
       .filter((a) => a.status === "completed")
-      .reduce((sum: number, a: any) => sum + (a.services?.price || 0), 0)
+      .reduce((sum: number, a) => sum + (a.services?.price || 0), 0)
 
     const revenueChange =
       previousRevenue > 0

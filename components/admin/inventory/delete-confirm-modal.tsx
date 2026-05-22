@@ -28,7 +28,7 @@ export function DeleteConfirmModal({ isOpen, onClose, onConfirm, itemName }: Del
 
         <div className="p-6">
           <p className="text-gray-700">
-            ¿Estás seguro de que deseas eliminar el artículo <span className="font-semibold">"{itemName}"</span>?
+            ¿Estás seguro de que deseas eliminar el artículo <span className="font-semibold">&quot;{itemName}&quot;</span>?
           </p>
           <p className="text-sm text-gray-500 mt-2">
             Esta acción no se puede deshacer.

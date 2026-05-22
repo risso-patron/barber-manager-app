@@ -57,7 +57,7 @@ export default function EmployeeProfilePage() {
         setProfile((prev) => ({
           ...prev,
           email: user.email || "",
-          role: (user as any).role || "employee",
+          role: (user as { role?: string }).role || "employee",
         }))
       }
       setLoading(false)

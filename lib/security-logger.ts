@@ -41,7 +41,7 @@ export interface SecurityEvent {
   userAgent?: string
   path: string
   method?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   severity: 'low' | 'medium' | 'high' | 'critical'
 }
 

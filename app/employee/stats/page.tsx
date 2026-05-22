@@ -62,7 +62,9 @@ export default function EmployeeStatsPage() {
         service:services(id, name, price, duration)`)
       .eq("barber_id", user.id)
       .then(({ data }) => {
-        if (data) setAppointments((data as any[]).map(a => ({
+        if (data) setAppointments(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data as any[]).map(a => ({
           id: a.id,
           clientId: a.client?.id || "",
           clientName: a.client?.name || "",
@@ -103,7 +105,7 @@ export default function EmployeeStatsPage() {
     const uniqueClients = new Set(completed.map(apt => apt.clientId)).size
 
     // Rating real desde BD
-    const rated = completed.filter(apt => apt.rating != null && apt.rating > 0)
+    const rated = completed.filter(apt => apt.rating !== null && apt.rating !== undefined && apt.rating > 0)
     const avgRating = rated.length > 0
       ? rated.reduce((sum, apt) => sum + (apt.rating ?? 0), 0) / rated.length
       : null
@@ -227,7 +229,7 @@ export default function EmployeeStatsPage() {
             <Star className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            {stats.avgRating != null ? (
+            {stats.avgRating !== null ? (
               <>
                 <div className="text-2xl font-bold text-yellow-600">{stats.avgRating.toFixed(1)} ★</div>
                 <p className="text-xs text-muted-foreground">
@@ -437,7 +439,7 @@ export default function EmployeeStatsPage() {
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">{apt.serviceName}</p>
                   <p className="text-sm">{apt.feedback}</p>
-                  {apt.rating != null && apt.rating > 0 && (
+                  {apt.rating !== null && apt.rating !== undefined && apt.rating > 0 && (
                     <p className="text-xs text-yellow-700 mt-2">⭐ {apt.rating.toFixed(1)} / 5</p>
                   )}
                 </div>
@@ -515,7 +517,7 @@ export default function EmployeeStatsPage() {
               <li>✅ {stats.totalCompleted} servicios completados exitosamente</li>
               <li>✅ ${stats.totalRevenue} en ingresos generados</li>
               <li>✅ {stats.uniqueClients} clientes satisfechos</li>
-              {stats.avgRating != null && (
+              {stats.avgRating !== null && (
                 <li>⭐ Calificación promedio: {stats.avgRating.toFixed(1)}/5 ({stats.ratedCount} reseñas)</li>
               )}
               {stats.completionRate >= 90 && (
