@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CancelAppointmentModal } from "@/components/client/cancel-appointment-modal"
+import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 import { useToast, ToastContainer } from "@/components/ui/toast"
 import { 
   Calendar, 
@@ -58,7 +59,16 @@ export default function ClientAppointmentsPage() {
   useEffect(() => {
     if (!user) return
     if (!supabase) {
-      setAppointments([])
+      setAppointments(DEMO_APPOINTMENTS.map(a => ({
+        id: a.id,
+        serviceName: a.serviceName,
+        employeeName: a.employeeName,
+        date: a.date,
+        time: a.time,
+        status: a.status,
+        duration: a.duration,
+        notes: a.notes,
+      })))
       return
     }
 
@@ -136,7 +146,18 @@ export default function ClientAppointmentsPage() {
   }
 
   const handleCancelConfirm = async (reason: string) => {
-    if (!appointmentToCancel || !user || !supabase) return
+    if (!appointmentToCancel || !user) return
+
+    // Demo mode: actualizar estado localmente
+    if (!supabase) {
+      setAppointments(prev => prev.map(a =>
+        a.id === appointmentToCancel.id ? { ...a, status: "cancelled" as const } : a
+      ))
+      success("Cita cancelada exitosamente (modo demo)")
+      setCancelModalOpen(false)
+      setAppointmentToCancel(null)
+      return
+    }
 
     // Verificar sesión activa antes de intentar actualizar
     const { data: { user: authUser } } = await supabase.auth.getUser()
