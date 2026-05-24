@@ -70,7 +70,7 @@ export default function ClientHistoryPage() {
           serviceName: a.service?.[0]?.name || "",
           employeeName: a.barber?.[0]?.name || "",
           date: a.appointment_date,
-          time: a.appointment_time,
+          time: a.appointment_time ?? undefined,
           status: a.status,
           price: a.service?.[0]?.price || 0,
           notes: a.notes || undefined,

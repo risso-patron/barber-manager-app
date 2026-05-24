@@ -125,7 +125,7 @@ export default function ClientDashboard() {
           service: a.service?.[0]?.name || "",
           barber: a.barber?.[0]?.name || "",
           date: a.appointment_date,
-          time: a.appointment_time,
+          time: a.appointment_time ?? undefined,
           status: a.status,
         }))
         setAppointments(all.filter(a =>
