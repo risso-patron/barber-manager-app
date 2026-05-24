@@ -593,7 +593,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       </span>
                     </div>
                     <p className="text-gray-500 mt-0.5">
-                      {GIFT_TYPE_LABEL[g.gift_type]?.label ?? g.gift_type}
+                      {GIFT_TYPE_LABEL[g.gift_type as keyof typeof GIFT_TYPE_LABEL]?.label ?? g.gift_type}
                       {g.value !== null && g.value !== undefined && ` · ${g.gift_type === "discount_pct" ? `${g.value}%` : `$${g.value}`}`}
                       {g.is_redeemed && <span className="ml-1 text-green-600">· Canjeado</span>}
                     </p>
