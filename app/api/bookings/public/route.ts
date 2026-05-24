@@ -231,6 +231,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (!supabase) {
+      return NextResponse.json({ success: true, bookings: [] })
+    }
+
     // Buscar cliente por teléfono
     const { data: client } = await supabase
       .from("users")
