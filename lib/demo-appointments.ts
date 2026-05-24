@@ -16,6 +16,7 @@ export interface Appointment {
   price: number
   status: AppointmentStatus
   notes?: string
+  rating?: number
   createdAt: string
 }
 
