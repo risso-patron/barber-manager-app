@@ -405,6 +405,10 @@ export async function updateUserProfile(
  */
 export async function updatePassword(newPassword: string): Promise<AuthResponse> {
   try {
+    if (isDemoMode || !supabase) {
+      return { success: false, error: "No disponible en modo demo" }
+    }
+
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     })
@@ -433,6 +437,10 @@ export async function updatePassword(newPassword: string): Promise<AuthResponse>
  */
 export async function resetPassword(email: string): Promise<AuthResponse> {
   try {
+    if (isDemoMode || !supabase) {
+      return { success: false, error: "No disponible en modo demo" }
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/reset-password`,
     })
