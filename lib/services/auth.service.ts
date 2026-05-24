@@ -35,6 +35,14 @@ export interface AuthResponse {
  */
 export async function signUp(data: SignUpData): Promise<AuthResponse> {
   try {
+    // Demo mode - sign up not supported
+    if (isDemoMode || !supabase) {
+      return {
+        success: false,
+        error: "Registro no disponible en modo demo",
+      }
+    }
+
     // 1. Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
