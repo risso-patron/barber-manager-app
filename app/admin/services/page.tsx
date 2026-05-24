@@ -71,12 +71,14 @@ export default function ServicesPage() {
   }, [services])
 
   const handleCreateService = async (service: Omit<Service, "id">) => {
+    if (!supabase) { setIsCreateModalOpen(false); return }
     const { data, error } = await supabase.from("services").insert(service).select().single()
     if (!error && data) setServices([data, ...services])
     setIsCreateModalOpen(false)
   }
 
   const handleUpdateService = async (service: Service | Omit<Service, "id">) => {
+    if (!supabase) { setEditingService(null); return }
     const updatedService = service as Service
     const { id, ...fields } = updatedService
     const { data, error } = await supabase.from("services").update(fields).eq("id", id).select().single()
@@ -85,6 +87,7 @@ export default function ServicesPage() {
   }
 
   const handleDeleteService = async (id: string) => {
+    if (!supabase) { setDeletingService(null); return }
     const { error } = await supabase.from("services").delete().eq("id", id)
     if (!error) setServices(services.filter(s => s.id !== id))
     setDeletingService(null)
