@@ -131,7 +131,7 @@ export function getClientIP(request: Request): string {
   const realIP = request.headers.get('x-real-ip')
   
   if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim()
+    return (forwardedFor.split(',')[0] ?? forwardedFor).trim()
   }
   
   if (realIP) {
