@@ -74,7 +74,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar userRole={user.profile?.role || user.role || "client"} userName={user.profile?.name || user.name} />
+      <Sidebar userRole={(user.profile?.role || user.role || "client") as "admin" | "employee" | "client"} userName={user.profile?.name || user.name} />
       <main className="flex-1 overflow-y-auto">
         <div className="p-6">{children}</div>
         <Footer />
