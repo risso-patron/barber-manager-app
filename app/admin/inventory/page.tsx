@@ -47,7 +47,7 @@ function mapDbToItem(row: InventoryRow): InventoryItem {
   return {
     id: row.id,
     name: row.product_name,
-    category: row.category || 'suministro',
+    category: (row.category || 'suministro') as "suministro" | "producto" | "herramienta",
     quantity: qty,
     minStock: min,
     price: row.cost_per_unit || 0,
