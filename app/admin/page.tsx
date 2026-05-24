@@ -20,9 +20,7 @@ interface DashboardStats {
 }
 
 interface RevenueAppointment {
-  service: {
-    price: number | null
-  } | null
+  service: { price: number | null }[] | null
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -84,8 +82,8 @@ export default function AdminDashboard() {
           supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
         ])
 
-        const revenueRows = (revenueData ?? []) as RevenueAppointment[]
-        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.price ?? 0), 0)
+        const revenueRows = (revenueData ?? []) as unknown as RevenueAppointment[]
+        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.[0]?.price ?? 0), 0)
 
         setStats({
           totalAppointments: totalAppointments || 0,
