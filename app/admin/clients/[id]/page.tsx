@@ -215,7 +215,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     if (giftType === "free_product") payload.product_name = giftExtra.trim() || null
 
     if (!supabase) {
-      setGifts(prev => [{ id: `demo-${Date.now()}`, gift_type: giftType, title: giftTitle.trim(), description: giftDesc.trim() || null, value: giftValue ? parseFloat(giftValue) : null, service_name: null, product_name: null, code: null, is_redeemed: false, expires_at: null, created_at: new Date().toISOString() } as ClientGift, ...prev])
+      setGifts(prev => [{ id: `demo-${Date.now()}`, gift_type: giftType, title: giftTitle.trim(), description: giftDesc.trim() || null, value: giftValue ? parseFloat(giftValue) : null, service_name: null, product_name: null, code: "", is_redeemed: false, expires_at: null, created_at: new Date().toISOString() } as ClientGift, ...prev])
       setGiftTitle(""); setGiftDesc(""); setGiftValue(""); setGiftExtra("")
       setIsSendingGift(false); setGiftSuccess(true)
       setTimeout(() => setGiftSuccess(false), 2500)
