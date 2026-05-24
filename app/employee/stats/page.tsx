@@ -321,7 +321,8 @@ export default function EmployeeStatsPage() {
                   formatter={(value: number, name: string) =>
                     name === "ingresos" ? [`$${value.toFixed(2)}`, "Ingresos"] : [value, "Servicios"]
                   }
-                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName ?? label}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  labelFormatter={(label, payload: any[]) => payload?.[0]?.payload?.fullName ?? label}
                 />
                 <Bar dataKey="ingresos" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
