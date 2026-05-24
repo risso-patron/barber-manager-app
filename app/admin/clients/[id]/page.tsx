@@ -60,7 +60,7 @@ interface ClientGift {
   created_at: string
 }
 
-const GIFT_TYPE_LABEL: Record<string, { label: string; icon: string }> = {
+const GIFT_TYPE_LABEL: Record<"discount_pct" | "discount_fixed" | "free_service" | "free_product", { label: string; icon: string }> = {
   discount_pct:   { label: "% Descuento",     icon: "%" },
   discount_fixed: { label: "Descuento fijo $", icon: "$" },
   free_service:   { label: "Servicio gratis",  icon: "✂" },
