@@ -149,8 +149,9 @@ export default function BookAppointmentPage() {
             } else {
               const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
               const currentIndex = steps.indexOf(step)
-              if (currentIndex > 0) {
-                setStep(steps[currentIndex - 1])
+              const prevStep = steps[currentIndex - 1]
+              if (currentIndex > 0 && prevStep) {
+                setStep(prevStep)
               }
             }
           }}>
@@ -414,8 +415,9 @@ export default function BookAppointmentPage() {
               onClick={() => {
                 const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
                 const currentIndex = steps.indexOf(step)
-                if (currentIndex > 0) {
-                  setStep(steps[currentIndex - 1])
+                const prevStep = steps[currentIndex - 1]
+                if (currentIndex > 0 && prevStep) {
+                  setStep(prevStep)
                 }
               }}
             >
@@ -430,8 +432,9 @@ export default function BookAppointmentPage() {
               } else {
                 const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
                 const currentIndex = steps.indexOf(step)
-                if (currentIndex < steps.length - 1) {
-                  setStep(steps[currentIndex + 1])
+                const nextStep = steps[currentIndex + 1]
+                if (currentIndex < steps.length - 1 && nextStep) {
+                  setStep(nextStep)
                 }
               }
             }}
