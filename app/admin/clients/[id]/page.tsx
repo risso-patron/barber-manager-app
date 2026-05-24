@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
@@ -74,7 +74,8 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   cancelled: { label: "Cancelada",  color: "bg-red-100 text-red-800" },
 }
 
-export default function ClientProfilePage({ params }: { params: { id: string } }) {
+export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const adminUser = useRequireAuth(["admin"])
   const [client, setClient] = useState<ClientProfile | null>(null)
@@ -105,8 +106,8 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     if (!adminUser) return
 
     if (!supabase) {
-      // Demo mode: build a placeholder profile from params.id
-      setClient({ id: params.id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null })
+      // Demo mode: build a placeholder profile from id
+      setClient({ id: id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null })
       setIsLoading(false)
       return
     }
@@ -121,26 +122,26 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
         supabase
           .from("users")
           .select("id, name, email, phone, created_at, admin_notes")
-          .eq("id", params.id)
+          .eq("id", id)
           .single(),
         supabase
           .from("appointments")
           .select(`id, appointment_date, appointment_time, status,
             service:services(name, price, duration),
             barber:users!appointments_barber_id_fkey(name)`)
-          .eq("client_id", params.id)
+          .eq("client_id", id)
           .order("appointment_date", { ascending: false })
           .limit(20),
         supabase
           .from("client_messages")
           .select("id, subject, message, is_read, created_at")
-          .eq("to_client_id", params.id)
+          .eq("to_client_id", id)
           .order("created_at", { ascending: false })
           .limit(20),
         supabase
           .from("client_gifts")
           .select("id, gift_type, title, description, value, service_name, product_name, code, is_redeemed, expires_at, created_at")
-          .eq("to_client_id", params.id)
+          .eq("to_client_id", id)
           .order("created_at", { ascending: false })
           .limit(20),
       ])
@@ -156,7 +157,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     }
 
     void loadProfile()
-  }, [adminUser, params.id])
+  }, [adminUser, id])
 
   const handleSaveNotes = async () => {
     if (!client) return
@@ -185,7 +186,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
       .from("client_messages")
       .insert({
         from_admin_id: adminUser.id,
-        to_client_id: params.id,
+        to_client_id: id,
         subject: msgSubject.trim() || null,
         message: msgText.trim(),
       })
@@ -204,7 +205,7 @@ export default function ClientProfilePage({ params }: { params: { id: string } }
     setIsSendingGift(true)
     const payload: Record<string, unknown> = {
       from_admin_id: adminUser.id,
-      to_client_id: params.id,
+      to_client_id: id,
       gift_type: giftType,
       title: giftTitle.trim(),
       description: giftDesc.trim() || null,
