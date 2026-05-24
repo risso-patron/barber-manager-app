@@ -81,7 +81,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+const STATUS_CONFIG: Record<"confirmed" | "pending" | "completed" | "cancelled", { label: string; color: string }> = {
   confirmed: { label: "Confirmada",  color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   pending:   { label: "Pendiente",   color: "bg-amber-100 text-amber-700 border-amber-200" },
   completed: { label: "Completada",  color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -315,7 +315,7 @@ export default function ClientDashboard() {
             {appointments.length > 0 ? (
               <div className="space-y-3">
                 {appointments.slice(0, 3).map((apt) => {
-                  const cfg = STATUS_CONFIG[apt.status] || STATUS_CONFIG.pending
+                  const cfg = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
                   return (
                     <div key={apt.id} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                       <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
