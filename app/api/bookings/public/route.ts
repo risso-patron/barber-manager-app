@@ -265,14 +265,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error consultando reservas" }, { status: 500 })
     }
 
-    const formatted = (bookings || []).map((b: { id: string; services?: { name?: string }; users?: { name?: string }; appointment_date: string; appointment_time: string; status: string }) => ({
+    interface BookingRow {
+      id: string
+      appointment_date: string
+      appointment_time: string
+      status: string
+      notes?: string | null
+      services?: { name?: string; price?: number }[] | null
+      users?: { name?: string }[] | null
+    }
+    const formatted = (bookings as unknown as BookingRow[] || []).map((b) => ({
       id: b.id,
-      serviceName: b.services?.name,
-      employeeName: b.users?.name,
+      serviceName: b.services?.[0]?.name,
+      employeeName: b.users?.[0]?.name,
       date: b.appointment_date,
       time: b.appointment_time,
       status: b.status,
-      price: b.services?.price,
+      price: b.services?.[0]?.price,
     }))
 
     return NextResponse.json({
