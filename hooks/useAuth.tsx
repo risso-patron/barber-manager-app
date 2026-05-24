@@ -119,7 +119,7 @@ function useAuthInternal(): UseAuthReturn {
       return false
     }
 
-    setUser(response.data?.user)
+    setUser((response.data?.user as AuthUser | undefined) ?? null)
     setIsLoading(false)
     return true
   }, [])

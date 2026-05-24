@@ -27,7 +27,7 @@ export interface SignInData {
 export interface AuthResponse {
   success: boolean
   error?: string
-  data?: unknown
+  data?: Record<string, unknown>
 }
 
 /**
