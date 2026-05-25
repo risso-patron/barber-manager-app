@@ -4,12 +4,6 @@ import twilio from 'twilio';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -56,9 +50,11 @@ export async function POST(
     });
 
     // 1. Enviar email de confirmación al cliente
+    const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
     let emailSent = false;
     if (clientEmail) {
       try {
+        if (!resend) throw new Error('RESEND_API_KEY not configured');
         await resend.emails.send({
           from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
           to: clientEmail,
@@ -100,11 +96,15 @@ export async function POST(
     }
 
     // 2. Notificar al barbero por WhatsApp
+    const twilioClient = (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+      ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+      : null;
     let whatsappSent = false;
     try {
       const barberPhone = process.env.TWILIO_TEST_TO; // En producción, usar el teléfono real del barbero
       
       if (barberPhone) {
+        if (!twilioClient) throw new Error('Twilio not configured');
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: barberPhone,
@@ -129,6 +129,7 @@ Este espacio ahora está disponible para otros clientes.`
     let clientWhatsappSent = false;
     if (clientPhone) {
       try {
+        if (!twilioClient) throw new Error('Twilio not configured');
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${clientPhone}`,
