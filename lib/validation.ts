@@ -53,7 +53,7 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
     return { valid: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { valid: false, error: error.errors[0].message }
+      return { valid: false, error: error.errors[0]?.message ?? 'Email inválido' }
     }
     return { valid: false, error: 'Email inválido' }
   }
@@ -114,7 +114,7 @@ export function validatePhone(phone: string): { valid: boolean; error?: string }
     return { valid: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { valid: false, error: error.errors[0].message }
+      return { valid: false, error: error.errors[0]?.message ?? 'Teléfono inválido' }
     }
     return { valid: false, error: 'Teléfono inválido' }
   }
@@ -136,7 +136,7 @@ export function validateName(name: string): { valid: boolean; error?: string } {
     return { valid: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { valid: false, error: error.errors[0].message }
+      return { valid: false, error: error.errors[0]?.message ?? 'Nombre inválido' }
     }
     return { valid: false, error: 'Nombre inválido' }
   }
