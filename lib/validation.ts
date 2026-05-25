@@ -20,7 +20,7 @@ export function sanitizeHTML(input: string): string {
     '/': '&#x2F;',
   }
   
-  return input.replace(/[&<>"'/]/g, (char) => map[char])
+  return input.replace(/[&<>"'/]/g, (char) => map[char] ?? char)
 }
 
 /**
