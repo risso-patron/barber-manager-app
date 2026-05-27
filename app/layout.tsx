@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Cormorant_Garamond, DM_Sans, DM_Mono } from "next/font/google"
 import "./globals.css"
+import { Providers } from "./providers"
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -52,7 +53,7 @@ export default function RootLayout({
           GeistSans.variable
         } ${GeistMono.variable} ${cormorant.variable} ${dmSans.variable} ${dmMono.variable} font-sans antialiased`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

@@ -79,8 +79,6 @@ export async function signUp(data: SignUpData): Promise<AuthResponse> {
     })
 
     if (profileError) {
-      // Delete auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id)
       return {
         success: false,
         error: "Failed to create user profile",
@@ -107,15 +105,8 @@ export async function signUp(data: SignUpData): Promise<AuthResponse> {
  */
 export async function signIn(data: SignInData): Promise<AuthResponse> {
   try {
-    console.log("🔍 Auth Service - isDemoMode:", isDemoMode)
-    console.log("🔍 Auth Service - Supabase URL:", supabaseUrl)
-    console.log("🔍 Auth Service - Email:", data.email)
-    
     // Demo mode authentication
     if (isDemoMode) {
-    console.log("🎭 Modo DEMO activado")
-    console.log("👥 DEMO_USERS:", DEMO_USERS)
-    
     // Convert DEMO_USERS object to array
     const demoUsersArray = Object.values(DEMO_USERS)
     
@@ -123,10 +114,7 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
       (user) => user.email === data.email && user.password === data.password
     )
 
-    console.log("🔎 Usuario demo encontrado:", demoUser)
-    
     if (!demoUser) {
-      console.log("❌ No se encontró usuario demo con esas credenciales")
       return {
         success: false,
         error: "Credenciales inválidas. Por favor, verifica tu email y contraseña.",
@@ -148,7 +136,6 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
 
       if (typeof window !== "undefined") {
         localStorage.setItem("currentUser", JSON.stringify(userProfile))
-        console.log("💾 Usuario guardado en localStorage:", userProfile)
       }
 
       return {
@@ -160,7 +147,6 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
       }
     }
 
-    console.log("🔐 Autenticando con Supabase...")
     // Supabase authentication
     const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
       email: data.email,
@@ -168,7 +154,6 @@ export async function signIn(data: SignInData): Promise<AuthResponse> {
     })
 
     if (authError) {
-      console.log("❌ Error de Supabase:", authError)
       return {
         success: false,
         error: authError.message,
