@@ -1,26 +1,10 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { type Appointment } from "@/lib/demo-appointments"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { createBrowserClient } from "@supabase/ssr"
-import { 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  TrendingUp,
-  Users,
-  Star,
-  Bell,
-  LogIn,
-  LogOut as LogOutIcon
-} from "lucide-react"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,6 +12,7 @@ const supabase = createBrowserClient(
 )
 
 export default function EmployeeDashboard() {
+  const router = useRouter()
   const user = useRequireAuth(["employee"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [isWorking, setIsWorking] = useState(false)
@@ -244,293 +229,208 @@ export default function EmployeeDashboard() {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser")
+    router.push("/auth/login")
+  }
+
   if (!user) return null
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Mi Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenido, {user.name}</p>
-        </div>
-        <div className="flex gap-2">
-          {!isWorking ? (
-            <Button onClick={handleClockIn} className="bg-green-600 hover:bg-green-700">
-              <LogIn className="mr-2 h-4 w-4" />
-              Iniciar Jornada
-            </Button>
-          ) : (
-            <Button onClick={handleClockOut} variant="destructive">
-              <LogOutIcon className="mr-2 h-4 w-4" />
-              Finalizar Jornada
-            </Button>
-          )}
-        </div>
-      </div>
+    <div style={{ minHeight: "100vh", background: "#161412", color: "#f0ebe3" }}>
+      <style>{`
+        @keyframes ornoFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .orno-row { animation: ornoFadeUp 0.35s ease both; }
+        .orno-row:nth-child(1) { animation-delay: 0.04s; }
+        .orno-row:nth-child(2) { animation-delay: 0.10s; }
+        .orno-row:nth-child(3) { animation-delay: 0.16s; }
+        .orno-row:nth-child(4) { animation-delay: 0.22s; }
+        .orno-row:nth-child(5) { animation-delay: 0.28s; }
+        .orno-btn { transition: background 0.15s, color 0.15s; }
+        .orno-btn:hover { background: rgba(240,235,227,0.06) !important; }
+        .orno-complete:hover { color: rgba(240,235,227,0.9) !important; }
+        .orno-cancel:hover { color: #cc2222 !important; }
+        .orno-exit:hover { color: #cc2222 !important; }
+        .orno-pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+      `}</style>
 
-      {/* Work Status */}
-      {isWorking && (
-        <Card className="mb-6 bg-green-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div>
-                  <p className="font-medium">Jornada Activa</p>
-                  <p className="text-sm text-muted-foreground">
-                    Inicio: {workStartTime && formatTime(workStartTime)}
-                  </p>
+      {/* Header */}
+      <header style={{ borderBottom: "1px solid rgba(240,235,227,0.12)" }}>
+        <div className="max-w-5xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
+          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "100px", width: "auto" }} />
+          <div className="flex items-center gap-6">
+            {isWorking && (
+              <span className="orno-pulse" style={{ display: "inline-block", width: "7px", height: "7px", borderRadius: "50%", background: "#4ade80" }} />
+            )}
+            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.04em" }}>
+              {(user as { name?: string }).name || user.email}
+            </span>
+            <button
+              className="orno-exit"
+              onClick={handleLogout}
+              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
+            >
+              Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-8">
+
+
+        {/* ── Jornada ──────────────────────── */}
+        <div className="pt-8 pb-3">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>Jornada</p>
+        </div>
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {isWorking ? (
+            <div>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "28px", fontWeight: 300, color: "#f0ebe3" }}>
+                {getWorkDuration()}
+              </p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.45)", marginTop: "3px" }}>
+                Inicio · {workStartTime && formatTime(workStartTime)}
+              </p>
+            </div>
+          ) : (
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 300, color: "rgba(240,235,227,0.35)" }}>Sin jornada activa</p>
+          )}
+          <button
+            className="orno-btn"
+            onClick={isWorking ? handleClockOut : handleClockIn}
+            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: isWorking ? "#cc2222" : "rgba(240,235,227,0.65)", background: "none", border: "1px solid currentColor", padding: "8px 16px", cursor: "pointer", transition: "color 0.2s" }}
+          >
+            {isWorking ? "Finalizar" : "Iniciar"}
+          </button>
+        </div>
+
+        {/* ── Stats ─────────────────────────── */}
+        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+          {[
+            { value: String(stats.todayAppointments), label: "Citas hoy",     sub: `${stats.confirmedToday} conf. · ${stats.pendingToday} pend.` },
+            { value: String(stats.weekAppointments),  label: "Esta semana",   sub: "Programadas" },
+            { value: String(stats.totalCompleted),    label: "Completadas",   sub: "Total histórico" },
+            { value: `$${stats.todayRevenue}`,        label: "Ingresos hoy",  sub: `Total $${stats.totalRevenue}` },
+          ].map((s, i) => (
+            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 3 ? "1px solid rgba(240,235,227,0.12)" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginTop: "4px" }}>{s.label}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(240,235,227,0.28)", marginTop: "2px" }}>{s.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Agenda de hoy ─────────────────── */}
+        <div className="pt-8 pb-3">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+            Agenda · {new Date(todayDate!).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+        </div>
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+          {todayAppointments.length === 0 ? (
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "rgba(240,235,227,0.30)", padding: "24px 0" }}>Sin citas para hoy</p>
+          ) : (
+            todayAppointments.map((apt, i) => (
+              <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+                <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(240,235,227,0.28)", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#f0ebe3" }}>{apt.time} · {apt.clientName}</p>
+                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: apt.status === "confirmed" ? "rgba(240,235,227,0.55)" : apt.status === "completed" ? "rgba(240,235,227,0.28)" : "#cc2222", textTransform: "uppercase" }}>
+                    {apt.status === "confirmed" ? "Conf." : apt.status === "completed" ? "Ok" : apt.status === "pending" ? "Pend." : "—"}
+                  </span>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold">{getWorkDuration()}</p>
-                <p className="text-sm text-muted-foreground">Tiempo trabajado</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.42)", marginTop: "3px" }}>
+                  {apt.serviceName} · {apt.duration} min · ${apt.price}
+                </p>
+                {apt.notes && (
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(240,235,227,0.28)", marginTop: "2px", fontStyle: "italic" }}>{apt.notes}</p>
+                )}
+                {apt.status === "confirmed" && (
+                  <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+                    <button
+                      className="orno-btn orno-complete"
+                      onClick={() => handleCompleteAppointment(apt.id)}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,235,227,0.50)", background: "none", border: "1px solid rgba(240,235,227,0.20)", padding: "5px 12px", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}
+                    >
+                      Completar
+                    </button>
+                    <button
+                      className="orno-btn orno-cancel"
+                      onClick={() => handleCancelAppointment(apt.id)}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,235,227,0.30)", background: "none", border: "none", padding: "5px 0", cursor: "pointer", transition: "color 0.15s" }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            ))
+          )}
+        </div>
 
-      {/* Real-time Notifications */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-blue-600" />
-            Notificaciones en Tiempo Real
-          </CardTitle>
-          <CardDescription>Cambios recientes en tus citas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {notifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin notificaciones recientes</p>
-          ) : (
-            <div className="space-y-2">
-              {notifications.map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                  <p className="text-sm font-medium">{item.message}</p>
-                  <p className="text-xs text-muted-foreground">
+        {/* ── Próximas citas ────────────────── */}
+        {upcomingAppointments.length > 0 && (
+          <>
+            <div className="pt-8 pb-3">
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>Próximas citas</p>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+              {upcomingAppointments.map((apt, i) => (
+                <div key={apt.id} className="orno-row" style={{ padding: "14px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+                  <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(240,235,227,0.28)", minWidth: "18px", paddingTop: "2px" }}>{String(i + 1).padStart(2, "0")}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", fontWeight: 400, color: "#f0ebe3" }}>
+                      {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {apt.time} · {apt.clientName}
+                    </p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.38)", marginTop: "2px" }}>{apt.serviceName}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── Rendimiento ───────────────────── */}
+        <div className="pt-8 pb-3">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>Rendimiento</p>
+        </div>
+        <div className="grid grid-cols-3" style={{ borderTop: "1px solid rgba(240,235,227,0.12)", marginBottom: "60px" }}>
+          {[
+            { value: String(stats.totalCompleted), label: "Clientes atendidos" },
+            { value: `$${stats.totalRevenue}`,     label: "Ingresos totales" },
+            { value: stats.avgRating !== null ? stats.avgRating.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
+          ].map((s, i) => (
+            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid rgba(240,235,227,0.12)" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{s.value}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(240,235,227,0.40)", marginTop: "4px" }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Notificaciones ────────────────── */}
+        {notifications.length > 0 && (
+          <>
+            <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", paddingTop: "20px", marginBottom: "48px" }}>
+              {notifications.slice(0, 5).map((item) => (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(240,235,227,0.06)" }}>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.55)" }}>{item.message}</p>
+                  <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "10px", color: "rgba(240,235,227,0.25)" }}>
                     {new Date(item.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        )}
 
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Citas Hoy</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.todayAppointments}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.confirmedToday} confirmadas, {stats.pendingToday} pendientes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.weekAppointments}</div>
-            <p className="text-xs text-muted-foreground">Citas programadas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completadas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCompleted}</div>
-            <p className="text-xs text-muted-foreground">Total histórico</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Hoy</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.todayRevenue}</div>
-            <p className="text-xs text-muted-foreground">
-              Total: ${stats.totalRevenue}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Today's Schedule */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Agenda de Hoy</CardTitle>
-            <CardDescription>
-              {new Date(todayDate!).toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {todayAppointments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No tienes citas programadas para hoy</p>
-                </div>
-              ) : (
-                todayAppointments.map((apt) => (
-                  <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex-shrink-0">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium">{apt.time}</p>
-                        <Badge variant="outline" className={`flex items-center gap-1 ${getStatusColor(apt.status)}`}>
-                          {getStatusIcon(apt.status)}
-                          {apt.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-semibold">{apt.clientName}</p>
-                      <p className="text-sm text-muted-foreground">{apt.serviceName}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>{apt.duration} min</span>
-                        <span>${apt.price}</span>
-                      </div>
-                      {apt.notes && (
-                        <p className="text-xs text-muted-foreground mt-1 italic">Nota: {apt.notes}</p>
-                      )}
-                      {apt.status === "confirmed" && (
-                        <div className="flex gap-2 mt-3">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleCompleteAppointment(apt.id)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Completar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleCancelAppointment(apt.id)}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Appointments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Próximas Citas</CardTitle>
-            <CardDescription>Tus próximas citas programadas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingAppointments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No tienes citas próximas programadas</p>
-                </div>
-              ) : (
-                upcomingAppointments.map((apt) => (
-                  <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex-shrink-0">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium">
-                          {new Date(apt.date).toLocaleDateString('es-ES', { 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })} - {apt.time}
-                        </p>
-                        <Badge variant="outline" className={getStatusColor(apt.status)}>
-                          {apt.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-semibold">{apt.clientName}</p>
-                      <p className="text-sm text-muted-foreground">{apt.serviceName}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>{apt.duration} min</span>
-                        <span>${apt.price}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Summary */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Resumen de Rendimiento</CardTitle>
-          <CardDescription>Tus estadísticas generales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{appointments.filter(a => a.status === "completed").length}</p>
-                <p className="text-sm text-muted-foreground">Clientes Atendidos</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-green-100 rounded-full">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${stats.totalRevenue}</p>
-                <p className="text-sm text-muted-foreground">Ingresos Totales</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <Star className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {stats.avgRating !== null ? stats.avgRating.toFixed(1) : "—"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.avgRating !== null                    ? `Calificación Promedio (${stats.ratedCount})`
-                    : "Sin calificaciones aún"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      </main>
     </div>
   )
 }

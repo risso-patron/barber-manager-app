@@ -184,352 +184,220 @@ export default function ClientDashboard() {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, is_read: true } : m))
   }
 
-  const initials = (user.profile?.name || user.email || "U")
-    .split(" ")
-    .map((w: string) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
-
   const nextAppointment = appointments[0]
+  const unreadCount = messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length
+
+  const STATUS_DARK: Record<string, string> = {
+    confirmed: "#cc2222",
+    pending:   "rgba(240,235,227,0.45)",
+    completed: "rgba(240,235,227,0.30)",
+    cancelled: "rgba(240,235,227,0.20)",
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-xl font-bold shadow-lg">
-                {initials}
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm">Bienvenido,</p>
-                <h1 className="text-xl font-bold">{user.profile?.name || user.email}</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Notification bell */}
-              {(messages.filter(m => !m.is_read).length > 0 || gifts.filter(g => !g.is_redeemed).length > 0) && (
-                <div className="relative">
-                  <Bell className="h-5 w-5 text-yellow-400" />
-                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
-                    {messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length}
-                  </span>
-                </div>
-              )}
-              <Button
-                onClick={handleLogout}
-                variant="ghost"
-                className="text-gray-400 hover:text-white hover:bg-white/10"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+    <div style={{ minHeight: "100vh", background: "#161412", color: "#f0ebe3" }}>
+      <style>{`
+        @keyframes ornoFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .orno-row { animation: ornoFadeUp 0.4s ease both; }
+        .orno-row:nth-child(1) { animation-delay: 0.05s; }
+        .orno-row:nth-child(2) { animation-delay: 0.12s; }
+        .orno-row:nth-child(3) { animation-delay: 0.19s; }
+        .orno-row:nth-child(4) { animation-delay: 0.26s; }
+        .orno-action { transition: background 0.16s; }
+        .orno-action:hover { background: rgba(240,235,227,0.04) !important; }
+        .orno-action:hover .orno-arrow { color: #cc2222; transform: translateX(3px); }
+        .orno-arrow { transition: color 0.16s, transform 0.16s; display: inline-block; }
+        .orno-exit:hover { color: #cc2222 !important; }
+      `}</style>
 
-          {/* Next appointment banner */}
+      {/* Header */}
+      <header style={{ borderBottom: "1px solid rgba(240,235,227,0.12)" }}>
+        <div className="max-w-4xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
+          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "100px", width: "auto" }} />
+          <div className="flex items-center gap-6">
+            {unreadCount > 0 && (
+              <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#cc2222", letterSpacing: "0.08em" }}>
+                {unreadCount} nuevo{unreadCount !== 1 ? "s" : ""}
+              </span>
+            )}
+            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.04em" }}>
+              {user.profile?.name || user.email}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="orno-exit"
+              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
+            >
+              Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-8">
+
+        {/* ── Próxima cita ─────────────────── */}
+        <div className="pt-10 pb-4">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+            Próxima cita
+          </p>
+        </div>
+
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", paddingTop: "28px", paddingBottom: "28px" }}>
           {nextAppointment ? (
-            <div className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-xs uppercase tracking-wide mb-1">Próxima cita</p>
-                <p className="font-semibold">{nextAppointment.service}</p>
-                <p className="text-gray-300 text-sm">
-                  {new Date(nextAppointment.date).toLocaleDateString("es-ES", {
-                    weekday: "long", day: "numeric", month: "long",
-                  })} · {nextAppointment.time}
-                </p>
-              </div>
-              <Scissors className="h-8 w-8 text-purple-400 opacity-60" />
+            <div>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(28px,4vw,44px)", fontWeight: 300, letterSpacing: "-0.01em", lineHeight: 1.1, marginBottom: "8px" }}>
+                {nextAppointment.service}
+              </p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.04em" }}>
+                {new Date(nextAppointment.date).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+                {nextAppointment.time ? ` · ${nextAppointment.time}` : ""}
+                {nextAppointment.barber ? ` · ${nextAppointment.barber}` : ""}
+              </p>
             </div>
           ) : (
-            <div className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-gray-300 text-xs uppercase tracking-wide mb-1">Sin citas pendientes</p>
-                <p className="text-gray-400 text-sm">Reserva tu próxima visita</p>
-              </div>
-              <Calendar className="h-8 w-8 text-blue-400 opacity-60" />
+            <div>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,34px)", fontWeight: 300, color: "rgba(240,235,227,0.35)", letterSpacing: "-0.01em" }}>
+                Sin citas pendientes
+              </p>
+              <button
+                onClick={() => router.push("/client/book")}
+                className="orno-action"
+                style={{ marginTop: "12px", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#cc2222", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+              >
+                Reservar ahora →
+              </button>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="max-w-4xl mx-auto px-4 -mt-4">
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="text-center shadow-sm">
-            <CardContent className="pt-4 pb-3">
-              <div className="text-2xl font-bold text-blue-600">{appointments.length}</div>
-              <p className="text-xs text-muted-foreground mt-0.5">Próximas</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center shadow-sm">
-            <CardContent className="pt-4 pb-3">
-              <div className="text-2xl font-bold text-emerald-600">{pastAppointments.length}</div>
-              <p className="text-xs text-muted-foreground mt-0.5">Visitas</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center shadow-sm">
-            <CardContent className="pt-4 pb-3">
-              <div className="text-2xl font-bold text-purple-600">{products.length}</div>
-              <p className="text-xs text-muted-foreground mt-0.5">Productos</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            className="h-14 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md"
-            onClick={() => router.push("/client/book")}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Reservar Cita
-          </Button>
-          <Button
-            variant="outline"
-            className="h-14"
-            onClick={() => router.push("/client/appointments")}
-          >
-            <History className="mr-2 h-4 w-4" />
-            Mis Citas
-          </Button>
+        {/* ── Stats ─────────────────────────── */}
+        <div className="grid grid-cols-3" style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+          {[
+            { value: String(appointments.length),     label: "Próximas" },
+            { value: String(pastAppointments.length),  label: "Visitas" },
+            { value: String(unreadCount),              label: "Sin leer" },
+          ].map((s, i) => (
+            <div key={i} className="orno-row" style={{ padding: "24px 0", borderRight: i < 2 ? "1px solid rgba(240,235,227,0.12)" : "none", paddingLeft: i > 0 ? "28px" : 0, paddingRight: i < 2 ? "28px" : 0 }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(32px,4vw,48px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginTop: "4px" }}>{s.label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Upcoming Appointments */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <div>
-              <CardTitle className="text-base">Próximas Citas</CardTitle>
-              <CardDescription>Citas confirmadas y pendientes</CardDescription>
+        {/* ── Acciones ──────────────────────── */}
+        <div className="pt-8 pb-3">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+            Acciones
+          </p>
+        </div>
+
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+          {[
+            { label: "Reservar cita", sub: "Elige servicio y horario", path: "/client/book" },
+            { label: "Mis citas",     sub: "Próximas y pendientes",    path: "/client/appointments" },
+            { label: "Historial",     sub: "Servicios completados",    path: "/client/history" },
+          ].map((a, i) => (
+            <button
+              key={i}
+              className="orno-action orno-row"
+              onClick={() => router.push(a.path)}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", background: "transparent", border: "none", borderBottom: "1px solid rgba(240,235,227,0.07)", cursor: "pointer", textAlign: "left" }}
+            >
+              <div>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#f0ebe3" }}>{a.label}</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.40)", marginTop: "2px" }}>{a.sub}</p>
+              </div>
+              <span className="orno-arrow" style={{ fontSize: "18px", color: "rgba(240,235,227,0.30)" }}>→</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Citas próximas ────────────────── */}
+        {appointments.length > 0 && (
+          <>
+            <div className="pt-10 pb-3">
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+                Agenda
+              </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/client/appointments")}>
-              Ver todas
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {appointments.length > 0 ? (
-              <div className="space-y-3">
-                {appointments.slice(0, 3).map((apt) => {
-                  const cfg = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending
-                  return (
-                    <div key={apt.id} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                        <Scissors className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{apt.service}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <User className="h-3 w-3" />{apt.barber}
-                          <span className="mx-1">·</span>
-                          <Clock className="h-3 w-3" />{apt.time}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(apt.date).toLocaleDateString("es-ES", {
-                            day: "numeric", month: "long", year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${cfg.color}`}>
-                        {cfg.label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">No tienes citas programadas</p>
-                <Button size="sm" className="mt-3" onClick={() => router.push("/client/book")}>
-                  Reservar ahora
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Products */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4 text-purple-600" />
-              Productos Disponibles
-            </CardTitle>
-            <CardDescription>Productos de la barbería</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {products.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Package className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">No hay productos disponibles</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Package className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{product.product_name}</p>
-                      {product.category && (
-                        <p className="text-xs text-muted-foreground capitalize">{product.category}</p>
-                      )}
-                      <p className="text-xs text-green-700 font-semibold mt-0.5">${product.cost_per_unit.toFixed(2)}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                      product.quantity <= 3
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : "bg-green-50 text-green-700 border-green-200"
-                    }`}>
-                      {product.quantity <= 3 ? "Últimas" : "Disponible"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* History */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <div>
-              <CardTitle className="text-base">Historial</CardTitle>
-              <CardDescription>Servicios completados</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/client/history")}>
-              <History className="mr-1 h-3 w-3" />
-              Ver todo
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {pastAppointments.length > 0 ? (
-              <div className="space-y-3">
-                {pastAppointments.slice(0, 3).map((apt) => (
-                  <div key={apt.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{apt.service}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {apt.barber} · {new Date(apt.date).toLocaleDateString("es-ES", {
-                          day: "numeric", month: "short",
-                        })}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <Star className="h-3 w-3 mr-1" />
-                      Calificar
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <History className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">Aún no tienes servicios completados</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Mensajes & Regalos */}
-        {(messages.length > 0 || gifts.length > 0) && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bell className="h-4 w-4 text-yellow-500" />
-                Mensajes y Regalos
-                {(messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length) > 0 && (
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">
-                    {messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length} nuevo{messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length !== 1 ? "s" : ""}
+            <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+              {appointments.slice(0, 4).map((apt, i) => (
+                <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                  <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(240,235,227,0.28)", minWidth: "18px", paddingTop: "3px" }}>
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-                )}
-              </CardTitle>
-              <CardDescription>Mensajes y regalos de tu barbería</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-
-              {/* Messages */}
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`p-3 rounded-lg border transition-colors ${
-                    m.is_read ? "bg-gray-50 border-gray-200" : "bg-blue-50 border-blue-200"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2 flex-1 min-w-0">
-                      <Mail className={`h-4 w-4 mt-0.5 shrink-0 ${m.is_read ? "text-gray-400" : "text-blue-600"}`} />
-                      <div className="flex-1 min-w-0">
-                        {m.subject && <p className={`font-medium text-sm ${m.is_read ? "text-gray-600" : "text-blue-900"}`}>{m.subject}</p>}
-                        <p className={`text-sm ${m.is_read ? "text-gray-500" : "text-blue-800"}`}>{m.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(m.created_at).toLocaleDateString("es-ES", {
-                            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    {!m.is_read && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs text-blue-600 hover:bg-blue-100 shrink-0 h-7"
-                        onClick={() => handleMarkRead(m.id)}
-                      >
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Leído
-                      </Button>
-                    )}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#f0ebe3" }}>{apt.service}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.42)", marginTop: "3px" }}>
+                      {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
+                      {apt.time ? ` · ${apt.time}` : ""}
+                      {apt.barber ? ` · ${apt.barber}` : ""}
+                    </p>
                   </div>
+                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", color: STATUS_DARK[apt.status] ?? "rgba(240,235,227,0.35)", paddingTop: "3px", textTransform: "uppercase" }}>
+                    {apt.status === "confirmed" ? "Conf." : apt.status === "pending" ? "Pend." : apt.status === "completed" ? "Ok" : "—"}
+                  </span>
                 </div>
               ))}
-
-              {/* Gifts */}
-              {gifts.map((g) => (
-                <div
-                  key={g.id}
-                  className={`p-3 rounded-lg border ${
-                    g.is_redeemed ? "bg-gray-50 border-gray-200 opacity-70" : "bg-purple-50 border-purple-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    <Gift className={`h-4 w-4 mt-0.5 shrink-0 ${g.is_redeemed ? "text-gray-400" : "text-purple-600"}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`font-medium text-sm ${g.is_redeemed ? "text-gray-500" : "text-purple-900"}`}>{g.title}</p>
-                        <span className={`px-2 py-0.5 rounded font-mono text-xs font-bold tracking-widest ${
-                          g.is_redeemed ? "bg-gray-200 text-gray-500" : "bg-purple-200 text-purple-800"
-                        }`}>
-                          {g.code}
-                        </span>
-                      </div>
-                      {g.description && <p className="text-xs text-gray-600 mt-0.5">{g.description}</p>}
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {GIFT_LABEL[g.gift_type] ?? g.gift_type}
-                        {g.value !== null && g.value !== undefined && ` · ${g.gift_type === "discount_pct" ? `${g.value}% off` : `$${g.value}`}`}
-                        {(g.service_name || g.product_name) && ` · ${g.service_name || g.product_name}`}
-                      </p>
-                      {g.is_redeemed ? (
-                        <p className="text-xs text-green-600 mt-1 font-medium">✓ Canjeado</p>
-                      ) : (
-                        <p className="text-xs text-purple-700 mt-1">Presenta este código en la barbería para canjear</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-            </CardContent>
-          </Card>
+            </div>
+          </>
         )}
 
-      </div>
+        {/* ── Mensajes y regalos ────────────── */}
+        {(messages.length > 0 || gifts.length > 0) && (
+          <>
+            <div className="pt-10 pb-3">
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+                Mensajes y regalos
+              </p>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", marginBottom: "60px" }}>
+              {messages.map((m) => (
+                <div key={m.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                  <div style={{ width: "3px", alignSelf: "stretch", background: m.is_read ? "rgba(240,235,227,0.10)" : "#cc2222", borderRadius: "2px", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    {m.subject && <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#f0ebe3" }}>{m.subject}</p>}
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.55)", marginTop: "3px" }}>{m.message}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(240,235,227,0.28)", marginTop: "6px" }}>
+                      {new Date(m.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                  {!m.is_read && (
+                    <button
+                      onClick={() => handleMarkRead(m.id)}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,235,227,0.38)", background: "none", border: "none", cursor: "pointer", paddingTop: "3px" }}
+                    >
+                      Leído
+                    </button>
+                  )}
+                </div>
+              ))}
+              {gifts.map((g) => (
+                <div key={g.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", display: "flex", alignItems: "flex-start", gap: "20px", opacity: g.is_redeemed ? 0.45 : 1 }}>
+                  <div style={{ width: "3px", alignSelf: "stretch", background: g.is_redeemed ? "rgba(240,235,227,0.10)" : "rgba(240,235,227,0.40)", borderRadius: "2px", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#f0ebe3" }}>{g.title}</p>
+                    <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.14em", marginTop: "4px" }}>{g.code}</p>
+                    {g.description && <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.40)", marginTop: "3px" }}>{g.description}</p>}
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(240,235,227,0.28)", marginTop: "4px" }}>
+                      {g.is_redeemed ? "Canjeado" : "Presenta este código en la barbería"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* bottom spacer */}
+        <div style={{ height: "48px" }} />
+
+      </main>
     </div>
   )
 }
+
