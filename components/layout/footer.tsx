@@ -9,9 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
           <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-3">
-              Barber Manager
-            </h3>
+            <img src="/orno_logo.svg" alt="Ornō" style={{ height: '32px', width: 'auto' }} className="mb-3" />
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Sistema de gestión profesional para barberías modernas.
             </p>
@@ -90,7 +88,7 @@ export function Footer() {
         <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              © {currentYear} Barber Manager. Todos los derechos reservados.
+              © {currentYear} Ornō. Todos los derechos reservados.
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Desarrollado por Jorge Luis Risso Patron

@@ -114,7 +114,9 @@ export function LoginForm() {
     <div className="w-full max-w-md mx-auto space-y-4">
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Barber Manager</CardTitle>
+          <div className="flex justify-center mb-2">
+            <img src="/orno_logo.svg" alt="Ornō" style={{ height: '48px', width: 'auto' }} />
+          </div>
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
         </CardHeader>
         <CardContent>

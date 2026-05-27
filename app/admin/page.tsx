@@ -4,9 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Calendar, Users, Package, Clock, DollarSign, TrendingUp, AlertTriangle, Scissors, LogOut } from "lucide-react"
+
 
 interface DashboardStats {
   totalAppointments: number
@@ -118,288 +116,185 @@ export default function AdminDashboard() {
     router.push("/auth/login")
   }
 
+  const modules = [
+    { label: "Citas",         sub: `${stats.pendingAppointments} pendientes`, href: "/admin/appointments", alert: stats.pendingAppointments > 0 },
+    { label: "Empleados",     sub: `${stats.activeEmployees} activos`,        href: "/admin/employees",    alert: false },
+    { label: "Servicios",     sub: "Catálogo",                                href: "/admin/services",     alert: false },
+    { label: "Inventario",    sub: "Stock y productos",                       href: "/admin/inventory",    alert: false },
+    { label: "Reportes",      sub: "Análisis y métricas",                     href: "/admin/reports",      alert: false },
+    { label: "Configuración", sub: "Ajustes del sistema",                     href: "/admin/settings",     alert: false },
+  ]
+
+  const todayLabel = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: "#161412", color: "#f0ebe3" }}>
+      <style>{`
+        @keyframes ornoFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .orno-stat { animation: ornoFadeUp 0.5s ease forwards; opacity: 0; }
+        .orno-stat:nth-child(1) { animation-delay: 0.05s; }
+        .orno-stat:nth-child(2) { animation-delay: 0.15s; }
+        .orno-stat:nth-child(3) { animation-delay: 0.25s; }
+        .orno-stat:nth-child(4) { animation-delay: 0.35s; }
+        .orno-mod { transition: background 0.18s; }
+        .orno-mod:hover { background: rgba(240,235,227,0.03); }
+        .orno-mod:hover .orno-arrow { color: #cc2222; transform: translateX(3px); }
+        .orno-arrow { transition: color 0.18s, transform 0.18s; display: inline-block; }
+        .orno-exit:hover { color: #cc2222 !important; }
+      `}</style>
+
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
-              <p className="text-gray-600 mt-1">Panel de control y gestión general</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => router.push("/")}
-                variant="outline"
-              >
-                Ir al Inicio
-              </Button>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </Button>
-            </div>
+      <header style={{ borderBottom: "1px solid rgba(240,235,227,0.12)" }}>
+        <div className="max-w-6xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
+          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "156px", width: "auto" }} />
+          <div className="flex items-center gap-6">
+            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.04em" }}>
+              {todayLabel}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="orno-exit"
+              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
+            >
+              Salir
+            </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Stats Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Citas Totales</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalAppointments}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stats.todayAppointments} citas hoy
-                </p>
-              </CardContent>
-            </Card>
+      {/* Main */}
+      <main className="max-w-6xl mx-auto px-8">
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Empleados</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stats.activeEmployees} activos
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Clientes</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalClients}</div>
-                <p className="text-xs text-muted-foreground">
-                  +{stats.newClientsMonth} este mes
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${stats.monthlyRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  <TrendingUp className="inline h-3 w-3 text-green-500" /> +12% vs mes anterior
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-500" />
-                  Gestión de Citas
-                </CardTitle>
-                <CardDescription>
-                  Administra todas las citas de la barbería
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => router.push("/admin/appointments")}
-                  >
-                    Ver Todas las Citas
-                  </Button>
-                  <Button 
-                    className="w-full"
-                    onClick={() => router.push("/admin/appointments")}
-                  >
-                    Nueva Cita
-                  </Button>
-                </div>
-                <div className="mt-4 flex items-center gap-2 text-sm text-orange-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  {stats.pendingAppointments} citas pendientes
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-500" />
-                  Gestión de Empleados
-                </CardTitle>
-                <CardDescription>
-                  Administra barberos y personal
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => router.push("/admin/employees")}
-                  >
-                    Ver Empleados
-                  </Button>
-                  <Button 
-                    className="w-full"
-                    onClick={() => router.push("/admin/employees")}
-                  >
-                    Agregar Empleado
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Scissors className="h-5 w-5 text-purple-500" />
-                  Gestión de Servicios
-                </CardTitle>
-                <CardDescription>
-                  Administra los servicios ofrecidos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => router.push("/admin/services")}
-                  >
-                    Ver Servicios
-                  </Button>
-                  <Button 
-                    className="w-full"
-                    onClick={() => router.push("/admin/services")}
-                  >
-                    Agregar Servicio
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-orange-500" />
-                  Inventario
-                </CardTitle>
-                <CardDescription>
-                  Control de productos y stock
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => router.push("/admin/inventory")}
-                  >
-                    Ver Inventario
-                  </Button>
-                  <Button 
-                    className="w-full"
-                    onClick={() => router.push("/admin/inventory")}
-                  >
-                    Agregar Producto
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity & Alerts */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actividad Reciente</CardTitle>
-                <CardDescription>Últimas acciones en el sistema</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Nueva cita reservada</p>
-                      <p className="text-xs text-muted-foreground">
-                        Juan Pérez - Corte de cabello - Hoy 3:00 PM
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Empleado registró entrada</p>
-                      <p className="text-xs text-muted-foreground">
-                        María García - 9:00 AM
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Cita completada</p>
-                      <p className="text-xs text-muted-foreground">
-                        Carlos Rodríguez - Barba y bigote - 11:30 AM
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Alertas del Sistema</CardTitle>
-                <CardDescription>Notificaciones importantes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-yellow-900">Stock Bajo</p>
-                      <p className="text-xs text-yellow-700">
-                        2 productos necesitan reposición
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <Calendar className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-blue-900">Citas Pendientes</p>
-                      <p className="text-xs text-blue-700">
-                        8 citas esperando confirmación
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* ── Stats ─────────────────────────── */}
+        <div className="pt-12 pb-5">
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+            Panel general
+          </p>
         </div>
-      </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+          {[
+            { value: `$${stats.monthlyRevenue.toLocaleString()}`, label: "Ingresos del mes" },
+            { value: String(stats.totalAppointments),             label: `Citas · ${stats.todayAppointments} hoy` },
+            { value: String(stats.totalClients),                  label: `Clientes · +${stats.newClientsMonth} este mes` },
+            { value: String(stats.totalEmployees),                label: "Empleados activos" },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className="orno-stat"
+              style={{
+                paddingTop: "28px",
+                paddingBottom: "28px",
+                paddingLeft:  i % 2 !== 0 ? "24px" : "0",
+                paddingRight: i % 2 === 0 ? "24px" : "0",
+                borderRight: i < 3 ? "1px solid rgba(240,235,227,0.12)" : "none",
+              }}
+            >
+              <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(36px,4.5vw,58px)", fontWeight: 400, lineHeight: 1, color: "#f0ebe3", letterSpacing: "-0.01em" }}>
+                {stat.value}
+              </div>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,235,227,0.50)", marginTop: "8px" }}>
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Módulos ───────────────────────── */}
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", marginTop: "48px" }} />
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", padding: "20px 0 0" }}>
+          Módulos
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {modules.map((mod, i) => (
+            <button
+              key={mod.href}
+              onClick={() => router.push(mod.href)}
+              className="orno-mod"
+              style={{
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                borderTop: "1px solid rgba(240,235,227,0.12)",
+                borderRight: i % 3 !== 2 ? "1px solid rgba(240,235,227,0.12)" : "none",
+                paddingTop: "22px",
+                paddingBottom: "22px",
+                paddingLeft:  i % 3 === 0 ? "0" : "20px",
+                paddingRight: i % 3 === 2 ? "0" : "20px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "24px", fontWeight: 400, color: "#f0ebe3", lineHeight: 1.2 }}>
+                  {mod.label}
+                </p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: mod.alert ? "#cc2222" : "rgba(240,235,227,0.50)", marginTop: "4px" }}>
+                  {mod.sub}
+                </p>
+              </div>
+              <span className="orno-arrow" style={{ color: "rgba(240,235,227,0.28)", fontSize: "15px", marginTop: "3px", flexShrink: 0 }}>→</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Activity + Alerts ─────────────── */}
+        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", margin: "48px 0 32px" }} />
+
+        <div className="grid md:grid-cols-2 gap-16 pb-16">
+
+          <div>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginBottom: "20px" }}>
+              Actividad reciente
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              {[
+                { title: "Nueva cita reservada",      detail: "Juan Pérez · Corte de cabello · Hoy 3:00 PM" },
+                { title: "Empleado registró entrada", detail: "María García · 9:00 AM" },
+                { title: "Cita completada",           detail: "Carlos Rodríguez · Barba y bigote · 11:30 AM" },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "flex", gap: "14px" }}>
+                  <div style={{ width: "1px", background: "rgba(240,235,227,0.12)", alignSelf: "stretch", flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>{item.title}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>{item.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginBottom: "20px" }}>
+              Alertas
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "flex", gap: "14px" }}>
+                <div style={{ width: "1px", background: "#cc2222", alignSelf: "stretch", flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>Stock bajo</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>2 productos necesitan reposición</p>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "14px" }}>
+                <div style={{ width: "1px", background: "rgba(240,235,227,0.28)", alignSelf: "stretch", flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>Citas pendientes</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>{stats.pendingAppointments} citas esperando confirmación</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   )
 }

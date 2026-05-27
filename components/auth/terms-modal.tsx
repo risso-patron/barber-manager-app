@@ -50,7 +50,7 @@ export function TermsModal({ isOpen, onAccept, onDecline }: TermsModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Bienvenido a Barber Manager
+                  Bienvenido a Ornō
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   Por favor, acepta nuestros términos para continuar
@@ -70,7 +70,7 @@ export function TermsModal({ isOpen, onAccept, onDecline }: TermsModalProps) {
             {/* Info Box */}
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm text-slate-700 dark:text-slate-300">
-                Para usar Barber Manager, necesitas aceptar nuestros términos de servicio y política de privacidad. 
+                Para usar Ornō, necesitas aceptar nuestros términos de servicio y política de privacidad. 
                 Lee ambos documentos antes de continuar.
               </p>
             </div>
@@ -102,7 +102,7 @@ export function TermsModal({ isOpen, onAccept, onDecline }: TermsModalProps) {
                     >
                       Términos de Servicio
                     </Link>
-                    {' '}de Barber Manager.
+                    {' '}de Ornō.
                   </p>
                 </label>
               </div>
@@ -142,7 +142,7 @@ export function TermsModal({ isOpen, onAccept, onDecline }: TermsModalProps) {
             {!canAccept && (
               <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  ⚠️ Debes aceptar ambos documentos para continuar usando Barber Manager.
+                  ⚠️ Debes aceptar ambos documentos para continuar usando Ornō.
                 </p>
               </div>
             )}

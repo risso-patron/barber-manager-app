@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Términos de Servicio | Barber Manager',
-  description: 'Términos y condiciones de uso de Barber Manager',
+  title: 'Términos de Servicio | Ornō',
+  description: 'Términos y condiciones de uso de Ornō',
 };
 
 export default function TermsPage() {
@@ -28,7 +28,7 @@ export default function TermsPage() {
               1. Aceptación de Términos
             </h2>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              Al acceder y usar Barber Manager (&quot;la Aplicación&quot;), aceptas estos términos en su totalidad. 
+              Al acceder y usar Ornō (&quot;la Aplicación&quot;), aceptas estos términos en su totalidad. 
               Si no estás de acuerdo, no debes usar la Aplicación.
             </p>
           </section>
@@ -39,7 +39,7 @@ export default function TermsPage() {
               2. Descripción del Servicio
             </h2>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
-              Barber Manager es una plataforma SaaS de gestión para barberías que incluye:
+              Ornō es una plataforma SaaS de gestión para barberías que incluye:
             </p>
             <ul className="list-disc list-inside space-y-2 text-slate-700 dark:text-slate-300 ml-4">
               <li>Sistema de reserva de citas</li>
@@ -101,7 +101,7 @@ export default function TermsPage() {
               5. Limitación de Responsabilidad
             </h2>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
-              Barber Manager se proporciona &quot;tal cual&quot;. No somos responsables por:
+              Ornō se proporciona &quot;tal cual&quot;. No somos responsables por:
             </p>
             <ul className="list-disc list-inside space-y-2 text-slate-700 dark:text-slate-300 ml-4">
               <li>Pérdida de datos (recomendamos mantener backups propios)</li>

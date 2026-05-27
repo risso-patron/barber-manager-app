@@ -69,7 +69,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       {/* Header */}
       <div className="p-4 border-b border-slate-700">
         <div className="flex items-center justify-between">
-          {!isCollapsed && <h1 className="text-xl font-bold">Barber Manager</h1>}
+          {!isCollapsed && <img src="/orno_logo.svg" alt="Ornō" style={{ height: '28px', width: 'auto' }} />}
           <Button
             variant="ghost"
             size="icon"

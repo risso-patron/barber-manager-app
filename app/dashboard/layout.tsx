@@ -62,8 +62,12 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0a0a" }}>
+        <div className="flex flex-col items-center gap-6">
+          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "80px", width: "auto" }} />
+          <div style={{ width: "1px", height: "36px", background: "rgba(240,235,227,0.12)" }} />
+          <div className="animate-spin" style={{ width: "26px", height: "26px", borderRadius: "50%", border: "2px solid rgba(204,34,34,0.2)", borderTopColor: "#cc2222" }} />
+        </div>
       </div>
     )
   }

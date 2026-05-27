@@ -164,7 +164,7 @@ export function RegisterForm() {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-          <CardDescription>Regístrate en Barber Manager</CardDescription>
+          <CardDescription>Regístrate en Ornō</CardDescription>
         </CardHeader>
       <CardContent>
         {isNetworkError && (

@@ -433,7 +433,7 @@ export default function ReportsPage() {
 
     const doc = new jsPDF({ orientation: "landscape" })
     doc.setFontSize(16)
-    doc.text("Reporte de Barber Manager", 14, 16)
+    doc.text("Reporte de Ornō", 14, 16)
     doc.setFontSize(11)
     doc.text(`Periodo: ${getPeriodLabel()}`, 14, 24)
     doc.text(`Generado: ${new Date().toLocaleString("es-ES")}`, 14, 30)

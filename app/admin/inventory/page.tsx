@@ -232,7 +232,7 @@ export default function InventoryPage() {
   const router = useRouter()
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
           <span>{error}</span>
@@ -325,7 +325,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por categoría"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md"
+              className="px-3 py-2 border rounded-md bg-white text-gray-900"
             >
               <option value="all">Todas las categorías</option>
               <option value="producto">Productos</option>
@@ -336,7 +336,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por estado"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md"
+              className="px-3 py-2 border rounded-md bg-white text-gray-900"
             >
               <option value="all">Todos los estados</option>
               <option value="disponible">Disponible</option>

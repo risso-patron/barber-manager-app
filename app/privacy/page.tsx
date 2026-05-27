@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidad | Barber Manager',
+  title: 'Política de Privacidad | Ornō',
   description: 'Cómo protegemos y manejamos tus datos personales',
 };
 
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               1. Responsable de Datos
             </h2>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong>Barber Manager</strong> es responsable de proteger tus datos personales. 
+              <strong>Ornō</strong> es responsable de proteger tus datos personales. 
               Actuamos como procesador de datos bajo acuerdos de Procesamiento de Datos con cada barbería.
             </p>
           </section>
