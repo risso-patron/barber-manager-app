@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const hasSupabaseConfig = Boolean(supabaseUrl && supabaseServiceKey)
-const supabase = hasSupabaseConfig
-  ? createClient(supabaseUrl!, supabaseServiceKey!)
-  : null
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 
 /**
  * API Route para crear reservas desde el enlace público
@@ -59,12 +52,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Demo mode: sin Supabase, devolver reserva simulada exitosa
-    if (!supabase) {
+    const hasSupabaseConfig = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+
+    if (!hasSupabaseConfig) {
       return NextResponse.json({
         success: true,
         appointmentId: `demo-${Date.now()}`,
         message: "Reserva registrada en modo demo",
       })
+    }
+
+    const supabase = (() => {
+      try {
+        return createAdminSupabaseClient()
+      } catch (err) {
+        console.error('[bookings/public] Admin client init failed:', err)
+        return null
+      }
+    })()
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Error de configuración del servidor' }, { status: 500 })
     }
 
     // Buscar o crear cliente por teléfono/email
@@ -231,9 +241,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (!supabase) {
+    const hasSupabaseConfig = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+    if (!hasSupabaseConfig) {
       return NextResponse.json({ success: true, bookings: [] })
     }
+
+    const supabase = createAdminSupabaseClient()
 
     // Buscar cliente por teléfono
     const { data: client } = await supabase

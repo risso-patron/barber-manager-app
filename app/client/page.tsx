@@ -305,7 +305,7 @@ export default function ClientDashboard() {
               key={i}
               className="orno-action orno-row"
               onClick={() => router.push(a.path)}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", borderBottom: "1px solid rgba(240,235,227,0.07)", background: "transparent", border: "none", borderBottom: "1px solid rgba(240,235,227,0.07)", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", background: "transparent", border: "none", borderBottom: "1px solid rgba(240,235,227,0.07)", cursor: "pointer", textAlign: "left" }}
             >
               <div>
                 <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#f0ebe3" }}>{a.label}</p>

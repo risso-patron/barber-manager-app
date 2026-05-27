@@ -23,6 +23,9 @@ test.describe('Flujo de Empleado - E2E', () => {
       testInfo.skip(true, 'Supabase credentials not configured — skipping employee E2E');
       return;
     }
+    if (!supabase) return;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const db = supabase!;
     // Generar credenciales únicas para cada worker/test para evitar colisiones en paralelo
     const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     testEmail = `employee${uniqueId}@example.com`;
@@ -30,7 +33,7 @@ test.describe('Flujo de Empleado - E2E', () => {
     testClientName = `Cliente E2E ${uniqueId}`;
 
     // Create auth user
-    const { data, error } = await supabase.auth.admin.createUser({
+    const { data, error } = await db.auth.admin.createUser({
       email: testEmail,
       password: testPass,
       email_confirm: true,
@@ -44,7 +47,7 @@ test.describe('Flujo de Empleado - E2E', () => {
     employeeId = data.user!.id;
 
     // Ensure they are in the public.users table as an employee
-    const { error: insertErr } = await supabase.from('users').insert({
+    const { error: insertErr } = await db.from('users').insert({
       id: employeeId,
       email: testEmail,
       name: 'Empleado Test',
@@ -57,19 +60,19 @@ test.describe('Flujo de Empleado - E2E', () => {
     }
     
     // Ensure the employee offers at least one service so they can receive appointments
-    const { data: services } = await supabase.from('services').select('id').limit(1);
+    const { data: services } = await db.from('services').select('id').limit(1);
     const serviceId = services?.[0]?.id;
     if (!serviceId) {
       throw new Error('No hay servicios disponibles para asociar al empleado de prueba');
     }
-    const { error: esErr } = await supabase.from('employee_services').insert({ employee_id: employeeId, service_id: serviceId });
+    const { error: esErr } = await db.from('employee_services').insert({ employee_id: employeeId, service_id: serviceId });
     if (esErr && esErr.code !== '23505') console.error("Error inserting employee_service:", esErr);
     
     // 2. Create a pending appointment for today so they have something to "Completar"
     const today = new Date().toISOString().split('T')[0];
     
     // Insert a fresh confirmed appointment
-    await supabase.from('appointments').insert({
+    await db.from('appointments').insert({
       barber_id: employeeId,
       appointment_date: today,
       appointment_time: '12:00',
@@ -81,11 +84,14 @@ test.describe('Flujo de Empleado - E2E', () => {
 
   test.afterAll(async () => {
     // Cleanup
+    if (!supabase || !employeeId) return;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const db = supabase!;
     if (employeeId) {
-      await supabase.from('appointments').delete().eq('barber_id', employeeId);
-      await supabase.from('employee_services').delete().eq('employee_id', employeeId);
-      await supabase.from('users').delete().eq('id', employeeId);
-      await supabase.auth.admin.deleteUser(employeeId);
+      await db.from('appointments').delete().eq('barber_id', employeeId);
+      await db.from('employee_services').delete().eq('employee_id', employeeId);
+      await db.from('users').delete().eq('id', employeeId);
+      await db.auth.admin.deleteUser(employeeId);
     }
   });
 

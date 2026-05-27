@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { z } from "zod"
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 
-// Admin client bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+const appointmentAdminSchema = z.object({
+  client_id:        z.string().uuid(),
+  barber_id:        z.string().uuid(),
+  service_id:       z.string().uuid(),
+  appointment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)"),
+  appointment_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:MM)"),
+  status:           z.enum(["pending", "confirmed", "completed", "cancelled"]).optional(),
+  notes:            z.string().max(500).optional(),
+})
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -26,15 +30,29 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { client_id, barber_id, service_id, appointment_date, appointment_time, status, notes } = body
+  const parsed = appointmentAdminSchema.safeParse(body)
 
-  if (!client_id || !barber_id || !service_id || !appointment_date || !appointment_time) {
-    return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", details: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    )
+  }
+
+  const { client_id, barber_id, service_id, appointment_date, appointment_time, status, notes } = parsed.data
+
+  let supabaseAdmin: ReturnType<typeof createAdminSupabaseClient>
+  try {
+    supabaseAdmin = createAdminSupabaseClient()
+  } catch (err) {
+    console.error('[appointments/admin] Admin client init failed:', err)
+    const msg = err instanceof Error ? err.message : 'Error de configuración del servidor'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .insert({ client_id, barber_id, service_id, appointment_date, appointment_time, status: status || "pending", notes: notes || null })
+    .insert({ client_id, barber_id, service_id, appointment_date, appointment_time, status: status ?? "pending", notes: notes ?? null })
     .select()
     .single()
 

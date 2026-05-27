@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { type Appointment } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
+import { CheckCircle, Calendar, AlertCircle, XCircle, Clock } from "lucide-react"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

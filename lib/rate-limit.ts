@@ -1,17 +1,20 @@
 /**
  * Rate Limiting Utility
- * 
+ *
  * Limita el número de requests por IP para prevenir:
  * - Ataques de fuerza bruta
  * - Spam de formularios
  * - Abuso de APIs
- * 
- * Usa Map en memoria (para producción usar Redis/Upstash)
+ *
+ * Usa Upstash Redis cuando las credenciales están configuradas (producción/staging).
+ * Fallback a Map en memoria cuando no lo están (desarrollo local / demo mode).
  */
 
+// ─── Limiter en memoria (fallback) ───────────────────────────────────────────
+
 interface RateLimitConfig {
-  windowMs: number  // Ventana de tiempo en ms
-  maxRequests: number  // Máximo de requests en la ventana
+  windowMs: number
+  maxRequests: number
 }
 
 interface RequestRecord {
@@ -19,145 +22,167 @@ interface RequestRecord {
   resetTime: number
 }
 
-class RateLimiter {
+class InMemoryRateLimiter {
   private requests: Map<string, RequestRecord> = new Map()
-  private config: RateLimitConfig
+  readonly config: RateLimitConfig
 
   constructor(config: RateLimitConfig) {
     this.config = config
-
-    // Cleanup de registros viejos cada minuto
     setInterval(() => this.cleanup(), 60000)
   }
 
-  /**
-   * Verifica si un request está dentro del límite
-   * @param identifier - IP o user ID
-   * @returns true si está permitido, false si excede el límite
-   */
   check(identifier: string): { allowed: boolean; remaining: number; resetIn: number } {
     const now = Date.now()
     const record = this.requests.get(identifier)
 
-    // Primera request o ventana expiró
     if (!record || now > record.resetTime) {
-      this.requests.set(identifier, {
-        count: 1,
-        resetTime: now + this.config.windowMs
-      })
-      return {
-        allowed: true,
-        remaining: this.config.maxRequests - 1,
-        resetIn: this.config.windowMs
-      }
+      this.requests.set(identifier, { count: 1, resetTime: now + this.config.windowMs })
+      return { allowed: true, remaining: this.config.maxRequests - 1, resetIn: this.config.windowMs }
     }
 
-    // Incrementar contador
     record.count++
 
-    // Verificar si excede el límite
     if (record.count > this.config.maxRequests) {
-      return {
-        allowed: false,
-        remaining: 0,
-        resetIn: record.resetTime - now
-      }
+      return { allowed: false, remaining: 0, resetIn: record.resetTime - now }
     }
 
-    return {
-      allowed: true,
-      remaining: this.config.maxRequests - record.count,
-      resetIn: record.resetTime - now
-    }
+    return { allowed: true, remaining: this.config.maxRequests - record.count, resetIn: record.resetTime - now }
   }
 
-  /**
-   * Resetea el contador para un identificador
-   */
   reset(identifier: string): void {
     this.requests.delete(identifier)
   }
 
-  /**
-   * Limpia registros expirados
-   */
   private cleanup(): void {
     const now = Date.now()
     for (const [key, record] of this.requests.entries()) {
-      if (now > record.resetTime) {
-        this.requests.delete(key)
-      }
-    }
-  }
-
-  /**
-   * Obtiene estadísticas
-   */
-  getStats() {
-    return {
-      totalIPs: this.requests.size,
-      config: this.config
+      if (now > record.resetTime) this.requests.delete(key)
     }
   }
 }
 
-// Instancias predefinidas para diferentes endpoints
-export const loginLimiter = new RateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  maxRequests: 5 // 5 intentos de login
-})
+// ─── Limiter Upstash (producción) ────────────────────────────────────────────
 
-export const apiLimiter = new RateLimiter({
-  windowMs: 60 * 1000, // 1 minuto
-  maxRequests: 60 // 60 requests por minuto
-})
+interface UpstashLimiterConfig {
+  windowMs: number
+  maxRequests: number
+}
 
-export const bookingLimiter = new RateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  maxRequests: 10 // 10 reservas por hora
-})
+interface UpstashCheckResult {
+  allowed: boolean
+  remaining: number
+  resetIn: number
+}
 
-export const strictLimiter = new RateLimiter({
-  windowMs: 60 * 1000, // 1 minuto
-  maxRequests: 10 // 10 requests por minuto
-})
+class UpstashRateLimiter {
+  readonly config: UpstashLimiterConfig
+  // Typed as any to avoid requiring @upstash/ratelimit types at compile time
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private limiter: any = null
+
+  constructor(config: UpstashLimiterConfig) {
+    this.config = config
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async getLimiter(): Promise<any> {
+    if (this.limiter) return this.limiter
+    const { Ratelimit } = await import("@upstash/ratelimit")
+    const { Redis } = await import("@upstash/redis")
+    this.limiter = new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.slidingWindow(this.config.maxRequests, `${this.config.windowMs}ms`),
+    })
+    return this.limiter
+  }
+
+  async check(identifier: string): Promise<UpstashCheckResult> {
+    const limiter = await this.getLimiter()
+    const result = await limiter.limit(identifier)
+    return {
+      allowed: result.success,
+      remaining: result.remaining,
+      resetIn: result.reset - Date.now(),
+    }
+  }
+}
+
+// ─── Selección de backend ─────────────────────────────────────────────────────
+
+type AnyLimiter = InMemoryRateLimiter | UpstashRateLimiter
+
+function buildRateLimiter(config: RateLimitConfig): AnyLimiter {
+  const hasUpstash =
+    Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
+    Boolean(process.env.UPSTASH_REDIS_REST_TOKEN)
+
+  if (hasUpstash) {
+    return new UpstashRateLimiter(config)
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    console.warn(
+      "[rate-limit] Rate limiter en memoria activo — no usar en producción. " +
+      "Configura UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN."
+    )
+  }
+
+  return new InMemoryRateLimiter(config)
+}
+
+// ─── Instancias exportadas ────────────────────────────────────────────────────
+
+export const loginLimiter = buildRateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 5 })
+export const apiLimiter = buildRateLimiter({ windowMs: 60 * 1000, maxRequests: 60 })
+export const bookingLimiter = buildRateLimiter({ windowMs: 60 * 60 * 1000, maxRequests: 10 })
+export const strictLimiter = buildRateLimiter({ windowMs: 60 * 1000, maxRequests: 10 })
 
 /**
  * Helper para obtener IP del request
  */
 export function getClientIP(request: Request): string {
-  // Vercel/Next.js headers
   const forwardedFor = request.headers.get('x-forwarded-for')
   const realIP = request.headers.get('x-real-ip')
-  
+
   if (forwardedFor) {
     return (forwardedFor.split(',')[0] ?? forwardedFor).trim()
   }
-  
+
   if (realIP) {
     return realIP
   }
-  
+
   return 'unknown'
 }
 
 /**
- * Middleware helper para aplicar rate limiting en API routes
+ * Middleware helper para aplicar rate limiting en API routes.
+ * Compatible con limiters en memoria (sync) y Upstash (async).
  */
 export async function withRateLimit(
   request: Request,
-  limiter: RateLimiter,
+  limiter: AnyLimiter,
   handler: () => Promise<Response>
 ): Promise<Response> {
-  const ip = getClientIP(request)
-  const { allowed, remaining, resetIn } = limiter.check(ip)
+  const rawIp = getClientIP(request)
+  const env = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'dev'
+  const ip = `${env}:ip:${rawIp}`
+
+  let result: { allowed: boolean; remaining: number; resetIn: number }
+
+  if (limiter instanceof UpstashRateLimiter) {
+    result = await limiter.check(ip)
+  } else {
+    result = (limiter as InMemoryRateLimiter).check(ip)
+  }
+
+  const { allowed, remaining, resetIn } = result
 
   if (!allowed) {
-    // Log rate limit exceeded (importar dinámicamente para evitar ciclos)
     if (typeof window === 'undefined') {
       const { logRateLimitExceeded } = await import('./security-logger')
       const url = new URL(request.url)
-      logRateLimitExceeded(ip, url.pathname, limiter['config'].maxRequests)
+      logRateLimitExceeded(rawIp, url.pathname, limiter.config.maxRequests)
     }
 
     return new Response(
@@ -170,7 +195,7 @@ export async function withRateLimit(
         headers: {
           'Content-Type': 'application/json',
           'Retry-After': Math.ceil(resetIn / 1000).toString(),
-          'X-RateLimit-Limit': limiter['config'].maxRequests.toString(),
+          'X-RateLimit-Limit': limiter.config.maxRequests.toString(),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': new Date(Date.now() + resetIn).toISOString()
         }
@@ -180,12 +205,11 @@ export async function withRateLimit(
 
   const response = await handler()
 
-  // Añadir headers de rate limit a la respuesta
-  response.headers.set('X-RateLimit-Limit', limiter['config'].maxRequests.toString())
+  response.headers.set('X-RateLimit-Limit', limiter.config.maxRequests.toString())
   response.headers.set('X-RateLimit-Remaining', remaining.toString())
   response.headers.set('X-RateLimit-Reset', new Date(Date.now() + resetIn).toISOString())
 
   return response
 }
 
-export default RateLimiter
+export default InMemoryRateLimiter

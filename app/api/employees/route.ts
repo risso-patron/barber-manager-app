@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-
-// Admin client bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+import { createAdminSupabaseClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   // Verify the caller is an admin
@@ -33,6 +26,15 @@ export async function POST(request: Request) {
 
   // Create auth user with a temporary password
   const tempPassword = `Barber${Math.random().toString(36).slice(2, 10)}!`
+  let supabaseAdmin: ReturnType<typeof createAdminSupabaseClient>
+  try {
+    supabaseAdmin = createAdminSupabaseClient()
+  } catch (err) {
+    console.error('[employees] Admin client init failed:', err)
+    const msg = err instanceof Error ? err.message : 'Error de configuración del servidor'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password: tempPassword,
@@ -85,6 +87,14 @@ export async function PATCH(request: Request) {
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
+  let supabaseAdmin: ReturnType<typeof createAdminSupabaseClient>
+  try {
+    supabaseAdmin = createAdminSupabaseClient()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Error de configuración del servidor'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+
   const newPassword = `Barber${Math.random().toString(36).slice(2, 10)}!`
   const { error } = await supabaseAdmin.auth.admin.updateUserById(id, { password: newPassword })
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -111,6 +121,13 @@ export async function DELETE(request: Request) {
   if (caller?.role !== "admin") return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
 
   // Delete auth user (cascades to public.users if FK set, else delete manually)
+  let supabaseAdmin: ReturnType<typeof createAdminSupabaseClient>
+  try {
+    supabaseAdmin = createAdminSupabaseClient()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Error de configuración del servidor'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
   await supabaseAdmin.from("users").delete().eq("id", id)
   await supabaseAdmin.auth.admin.deleteUser(id)
 
