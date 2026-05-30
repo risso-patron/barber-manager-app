@@ -11,10 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { User, Mail, Phone, Camera, Save, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = !!(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 type ProfileData = {
   name: string
@@ -42,6 +42,7 @@ export default function EmployeeProfilePage() {
   useEffect(() => {
     if (!user?.id) return
 
+    if (!supabase) { setLoading(false); return }
     const loadProfile = async () => {
       const { data } = await supabase
         .from("users")
@@ -71,7 +72,7 @@ export default function EmployeeProfilePage() {
   }, [user])
 
   const handleSave = async () => {
-    if (!user?.id) return
+    if (!user?.id || !supabase) return
     setSaving(true)
 
     const { error } = await supabase
