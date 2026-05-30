@@ -331,7 +331,7 @@ La ruta `/dashboard` detecta el rol y redirige:
 
 ## 8. API Endpoints
 
-### Autenticación
+### Autenticación 
 
 | Endpoint | Método | Auth | Descripción |
 |----------|--------|------|-------------|
