@@ -39,8 +39,8 @@ interface AppointmentRow {
   appointment_time: string
   status: Appointment["status"]
   notes?: string | null
-  barber?: { id: string; name: string }[] | null
-  service?: { id: string; name: string; duration?: number }[] | null
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string; duration?: number; price?: number } | null
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -82,12 +82,12 @@ export default function ClientAppointmentsPage() {
       .then(({ data }) => {
         if (data) setAppointments((data as unknown as AppointmentRow[]).map((a) => ({
           id: a.id,
-          serviceName: a.service?.[0]?.name || "",
-          employeeName: a.barber?.[0]?.name || "",
+          serviceName: a.service?.name || "",
+          employeeName: a.barber?.name || "",
           date: a.appointment_date,
           time: a.appointment_time ?? undefined,
           status: a.status,
-          duration: a.service?.[0]?.duration || 0,
+          duration: a.service?.duration || 0,
           notes: a.notes || "",
         })))
       })
