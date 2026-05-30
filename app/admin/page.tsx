@@ -18,7 +18,7 @@ interface DashboardStats {
 }
 
 interface RevenueAppointment {
-  service: { price: number | null }[] | null
+  service: { price: number | null } | null
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
         ])
 
         const revenueRows = (revenueData ?? []) as unknown as RevenueAppointment[]
-        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.[0]?.price ?? 0), 0)
+        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.price ?? 0), 0)
 
         setStats({
           totalAppointments: totalAppointments || 0,

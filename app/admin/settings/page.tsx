@@ -114,13 +114,7 @@ export default function SettingsPage() {
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 3000)
     
-    // In a real app, save to database/API
-    console.log("Settings saved:", {
-      business: businessSettings,
-      schedule: scheduleSettings,
-      notifications: notificationSettings,
-      payments: paymentSettings
-    })
+    // TODO: Save settings to database/API
   }
 
   const tabs = [

@@ -70,16 +70,21 @@ export async function POST(request: Request) {
         )
       }
 
-      // TODO: Implementar autenticación real con Supabase
-      // const { data, error } = await supabase.auth.signInWithPassword({
-      //   email,
-      //   password,
-      // })
-      
-      return NextResponse.json(
-        { error: 'Autenticación no implementada en producción' },
-        { status: 501 }
-      )
+      // Autenticación real con Supabase
+      const { createServerSupabaseClient } = await import('@/lib/supabase/server')
+      const supabase = await createServerSupabaseClient()
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error || !data.user) {
+        logLoginFailed(ip, email, userAgent)
+        return NextResponse.json(
+          { error: 'Email o contraseña incorrectos' },
+          { status: 401 }
+        )
+      }
+
+      logLoginSuccess(ip, data.user.id, userAgent)
+      return NextResponse.json({ success: true, user: { id: data.user.id, email: data.user.email } })
 
     } catch (error) {
       console.error('Error en /api/auth/login:', error)

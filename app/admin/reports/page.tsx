@@ -59,8 +59,8 @@ interface DbAppointmentRow {
   status: string
   client_id: string
   barber_id: string
-  service: { name: string; price: number; duration: number }[] | null
-  barber: { id: string; name: string }[] | null
+  service: { name: string; price: number; duration: number } | null
+  barber: { id: string; name: string } | null
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -110,10 +110,10 @@ export default function ReportsPage() {
           status: a.status,
           clientId: a.client_id,
           employeeId: a.barber_id,
-          employeeName: a.barber?.[0]?.name || "Sin asignar",
-          serviceName: a.service?.[0]?.name || "Sin servicio",
-          price: a.service?.[0]?.price || 0,
-          duration: a.service?.[0]?.duration || 0,
+          employeeName: a.barber?.name || "Sin asignar",
+          serviceName: a.service?.name || "Sin servicio",
+          price: a.service?.price || 0,
+          duration: a.service?.duration || 0,
         }))
       )
     }

@@ -60,9 +60,9 @@ interface AppointmentRow {
   status: AppointmentStatus
   notes?: string | null
   created_at: string
-  client?: Array<{ id: string; name: string; phone?: string | null }>
-  barber?: Array<{ id: string; name: string; phone?: string | null }>
-  service?: Array<{ id: string; name: string; price?: number; duration?: number }>
+  client?: { id: string; name: string; phone?: string | null } | null
+  barber?: { id: string; name: string; phone?: string | null } | null
+  service?: { id: string; name: string; price?: number; duration?: number } | null
 }
 
 export default function AppointmentsPage() {
@@ -106,10 +106,10 @@ export default function AppointmentsPage() {
       .order("appointment_date", { ascending: false })
       .then(({ data }) => {
         if (data) {
-          setAppointments((data as AppointmentRow[]).map((raw) => {
-            const client = raw.client?.[0]
-            const barber = raw.barber?.[0]
-            const service = raw.service?.[0]
+          setAppointments((data as unknown as AppointmentRow[]).map((raw) => {
+            const client = raw.client
+            const barber = raw.barber
+            const service = raw.service
             return {
               id: raw.id,
               clientId: client?.id || "",
