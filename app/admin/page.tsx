@@ -128,7 +128,7 @@ export default function AdminDashboard() {
   const todayLabel = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
 
   return (
-    <div className="min-h-screen" style={{ background: "#161412", color: "#f0ebe3" }}>
+    <div className="min-h-screen" style={{ background: "#fafaf9", color: "#1a1a18" }}>
       <style>{`
         @keyframes ornoFadeUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -140,24 +140,24 @@ export default function AdminDashboard() {
         .orno-stat:nth-child(3) { animation-delay: 0.25s; }
         .orno-stat:nth-child(4) { animation-delay: 0.35s; }
         .orno-mod { transition: background 0.18s; }
-        .orno-mod:hover { background: rgba(240,235,227,0.03); }
+        .orno-mod:hover { background: rgba(26,26,24,0.03); }
         .orno-mod:hover .orno-arrow { color: #cc2222; transform: translateX(3px); }
         .orno-arrow { transition: color 0.18s, transform 0.18s; display: inline-block; }
         .orno-exit:hover { color: #cc2222 !important; }
       `}</style>
 
       {/* Header */}
-      <header style={{ borderBottom: "1px solid rgba(240,235,227,0.12)" }}>
+      <header style={{ borderBottom: "1px solid rgba(26,26,24,0.12)" }}>
         <div className="max-w-6xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
           <img src="/orno_logo.svg" alt="Ornō" style={{ height: "156px", width: "auto" }} />
           <div className="flex items-center gap-6">
-            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(240,235,227,0.50)", letterSpacing: "0.04em" }}>
+            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.04em" }}>
               {todayLabel}
             </span>
             <button
               onClick={handleLogout}
               className="orno-exit"
-              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
+              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
             >
               Salir
             </button>
@@ -170,12 +170,12 @@ export default function AdminDashboard() {
 
         {/* ── Stats ─────────────────────────── */}
         <div className="pt-12 pb-5">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)" }}>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
             Panel general
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid rgba(240,235,227,0.12)" }}>
+        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
           {[
             { value: `$${stats.monthlyRevenue.toLocaleString()}`, label: "Ingresos del mes" },
             { value: String(stats.totalAppointments),             label: `Citas · ${stats.todayAppointments} hoy` },
@@ -190,13 +190,13 @@ export default function AdminDashboard() {
                 paddingBottom: "28px",
                 paddingLeft:  i % 2 !== 0 ? "24px" : "0",
                 paddingRight: i % 2 === 0 ? "24px" : "0",
-                borderRight: i < 3 ? "1px solid rgba(240,235,227,0.12)" : "none",
+                borderRight: i < 3 ? "1px solid rgba(26,26,24,0.12)" : "none",
               }}
             >
-              <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(36px,4.5vw,58px)", fontWeight: 400, lineHeight: 1, color: "#f0ebe3", letterSpacing: "-0.01em" }}>
+              <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(36px,4.5vw,58px)", fontWeight: 400, lineHeight: 1, color: "#1a1a18", letterSpacing: "-0.01em" }}>
                 {stat.value}
               </div>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,235,227,0.50)", marginTop: "8px" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,24,0.50)", marginTop: "8px" }}>
                 {stat.label}
               </p>
             </div>
@@ -204,8 +204,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Módulos ───────────────────────── */}
-        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", marginTop: "48px" }} />
-        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", padding: "20px 0 0" }}>
+        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", marginTop: "48px" }} />
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", padding: "20px 0 0" }}>
           Módulos
         </p>
 
@@ -219,8 +219,8 @@ export default function AdminDashboard() {
                 textAlign: "left",
                 background: "none",
                 border: "none",
-                borderTop: "1px solid rgba(240,235,227,0.12)",
-                borderRight: i % 3 !== 2 ? "1px solid rgba(240,235,227,0.12)" : "none",
+                borderTop: "1px solid rgba(26,26,24,0.12)",
+                borderRight: i % 3 !== 2 ? "1px solid rgba(26,26,24,0.12)" : "none",
                 paddingTop: "22px",
                 paddingBottom: "22px",
                 paddingLeft:  i % 3 === 0 ? "0" : "20px",
@@ -233,25 +233,25 @@ export default function AdminDashboard() {
               }}
             >
               <div>
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "24px", fontWeight: 400, color: "#f0ebe3", lineHeight: 1.2 }}>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "24px", fontWeight: 400, color: "#1a1a18", lineHeight: 1.2 }}>
                   {mod.label}
                 </p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: mod.alert ? "#cc2222" : "rgba(240,235,227,0.50)", marginTop: "4px" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: mod.alert ? "#cc2222" : "rgba(26,26,24,0.50)", marginTop: "4px" }}>
                   {mod.sub}
                 </p>
               </div>
-              <span className="orno-arrow" style={{ color: "rgba(240,235,227,0.28)", fontSize: "15px", marginTop: "3px", flexShrink: 0 }}>→</span>
+              <span className="orno-arrow" style={{ color: "rgba(26,26,24,0.28)", fontSize: "15px", marginTop: "3px", flexShrink: 0 }}>→</span>
             </button>
           ))}
         </div>
 
         {/* ── Activity + Alerts ─────────────── */}
-        <div style={{ borderTop: "1px solid rgba(240,235,227,0.12)", margin: "48px 0 32px" }} />
+        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", margin: "48px 0 32px" }} />
 
         <div className="grid md:grid-cols-2 gap-16 pb-16">
 
           <div>
-            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginBottom: "20px" }}>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginBottom: "20px" }}>
               Actividad reciente
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -261,10 +261,10 @@ export default function AdminDashboard() {
                 { title: "Cita completada",           detail: "Carlos Rodríguez · Barba y bigote · 11:30 AM" },
               ].map((item, i) => (
                 <div key={i} style={{ display: "flex", gap: "14px" }}>
-                  <div style={{ width: "1px", background: "rgba(240,235,227,0.12)", alignSelf: "stretch", flexShrink: 0 }} />
+                  <div style={{ width: "1px", background: "rgba(26,26,24,0.12)", alignSelf: "stretch", flexShrink: 0 }} />
                   <div>
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>{item.title}</p>
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>{item.detail}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>{item.title}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>{item.detail}</p>
                   </div>
                 </div>
               ))}
@@ -272,22 +272,22 @@ export default function AdminDashboard() {
           </div>
 
           <div>
-            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(240,235,227,0.45)", marginBottom: "20px" }}>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginBottom: "20px" }}>
               Alertas
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div style={{ display: "flex", gap: "14px" }}>
                 <div style={{ width: "1px", background: "#cc2222", alignSelf: "stretch", flexShrink: 0 }} />
                 <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>Stock bajo</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>2 productos necesitan reposición</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>Stock bajo</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>2 productos necesitan reposición</p>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "14px" }}>
-                <div style={{ width: "1px", background: "rgba(240,235,227,0.28)", alignSelf: "stretch", flexShrink: 0 }} />
+                <div style={{ width: "1px", background: "rgba(26,26,24,0.28)", alignSelf: "stretch", flexShrink: 0 }} />
                 <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#f0ebe3" }}>Citas pendientes</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(240,235,227,0.52)", marginTop: "3px" }}>{stats.pendingAppointments} citas esperando confirmación</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>Citas pendientes</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>{stats.pendingAppointments} citas esperando confirmación</p>
                 </div>
               </div>
             </div>
