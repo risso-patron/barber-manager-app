@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,8 @@ import {
   Globe,
   Calendar,
   Shield,
-  Palette
+  Palette,
+  ArrowLeft
 } from "lucide-react"
 
 interface BusinessSettings {
@@ -67,6 +69,8 @@ interface PaymentSettings {
 
 export default function SettingsPage() {
   useRequireAuth(["admin"])
+
+  const router = useRouter()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -197,6 +201,10 @@ export default function SettingsPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <div>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2 mb-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </Button>
           <h1 className="text-3xl font-bold">Configuración</h1>
           <p className="text-muted-foreground">Administra los ajustes de tu barbería</p>
         </div>
