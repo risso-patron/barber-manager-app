@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { User, Mail, Phone, Camera, Save } from "lucide-react"
+import { User, Mail, Phone, Camera, Save, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +25,7 @@ type ProfileData = {
 }
 
 export default function EmployeeProfilePage() {
+  const router = useRouter()
   const user = useRequireAuth(["employee", "admin"])
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
@@ -34,6 +36,8 @@ export default function EmployeeProfilePage() {
   })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user?.id) return
@@ -82,11 +86,11 @@ export default function EmployeeProfilePage() {
 
     setSaving(false)
     if (error) {
-      alert("No se pudo guardar el perfil. Intenta nuevamente.")
+      setSaveError("No se pudo guardar el perfil. Intenta nuevamente.")
       return
     }
-
-    alert("Perfil actualizado correctamente")
+    setSaveSuccess(true)
+    setTimeout(() => setSaveSuccess(false), 3000)
   }
 
   if (!user || loading) {
@@ -100,9 +104,26 @@ export default function EmployeeProfilePage() {
   return (
     <div className="p-8">
       <div className="mb-6">
+        <Button variant="ghost" size="sm" onClick={() => router.push("/employee/dashboard")} className="gap-2 mb-2">
+          <ArrowLeft className="h-4 w-4" />
+          Volver
+        </Button>
         <h1 className="text-3xl font-bold mb-2">Mi Perfil</h1>
         <p className="text-muted-foreground">Gestiona tus datos personales y de contacto</p>
       </div>
+
+      {saveSuccess && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-800">
+          <CheckCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">Perfil actualizado correctamente</span>
+        </div>
+      )}
+      {saveError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-800">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">{saveError}</span>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
