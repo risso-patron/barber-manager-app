@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -66,9 +67,17 @@ interface PaymentSettings {
 
 export default function SettingsPage() {
   useRequireAuth(["admin"])
-  
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabase = supabaseUrl && supabaseAnonKey
+    ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+    : null
+
   const [activeTab, setActiveTab] = useState<"business" | "schedule" | "notifications" | "payments">("business")
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
     name: "Mi Barbería Premium",
@@ -109,12 +118,62 @@ export default function SettingsPage() {
     cancellationFee: 0
   })
 
-  const handleSave = () => {
-    // Simulate save
+  // Cargar settings desde Supabase
+  useEffect(() => {
+    if (!supabase) return
+    supabase
+      .from("business_settings")
+      .select("setting_key, setting_value")
+      .in("setting_key", ["business", "schedule", "notifications", "payments"])
+      .then(({ data }) => {
+        if (!data) return
+        data.forEach((row) => {
+          try {
+            const parsed = JSON.parse(row.setting_value)
+            if (row.setting_key === "business") setBusinessSettings(parsed)
+            if (row.setting_key === "schedule") setScheduleSettings(parsed)
+            if (row.setting_key === "notifications") setNotificationSettings(parsed)
+            if (row.setting_key === "payments") setPaymentSettings(parsed)
+          } catch {
+            // valor no es JSON válido — ignorar
+          }
+        })
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleSave = async () => {
+    setSaveError(null)
+    setIsSaving(true)
+
+    if (!supabase) {
+      // Sin conexión — sólo feedback visual (modo demo)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+      setIsSaving(false)
+      return
+    }
+
+    const rows = [
+      { setting_key: "business",       setting_value: JSON.stringify(businessSettings),      description: "Datos generales del negocio" },
+      { setting_key: "schedule",       setting_value: JSON.stringify(scheduleSettings),      description: "Horarios de atención por día" },
+      { setting_key: "notifications",  setting_value: JSON.stringify(notificationSettings),  description: "Preferencias de notificaciones" },
+      { setting_key: "payments",       setting_value: JSON.stringify(paymentSettings),       description: "Métodos y configuración de pagos" },
+    ]
+
+    const { error } = await supabase
+      .from("business_settings")
+      .upsert(rows, { onConflict: "setting_key" })
+
+    setIsSaving(false)
+
+    if (error) {
+      setSaveError("No se pudieron guardar los cambios. Intenta de nuevo.")
+      return
+    }
+
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 3000)
-    
-    // TODO: Save settings to database/API
   }
 
   const tabs = [
@@ -141,9 +200,9 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold">Configuración</h1>
           <p className="text-muted-foreground">Administra los ajustes de tu barbería</p>
         </div>
-        <Button onClick={handleSave} className="gap-2">
+        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
           <Save className="h-4 w-4" />
-          Guardar Cambios
+          {isSaving ? "Guardando..." : "Guardar Cambios"}
         </Button>
       </div>
 
@@ -151,6 +210,12 @@ export default function SettingsPage() {
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-800">
           <CheckCircle className="h-5 w-5" />
           <span className="font-medium">Configuración guardada exitosamente</span>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-800">
+          <span className="font-medium">{saveError}</span>
         </div>
       )}
 
