@@ -529,6 +529,7 @@ export default function ReportsPage() {
             </div>
             
             <select
+              aria-label="Filtrar por empleado"
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
               className="px-3 py-2 border rounded-md"

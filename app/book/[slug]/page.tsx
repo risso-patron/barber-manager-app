@@ -169,7 +169,7 @@ export default function PublicBookingPage() {
       }
 
       const result = await response.json()
-      console.log("✅ Reserva creada:", result)
+      void result // consumed by API
 
       // Notificaciones se envían automáticamente desde la API
       setBookingSuccess(true)

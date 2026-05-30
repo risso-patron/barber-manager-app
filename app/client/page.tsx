@@ -66,8 +66,8 @@ interface AppointmentRow {
   appointment_date: string
   appointment_time: string
   status: Appointment["status"]
-  barber?: { id: string; name: string }[] | null
-  service?: { id: string; name: string }[] | null
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string } | null
 }
 
 const GIFT_LABEL: Record<string, string> = {
@@ -122,8 +122,8 @@ export default function ClientDashboard() {
         if (!data) return
         const all = (data as unknown as AppointmentRow[]).map((a) => ({
           id: a.id,
-          service: a.service?.[0]?.name || "",
-          barber: a.barber?.[0]?.name || "",
+          service: a.service?.name || "",
+          barber: a.barber?.name || "",
           date: a.appointment_date,
           time: a.appointment_time ?? undefined,
           status: a.status,
