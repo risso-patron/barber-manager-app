@@ -14,22 +14,12 @@ interface EmployeeModalProps {
   employee?: Employee
 }
 
+// Los 4 niveles de acceso del sistema — determinan qué ve cada empleado
 const SPECIALTIES = [
-  { label: "Barbero",        role: "employee"  as const, desc: "Cortes y servicios de barbería" },
-  { label: "Estilista",      role: "employee"  as const, desc: "Coloración, peinados y técnicas" },
-  { label: "Colorista",      role: "employee"  as const, desc: "Tintes, mechas y coloración" },
-  { label: "Manicurista",    role: "employee"  as const, desc: "Manicura y nail art" },
-  { label: "Pedicurista",    role: "employee"  as const, desc: "Pedicura y cuidado de pies" },
-  { label: "Masajista",      role: "employee"  as const, desc: "Masajes y terapias corporales" },
-  { label: "Cosmetóloga/o",  role: "employee"  as const, desc: "Tratamientos faciales y corporales" },
-  { label: "Depilación",     role: "employee"  as const, desc: "Depilación con cera, hilo o laser" },
-  { label: "Maquillador/a",  role: "employee"  as const, desc: "Maquillaje artístico y social" },
-  { label: "Recepcionista",  role: "employee"  as const, desc: "Atención al cliente y agenda" },
-  { label: "Cajero/a",       role: "employee"  as const, desc: "Gestión de cobros y caja" },
-  { label: "Vendedor/a",     role: "employee"  as const, desc: "Venta de productos y asesoría" },
-  { label: "Encargado/a",    role: "employee"  as const, desc: "Supervisión y coordinación" },
-  { label: "Asistente",      role: "employee"  as const, desc: "Apoyo general al equipo" },
-  { label: "Otro",           role: "employee"  as const, desc: "Otro puesto o especialidad" },
+  { label: "Barbero / Estilista", value: "barbero",       role: "employee" as const, desc: "Ve su agenda, citas del día, control horario y sus estadísticas" },
+  { label: "Recepcionista",       value: "recepcionista", role: "employee" as const, desc: "Ve agenda completa, gestiona clientes y citas" },
+  { label: "Cajero/a",            value: "cajero",        role: "employee" as const, desc: "Ve agenda completa e inventario de productos" },
+  { label: "Gerente",             value: "gerente",       role: "employee" as const, desc: "Acceso completo: agenda, clientes, inventario y estadísticas" },
 ]
 
 const PRESET_AVATARS = [
@@ -51,8 +41,8 @@ const PRESET_AVATARS = [
 ]
 
 export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
-  const defaultSpecialty = (employee as { specialty?: string } | undefined)?.specialty || "Barbero"
-  const defaultRole = SPECIALTIES.find(s => s.label === defaultSpecialty)?.role || "employee"
+  const defaultSpecialty = (employee as { specialty?: string } | undefined)?.specialty || "barbero"
+  const defaultRole = SPECIALTIES.find(s => s.value === defaultSpecialty)?.role || "employee"
 
   const [formData, setFormData] = useState({
     name: employee?.name || "",
@@ -63,9 +53,9 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     avatar: employee?.avatar || "",
   })
 
-  const handleSpecialtyChange = (label: string) => {
-    const spec = SPECIALTIES.find(s => s.label === label)!
-    setFormData({ ...formData, specialty: label, role: spec.role })
+  const handleSpecialtyChange = (value: string) => {
+    const spec = SPECIALTIES.find(s => s.value === value)!
+    setFormData({ ...formData, specialty: value, role: spec.role })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,7 +69,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
 
   if (!isOpen) return null
 
-  const selectedSpec = SPECIALTIES.find(s => s.label === formData.specialty)
+  const selectedSpec = SPECIALTIES.find(s => s.value === formData.specialty)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
@@ -149,7 +139,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 {SPECIALTIES.map((s) => (
-                  <option key={s.label} value={s.label}>{s.label}</option>
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
               {selectedSpec && (

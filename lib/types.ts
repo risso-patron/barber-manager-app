@@ -1,5 +1,7 @@
 export type UserRole = "client" | "employee" | "admin"
 
+export type EmployeeSpecialty = "barbero" | "cajero" | "recepcionista" | "gerente"
+
 export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
 
 export interface User {
@@ -7,6 +9,7 @@ export interface User {
   name: string
   email: string
   role: UserRole
+  specialty?: EmployeeSpecialty | null
   phone?: string
   avatar_url?: string
   created_at: string

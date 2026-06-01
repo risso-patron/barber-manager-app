@@ -268,6 +268,35 @@ export default function EmployeeDashboard() {
             {isWorking && (
               <span className="orno-pulse" style={{ display: "inline-block", width: "7px", height: "7px", borderRadius: "50%", background: "#4ade80" }} />
             )}
+            {/* Nav por especialidad */}
+            {(() => {
+              const specialty = (user as { specialty?: string | null }).specialty
+              const navItems: { label: string; href: string }[] = [
+                { label: "Agenda", href: "/employee/schedule" },
+                { label: "Horario", href: "/employee/time-tracking" },
+              ]
+              if (specialty === "barbero" || specialty === "gerente") {
+                navItems.push({ label: "Estadísticas", href: "/employee/stats" })
+              }
+              if (specialty === "cajero" || specialty === "gerente") {
+                navItems.push({ label: "Inventario", href: "/admin/inventory" })
+              }
+              if (specialty === "recepcionista" || specialty === "gerente") {
+                navItems.push({ label: "Clientes", href: "/admin/clients" })
+              }
+              navItems.push({ label: "Perfil", href: "/employee/profile" })
+              return navItems.map(item => (
+                <button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "rgba(26,26,24,0.9)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(26,26,24,0.55)")}
+                >
+                  {item.label}
+                </button>
+              ))
+            })()}
             <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.04em" }}>
               {(user as { name?: string }).name || user.email}
             </span>

@@ -54,7 +54,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
       // Get role from users table
       const { data: profile } = await supabase
         .from("users")
-        .select("role, name, phone, avatar_url")
+        .select("role, name, phone, avatar_url, specialty")
         .eq("id", authUser.id)
         .single()
 
@@ -65,7 +65,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
         return
       }
 
-      setUser({ id: authUser.id, email: authUser.email, role, profile })
+      setUser({ id: authUser.id, email: authUser.email, role, specialty: profile?.specialty ?? null, profile })
     }
 
     checkSession()

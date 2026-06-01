@@ -31,7 +31,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
-const BARBER_SPECIALTIES = ["Barbero", "Estilista", "Colorista"]
+const BARBER_SPECIALTIES = ["barbero"]
 
 type EmployeeWithSpecialty = Employee & { specialty?: string | null }
 

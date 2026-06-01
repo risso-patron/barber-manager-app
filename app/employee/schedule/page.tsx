@@ -20,10 +20,10 @@ import {
   AlertCircle
 } from "lucide-react"
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = !!(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 export default function EmployeeSchedulePage() {
   const user = useRequireAuth(["employee", "admin"])
@@ -32,6 +32,7 @@ export default function EmployeeSchedulePage() {
 
   useEffect(() => {
     if (!user) return
+    if (!supabase) return
     supabase
       .from("appointments")
       .select(`id, appointment_date, appointment_time, status, notes, created_at,
