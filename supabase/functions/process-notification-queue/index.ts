@@ -109,44 +109,74 @@ serve(async (req: Request) => {
 })
 
 async function processNotification(n: NotificationRow): Promise<void> {
-  // ── Item 19: descomentar y completar cuando se configuren los proveedores ──
-  //
-  // EMAIL via Resend:
-  // if (n.recipient_email && n.message_email) {
-  //   const res = await fetch("https://api.resend.com/emails", {
-  //     method: "POST",
-  //     headers: {
-  //       "Authorization": `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       from: "Ornō Barbershop <noreply@tu-dominio.com>",
-  //       to: n.recipient_email,
-  //       subject: n.subject_email ?? "Notificación de tu cita",
-  //       text: n.message_email,
-  //     }),
-  //   })
-  //   if (!res.ok) throw new Error(`Resend error: ${await res.text()}`)
-  // }
-  //
-  // SMS via Twilio:
-  // if (n.recipient_phone && n.message_sms) {
-  //   const sid = Deno.env.get("TWILIO_ACCOUNT_SID")!
-  //   const token = Deno.env.get("TWILIO_AUTH_TOKEN")!
-  //   const from = Deno.env.get("TWILIO_PHONE_NUMBER")!
-  //   const body = new URLSearchParams({ From: from, To: n.recipient_phone, Body: n.message_sms })
-  //   const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-  //     method: "POST",
-  //     headers: { Authorization: "Basic " + btoa(`${sid}:${token}`) },
-  //     body,
-  //   })
-  //   if (!res.ok) throw new Error(`Twilio error: ${await res.text()}`)
-  // }
-  // ─────────────────────────────────────────────────────────────────────────
+  const errors: string[] = []
 
-  // Item 18: log (simulación exitosa hasta que Item 19 active los proveedores)
-  console.log(
-    `[notify-queue] ${n.type} | phone=${n.recipient_phone ?? "-"} | email=${n.recipient_email ?? "-"}`
-  )
-  console.log(`[notify-queue] SMS: ${n.message_sms?.slice(0, 80) ?? "-"}`)
+  // ── EMAIL via Resend ──────────────────────────────────────────────────────
+  const resendKey = Deno.env.get("RESEND_API_KEY")
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") ?? "noreply@resend.dev"
+
+  if (n.recipient_email && n.message_email && resendKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: `Ornō Barbershop <${fromEmail}>`,
+        to: n.recipient_email,
+        subject: n.subject_email ?? "Notificación de tu cita",
+        text: n.message_email,
+      }),
+    })
+    if (!res.ok) {
+      const detail = await res.text()
+      errors.push(`Resend: ${detail}`)
+      console.error(`[notify-queue] Resend error (${n.id}):`, detail)
+    } else {
+      console.log(`[notify-queue] Email enviado a ${n.recipient_email}`)
+    }
+  } else if (n.recipient_email && !resendKey) {
+    console.warn("[notify-queue] RESEND_API_KEY no configurada — email omitido")
+  }
+
+  // ── WhatsApp via Twilio ───────────────────────────────────────────────────
+  const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID")
+  const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN")
+  const twilioFrom = Deno.env.get("TWILIO_WHATSAPP_FROM") // formato: whatsapp:+1234567890
+
+  if (n.recipient_phone && n.message_sms && twilioSid && twilioToken && twilioFrom) {
+    // Normalizar número de destino al formato WhatsApp de Twilio
+    const toNumber = n.recipient_phone.startsWith("whatsapp:")
+      ? n.recipient_phone
+      : `whatsapp:${n.recipient_phone}`
+
+    const body = new URLSearchParams({
+      From: twilioFrom,
+      To: toNumber,
+      Body: n.message_sms,
+    })
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: { Authorization: "Basic " + btoa(`${twilioSid}:${twilioToken}`) },
+        body,
+      }
+    )
+    if (!res.ok) {
+      const detail = await res.text()
+      errors.push(`Twilio: ${detail}`)
+      console.error(`[notify-queue] Twilio error (${n.id}):`, detail)
+    } else {
+      console.log(`[notify-queue] WhatsApp enviado a ${n.recipient_phone}`)
+    }
+  } else if (n.recipient_phone && !(twilioSid && twilioToken && twilioFrom)) {
+    console.warn("[notify-queue] Twilio no configurado — WhatsApp omitido")
+  }
+
+  // Si ambos canales fallaron con error (no solo omitidos), propagar
+  if (errors.length > 0) {
+    throw new Error(errors.join(" | "))
+  }
 }
