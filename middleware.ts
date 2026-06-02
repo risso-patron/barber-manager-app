@@ -58,8 +58,20 @@ export async function middleware(request: NextRequest) {
     const userRole = userData?.role
 
     // Admin routes
-    if (request.nextUrl.pathname.startsWith("/admin") && userRole !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      if (userRole === "admin") {
+        // Full access — no restriction
+      } else if (userRole === "manager") {
+        // Manager: acceso operacional; bloqueado de configuración y finanzas
+        const managerBlockedPaths = ["/admin/settings", "/admin/reports", "/admin/employees"]
+        const isBlocked = managerBlockedPaths.some((p) => request.nextUrl.pathname.startsWith(p))
+        if (isBlocked) {
+          return NextResponse.redirect(new URL("/dashboard", request.url))
+        }
+      } else {
+        // Cualquier otro rol: sin acceso a /admin
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
     }
 
     // Employee/Barber routes

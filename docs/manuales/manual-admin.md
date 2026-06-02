@@ -1,6 +1,6 @@
 # Manual del Administrador
 
-**Barber Manager App — Versión 1.0**  
+**Barber Manager App — Versión 1.1**  
 **Perfil:** Administrador (dueño o gestor de la barbería)  
 **Ruta de acceso:** `/admin`
 
@@ -15,10 +15,11 @@
 5. [Gestión de servicios](#5-gestión-de-servicios)
 6. [Gestión de clientes](#6-gestión-de-clientes)
 7. [Inventario](#7-inventario)
-8. [Reportes](#8-reportes)
-9. [Compartir enlace de reservas](#9-compartir-enlace-de-reservas)
-10. [Configuración del negocio](#10-configuración-del-negocio)
-11. [Preguntas frecuentes](#11-preguntas-frecuentes)
+8. [Punto de Venta (POS)](#8-punto-de-venta-pos)
+9. [Reportes](#9-reportes)
+10. [Compartir enlace de reservas](#10-compartir-enlace-de-reservas)
+11. [Configuración del negocio](#11-configuración-del-negocio)
+12. [Preguntas frecuentes](#12-preguntas-frecuentes)
 
 ---
 
@@ -40,7 +41,11 @@
 
 ### Olvidé mi contraseña
 
-Por el momento el restablecimiento de contraseña se gestiona desde Supabase Auth directamente. Contactar al administrador técnico.
+1. En la pantalla de login, hacer clic en **¿Olvidaste tu contraseña?**
+2. Ingresar el email del administrador y hacer clic en **Enviar instrucciones**
+3. Revisar el correo y hacer clic en el enlace de restablecimiento
+4. Ingresar la nueva contraseña (mínimo 8 caracteres, mayúscula, minúscula y número)
+5. Al confirmar, el sistema redirige al login
 
 ### Cerrar sesión
 
@@ -67,6 +72,17 @@ Al ingresar, el dashboard muestra una vista general del negocio con **8 tarjetas
 
 > **Modo demo:** Si el sistema no tiene Supabase configurado, el dashboard muestra datos ficticios: 14 citas, 3 empleados, 24 clientes, $840 mensuales.
 
+### Alertas de calificación (sección inferior)
+
+El panel muestra automáticamente las **alertas de baja calificación** pendientes de revisión.
+
+- Las calificaciones de **1★** se muestran con franja roja
+- Las calificaciones de **2★** se muestran con franja ámbar
+- Cada alerta muestra: estrellas, nombre del cliente, reseña (si la hay), empleado involucrado y fecha
+- Si no hay alertas pendientes se muestra “Sin alertas pendientes” en gris
+
+> Para resolver alertas: ir a `/api/alerts` o usar el botón de resolver en cada alerta.
+
 ### Navegación lateral
 
 El menú lateral izquierdo da acceso a todas las secciones:
@@ -77,6 +93,7 @@ El menú lateral izquierdo da acceso a todas las secciones:
 - **Servicios** — Catálogo de servicios
 - **Clientes** — Base de clientes
 - **Inventario** — Stock y productos
+- **Punto de Venta** — Ventas directas sin cita previa
 - **Reportes** — Estadísticas y gráficos
 - **Compartir** — Enlace de reservas públicas
 - **Configuración** — Datos del negocio
@@ -183,6 +200,7 @@ Muestra todos los empleados con:
 | Email | Email | Sí | Debe ser único en el sistema |
 | Teléfono | Teléfono | Sí | Formato internacional aceptado |
 | Especialidad / Puesto | Selector | Sí | Ver lista de especialidades disponibles abajo |
+| Porcentaje de comisión | Número (%) | Sí | 0–100%. Define qué % del precio del servicio cobra el empleado |
 | Avatar | Selector | No | 15 avatares generados por DiceBear |
 
 **Especialidades disponibles:**
@@ -301,6 +319,21 @@ Filtro por: nombre, email o teléfono.
 
 Menú (⋮) → **Ver** → se abre una vista con el historial de citas del cliente.
 
+### Gestionar puntos de fidelidad de un cliente
+
+Cada cliente acumula **1 punto por cada dólar** gastado en citas completadas y en ventas POS.
+
+Para ver o ajustar los puntos:
+
+1. En la tabla de clientes, la columna **Puntos** muestra el saldo actual con una etiqueta ámbar
+2. Menú (⋮) → **Puntos** → se abre el modal de fidelidad
+3. Seleccionar la acción:
+   - **Agregar puntos** — para bonificar manualmente
+   - **Restar puntos** — para canjear un beneficio o corregir un error
+4. Ingresar la cantidad (número entero) y una descripción opcional
+5. El modal muestra el saldo actual y el nuevo saldo proyectado antes de confirmar
+6. Hacer clic en **Confirmar** — el ajuste se aplica de inmediato y queda registrado en el historial de transacciones del cliente
+
 ### Editar un cliente
 
 Menú (⋮) → **Editar** → modificar datos → **Guardar**.
@@ -374,9 +407,50 @@ Menú (⋮) → **Eliminar** → confirmar.
 En modo demo el sistema carga 8 ítems de ejemplo:
 - Shampoo, cera para cabello, tijeras profesionales, máquina de corte, toallas, cuchillas de afeitar, gel para barba, aceite para barba
 
+## 8. Punto de Venta (POS)
+
+**Ruta:** `/admin/pos`
+
+Permite registrar **ventas directas** de productos y servicios sin necesidad de crear una cita. Ideal para venta de productos en mostrador, servicios pagados en el momento o cualquier transacción rápida.
+
+### Interfaz
+
+La pantalla está dividida en dos paneles:
+
+**Panel izquierdo — Catálogo:**
+- Pestañas **Servicios** y **Productos** para filtrar el catálogo
+- Campo de búsqueda para filtrar por nombre
+- Grid de tarjetas clickeables; al hacer clic en una se agrega al carrito
+
+**Panel derecho — Carrito:**
+- Lista de ítems con controles de cantidad (+/−) y botón de eliminar
+- Selector de **cliente** (opcional) — si se elige un cliente, la venta acumula puntos de fidelidad
+- Si hay cliente seleccionado: muestra puntos actuales y cuántos ganará con esta venta
+- Campo de **descuento** ($) aplicado sobre el subtotal
+- Selector de **método de pago:** Efectivo / Tarjeta / Transferencia
+- Campo de **notas** opcionales
+- Resumen: subtotal, descuento, **total**
+- Botón **"Cobrar $X.XX"** para registrar la venta
+
+### Registrar una venta
+
+1. Navegar a `/admin/pos` desde la barra lateral (icono carrito — "Punto de Venta")
+2. Hacer clic en los servicios o productos del catálogo para agregarlos
+3. Ajustar cantidades con los botones +/−
+4. Seleccionar el cliente si lo hay (opcional)
+5. Elegir el método de pago
+6. Aplicar descuento si corresponde
+7. Hacer clic en **"Cobrar"**
+8. El sistema muestra una confirmación verde con el total cobrado
+9. El carrito se limpia automáticamente para la siguiente venta
+
+### Puntos de fidelidad en POS
+
+Si se selecciona un cliente en la venta, el sistema asigna automáticamente **1 punto por cada dólar** del total de la venta (la misma regla que las citas).
+
 ---
 
-## 8. Reportes
+## 9. Reportes
 
 **Ruta:** `/admin/reports`
 
@@ -429,7 +503,7 @@ La pantalla muestra la **última sincronización** (timestamp).
 
 ---
 
-## 9. Compartir enlace de reservas
+## 10. Compartir enlace de reservas
 
 **Ruta:** `/admin/share`
 
@@ -459,7 +533,7 @@ La página genera automáticamente un **código QR** de alta resolución del enl
 
 ---
 
-## 10. Configuración del negocio
+## 11. Configuración del negocio
 
 **Ruta:** `/admin/settings`
 
@@ -525,7 +599,7 @@ Hacer clic en **Guardar configuración** al final de la pestaña activa. El sist
 
 ---
 
-## 11. Preguntas frecuentes
+## 12. Preguntas frecuentes
 
 **¿Por qué veo datos ficticios al entrar?**  
 El sistema está en **modo demo**. Esto ocurre cuando las variables de entorno de Supabase no están configuradas. Los datos son de prueba y no se guardan.

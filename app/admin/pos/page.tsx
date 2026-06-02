@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -66,7 +67,7 @@ const PAYMENT_ICONS: Record<PaymentMethod, React.ReactNode> = {
 // ---------- Page ------------------------------------------------------------
 
 export default function POSPage() {
-  const user = useRequireAuth(["admin"])
+  const user = useRequireAuth(["admin", "manager"])
 
   // Catalog
   const [services, setServices] = useState<Service[]>([])
@@ -79,9 +80,14 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [payment, setPayment] = useState<PaymentMethod>("cash")
   const [discount, setDiscount] = useState("")
+  const [tip, setTip] = useState("")
   const [clientSearch, setClientSearch] = useState("")
   const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null)
   const [notes, setNotes] = useState("")
+  const [useRedeemPoints, setUseRedeemPoints] = useState(false)
+
+  // Redemption constants
+  const POINT_VALUE = 0.1 // $0.10 por punto
 
   // UX state
   const [loading, setLoading] = useState(false)
@@ -131,6 +137,32 @@ export default function POSPage() {
       })
   }, [user])
 
+  // ---------- Preload from appointment (Item 9) -----------------------------
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const appointmentId = searchParams.get("appointment_id")
+    if (!appointmentId || !supabase || !user) return
+
+    supabase
+      .from("appointments")
+      .select(`
+        id,
+        service:services(id, name, price),
+        client:users!appointments_client_id_fkey(id, name, loyalty_points)
+      `)
+      .eq("id", appointmentId)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        const svc = data.service as { id: string; name: string; price: number } | null
+        const cli = data.client as { id: string; name: string; loyalty_points: number } | null
+        if (svc) addItem("service", svc.id, svc.name, svc.price)
+        if (cli) setSelectedClient({ id: cli.id, name: cli.name, loyalty_points: cli.loyalty_points ?? 0 })
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
   // ---------- Catalog filter ------------------------------------------------
   const filteredItems = useMemo(() => {
     const q = catalogSearch.toLowerCase()
@@ -169,8 +201,14 @@ export default function POSPage() {
   // ---------- Totals --------------------------------------------------------
   const subtotal = useMemo(() => cart.reduce((sum, c) => sum + c.price * c.quantity, 0), [cart])
   const discountAmt = parseFloat(discount) || 0
-  const total = Math.max(0, subtotal - discountAmt)
-  const loyaltyEarned = selectedClient ? Math.max(1, Math.floor(total)) : 0
+  const tipAmt = parseFloat(tip) || 0
+  const totalBeforeRedemption = Math.max(0, subtotal - discountAmt)
+  const availablePoints = selectedClient?.loyalty_points ?? 0
+  const maxRedemptionAmt = parseFloat((availablePoints * POINT_VALUE).toFixed(2))
+  const redemptionAmt = useRedeemPoints ? Math.min(maxRedemptionAmt, totalBeforeRedemption) : 0
+  const redeemPointsCount = useRedeemPoints ? Math.ceil(redemptionAmt / POINT_VALUE) : 0
+  const total = Math.max(0, totalBeforeRedemption - redemptionAmt)
+  const loyaltyEarned = selectedClient && !useRedeemPoints ? Math.max(1, Math.floor(total)) : 0
 
   // ---------- Checkout ------------------------------------------------------
   async function handleCheckout() {
@@ -186,6 +224,8 @@ export default function POSPage() {
           client_id: selectedClient?.id,
           payment_method: payment,
           discount: discountAmt,
+          redeem_points: redeemPointsCount,
+          tip: tipAmt,
           notes: notes || undefined,
           items: cart.map((c) => ({
             item_type: c.item_type,
@@ -204,10 +244,12 @@ export default function POSPage() {
       setTimeout(() => {
         setCart([])
         setDiscount("")
+        setTip("")
         setSelectedClient(null)
         setClientSearch("")
         setNotes("")
         setPayment("cash")
+        setUseRedeemPoints(false)
         setSuccess(false)
       }, 2200)
     } catch {
@@ -359,18 +401,39 @@ export default function POSPage() {
             </CardHeader>
             <CardContent>
               {selectedClient ? (
-                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-bold text-sm">
-                    {selectedClient.name.charAt(0)}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-bold text-sm">
+                      {selectedClient.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{selectedClient.name}</p>
+                      <p className="text-xs text-amber-700 flex items-center gap-1">
+                        <Gift className="h-3 w-3" />
+                        {selectedClient.loyalty_points} pts actuales
+                        {cart.length > 0 && !useRedeemPoints && ` → +${loyaltyEarned} pts`}
+                        {cart.length > 0 && useRedeemPoints && ` → −${redeemPointsCount} pts (−$${redemptionAmt.toFixed(2)})`}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{selectedClient.name}</p>
-                    <p className="text-xs text-amber-700 flex items-center gap-1">
-                      <Gift className="h-3 w-3" />
-                      {selectedClient.loyalty_points} pts actuales
-                      {cart.length > 0 && ` → +${loyaltyEarned} pts`}
-                    </p>
-                  </div>
+
+                  {/* Loyalty redemption toggle (Item 10) */}
+                  {availablePoints > 0 && cart.length > 0 && (
+                    <label className="flex items-center gap-2 cursor-pointer select-none p-2 rounded-lg border hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={useRedeemPoints}
+                        onChange={(e) => setUseRedeemPoints(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm text-gray-700">
+                        Canjear{" "}
+                        <span className="font-medium text-amber-700">{availablePoints} pts</span>
+                        {" "}= descuento de{" "}
+                        <span className="font-medium text-green-700">${Math.min(maxRedemptionAmt, totalBeforeRedemption).toFixed(2)}</span>
+                      </span>
+                    </label>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -445,6 +508,20 @@ export default function POSPage() {
 
               {/* Notes */}
               <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600 w-24 shrink-0">Propina $</label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  placeholder="0.00"
+                  value={tip}
+                  onChange={(e) => setTip(e.target.value)}
+                  className="max-w-[120px]"
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="flex items-center gap-3">
                 <label className="text-sm text-gray-600 w-24 shrink-0">Notas</label>
                 <Input
                   placeholder="Opcional…"
@@ -466,10 +543,22 @@ export default function POSPage() {
                     <span>− ${discountAmt.toFixed(2)}</span>
                   </div>
                 )}
+                {redemptionAmt > 0 && (
+                  <div className="flex justify-between text-amber-600">
+                    <span>Puntos canjeados ({redeemPointsCount} pts)</span>
+                    <span>− ${redemptionAmt.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-lg text-gray-900 pt-1">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
+                {tipAmt > 0 && (
+                  <div className="flex justify-between text-indigo-600 pt-1 border-t">
+                    <span>Propina</span>
+                    <span>+ ${tipAmt.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Error */}

@@ -23,6 +23,7 @@ export default function DashboardPage() {
         const role = user.profile?.role || user.role
         const destinations: Record<string, string> = {
           admin: "/admin",
+          manager: "/admin",
           employee: "/employee/dashboard",
           barber: "/employee/dashboard",
           client: "/client",
@@ -59,6 +60,7 @@ export default function DashboardPage() {
       const role = profile?.role || "client"
       const destinations: Record<string, string> = {
         admin: "/admin",
+        manager: "/admin",
         employee: "/employee/dashboard",
         barber: "/employee/dashboard",
         client: "/client",

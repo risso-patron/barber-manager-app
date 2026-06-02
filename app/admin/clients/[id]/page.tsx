@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { maskPhone } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,7 @@ interface ClientProfile {
   phone: string | null
   created_at: string
   admin_notes: string | null
+  no_show_count: number
 }
 
 interface Appointment {
@@ -68,16 +70,17 @@ const GIFT_TYPE_LABEL: Record<"discount_pct" | "discount_fixed" | "free_service"
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  pending:   { label: "Pendiente",  color: "bg-yellow-100 text-yellow-800" },
-  confirmed: { label: "Confirmada", color: "bg-blue-100 text-blue-800" },
-  completed: { label: "Completada", color: "bg-green-100 text-green-800" },
-  cancelled: { label: "Cancelada",  color: "bg-red-100 text-red-800" },
+  pending:   { label: "Pendiente",       color: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confirmada",      color: "bg-blue-100 text-blue-800" },
+  completed: { label: "Completada",      color: "bg-green-100 text-green-800" },
+  cancelled: { label: "Cancelada",       color: "bg-red-100 text-red-800" },
+  no_show:   { label: "No se presentó",  color: "bg-orange-100 text-orange-800" },
 }
 
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const adminUser = useRequireAuth(["admin"])
+  const adminUser = useRequireAuth(["admin", "manager"])
   const [client, setClient] = useState<ClientProfile | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [messages, setMessages] = useState<ClientMessage[]>([])
@@ -121,7 +124,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       ] = await Promise.all([
         supabase
           .from("users")
-          .select("id, name, email, phone, created_at, admin_notes")
+          .select("id, name, email, phone, created_at, admin_notes, no_show_count")
           .eq("id", id)
           .single(),
         supabase
@@ -290,6 +293,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         </div>
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
+          {client.no_show_count > 0 && (
+            <div className="mt-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300">
+                <XCircle className="h-3 w-3" />
+                {client.no_show_count} no-show{client.no_show_count > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
             <span className="flex items-center gap-1">
               <Mail className="h-4 w-4" />
@@ -300,7 +311,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             {client.phone && (
               <span className="flex items-center gap-1">
                 <Phone className="h-4 w-4" />
-                {client.phone}
+                {adminUser?.role === "manager" ? maskPhone(client.phone) : client.phone}
               </span>
             )}
             <span className="flex items-center gap-1">

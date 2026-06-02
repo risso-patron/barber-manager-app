@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { maskPhone } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +20,8 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingCart,
 } from "lucide-react"
 import {
   type Appointment,
@@ -44,6 +46,7 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
   confirmed: "bg-blue-100 text-blue-800 border-blue-300",
   completed: "bg-green-100 text-green-800 border-green-300",
   cancelled: "bg-red-100 text-red-800 border-red-300",
+  no_show:   "bg-orange-100 text-orange-800 border-orange-300",
 }
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -51,6 +54,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   confirmed: "Confirmada",
   completed: "Completada",
   cancelled: "Cancelada",
+  no_show:   "No se presentó",
 }
 
 interface AppointmentRow {
@@ -67,7 +71,7 @@ interface AppointmentRow {
 
 export default function AppointmentsPage() {
   const router = useRouter()
-  const user = useRequireAuth(["admin"])
+  const user = useRequireAuth(["admin", "manager"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -472,7 +476,9 @@ export default function AppointmentsPage() {
                           <User className="h-4 w-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-sm font-medium">{appointment.clientName}</p>
-                            <p className="text-xs text-gray-600">{appointment.clientPhone}</p>
+                            <p className="text-xs text-gray-600">
+                              {user?.role === "manager" ? maskPhone(appointment.clientPhone) : appointment.clientPhone}
+                            </p>
                           </div>
                         </div>
 
@@ -546,6 +552,32 @@ export default function AppointmentsPage() {
                               >
                                 <CheckCircle className="h-4 w-4 text-blue-600" />
                                 Marcar como completada
+                              </button>
+                            )}
+
+                            {(appointment.status === "confirmed" || appointment.status === "completed") && (
+                              <button
+                                onClick={() => {
+                                  setActiveDropdown(null)
+                                  router.push(`/admin/pos?appointment_id=${appointment.id}`)
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <ShoppingCart className="h-4 w-4 text-indigo-600" />
+                                Cobrar en POS
+                              </button>
+                            )}
+
+                            {appointment.status === "confirmed" && (
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(appointment.id, "no_show")
+                                  setActiveDropdown(null)
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 flex items-center gap-2 text-orange-700"
+                              >
+                                <XCircle className="h-4 w-4" />
+                                No se presentó
                               </button>
                             )}
 

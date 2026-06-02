@@ -1,6 +1,6 @@
 # Manual del Empleado / Barbero
 
-**Barber Manager App — Versión 1.0**  
+**Barber Manager App — Versión 1.1**  
 **Perfil:** Empleado / Barbero  
 **Ruta de acceso:** `/barber` (redirige automáticamente desde `/dashboard` si el rol es `employee`)
 
@@ -13,7 +13,7 @@
 3. [Estado de trabajo](#3-estado-de-trabajo)
 4. [Mis citas del día](#4-mis-citas-del-día)
 5. [Gestionar el estado de una cita](#5-gestionar-el-estado-de-una-cita)
-6. [Estadísticas personales](#6-estadísticas-personales)
+6. [Estadísticas personales y comisiones](#6-estadísticas-personales-y-comisiones)
 7. [Preguntas frecuentes](#7-preguntas-frecuentes)
 
 ---
@@ -35,7 +35,13 @@ Si el administrador te entregó una contraseña temporal (formato `Barber{códig
 
 ### Olvidé mi contraseña
 
-Contactar al administrador para que realice el **reseteo de contraseña** desde el panel de empleados. Te dará una nueva contraseña temporal.
+1. En la pantalla de login, hacer clic en **¿Olvidaste tu contraseña?**
+2. Ingresar tu email y hacer clic en **Enviar instrucciones**
+3. Revisar el correo y hacer clic en el enlace de restablecimiento
+4. Ingresar la nueva contraseña y confirmarla
+5. Al guardar, el sistema redirige al login
+
+Si no recordas el email de tu cuenta, contactá al administrador.
 
 ### Cerrar sesión
 
@@ -66,15 +72,17 @@ Al ingresar, verás tu panel personal que muestra únicamente **tus propias cita
 Al inicio de tu jornada, hacer clic en el botón **"Comience a trabajar"**.
 
 - El botón cambia a **"Termine de trabajar"**
-- Se registra la hora de inicio en la sesión
+- Se registra la hora de inicio en la base de datos
+- El estado se mantiene aunque recargues la página o cierres y vuelvas a abrir el navegador
 
 ### Terminar de trabajar
 
-Al finalizar tu jornada, hacer clic en **"Termine de trabajar"**.
+Al finalizar tu jornada, hacer clic en **“Termine de trabajar”**.
 
-- El estado se limpia de la sesión
+- Se registra la hora de fin en la base de datos
+- El estado se borra del dashboard
 
-> **Nota técnica:** El estado de trabajo se guarda en `sessionStorage` del navegador. Si cerrás o recargás la pestaña, el estado se reinicia. Esto es una limitación actual del sistema.
+> **Nota:** A partir de la versión 1.1 el estado de trabajo se guarda en la base de datos. Si cerraste la pestaña y volvés a entrar, el sistema recupera automáticamente si ya estabas trabajando.
 
 ---
 
@@ -144,7 +152,7 @@ Si el cliente no se presentó a su cita:
 
 ---
 
-## 6. Estadísticas personales
+## 6. Estadísticas personales y comisiones
 
 Las 4 tarjetas en la parte superior del dashboard muestran tus métricas:
 
@@ -156,6 +164,16 @@ Las 4 tarjetas en la parte superior del dashboard muestran tus métricas:
 | Ingresos este mes | Suma de los servicios que completaste este mes |
 
 Los datos se cargan automáticamente al abrir el dashboard y corresponden **solo a tus citas**.
+
+### Comisiones
+
+Cada empleado tiene un **porcentaje de comisión** configurado por el administrador. Cuando una cita asignada a vos pasa a estado **Completada**, el sistema calcula automáticamente tu comisión:
+
+> `comisión = precio del servicio × porcentaje de comisión / 100`
+
+Por ejemplo, si el servicio cuesta $30 y tu comisión es del 40%, ganás $12 por esa cita.
+
+Los ingresos que se muestran en tu dashboard son el **precio total del servicio** (no la comisión). Para ver el detalle de comisiones, contactá al administrador.
 
 ---
 
@@ -171,10 +189,10 @@ No directamente. La creación y cancelación de citas la maneja el administrador
 Puede ser que la cita esté asignada a otro empleado. Consultá con el administrador para que verifique la asignación.
 
 **¿Los ingresos que veo son mis comisiones?**  
-No, son el total del precio del servicio. El cálculo de comisiones no está implementado en esta versión.
+No, son el total del precio del servicio. Tu comisión se calcula automáticamente como `precio × tu % de comisión`. Para ver el detalle, contactá al administrador.
 
-**¿Por qué al recargar la página el estado de "trabajando" se resetea?**  
-El estado de trabajo se guarda solo mientras la pestaña del navegador está abierta. Es una limitación actual del sistema — se recomienda no cerrar la pestaña durante el turno.
+**¿Por qué al recargar la página el estado de "trabajando" no se pierde?**  
+A partir de la versión 1.1 el estado de jornada laboral se guarda en la base de datos y se recupera automáticamente al volver a ingresar.
 
 **¿Puedo usar la app desde el celular?**  
 Sí. La aplicación es responsive y funciona en móvil. Se recomienda usar el navegador Chrome o Safari actualizados.

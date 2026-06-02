@@ -58,7 +58,7 @@ function mapDbToItem(row: InventoryRow): InventoryItem {
 }
 
 export default function InventoryPage() {
-  useRequireAuth(["admin"])
+  useRequireAuth(["admin", "manager"])
   
   const [items, setItems] = useState<InventoryItem[]>([])
   const [error, setError] = useState<string | null>(null)

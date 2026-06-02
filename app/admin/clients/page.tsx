@@ -21,7 +21,8 @@ import {
   UserPlus,
   TrendingUp,
   Eye,
-  Gift
+  Gift,
+  XCircle,
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
 import { DEMO_CLIENTS } from "@/lib/demo-appointments"
@@ -35,7 +36,7 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 export default function ClientsPage() {
-  const user = useRequireAuth(["admin"])
+  const user = useRequireAuth(["admin", "manager"])
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -53,7 +54,7 @@ export default function ClientsPage() {
     }
     supabase
       .from("users")
-      .select("id, name, email, phone, created_at, loyalty_points")
+      .select("id, name, email, phone, created_at, loyalty_points, no_show_count")
       .eq("role", "client")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -279,6 +280,14 @@ export default function ClientsPage() {
                           <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                             <Gift className="h-3 w-3" />
                             <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
+                          </div>
+                        )}
+                        {/* No-show badge */}
+                        {(client as Client & { no_show_count?: number }).no_show_count != null &&
+                         (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
+                          <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
+                            <XCircle className="h-3 w-3" />
+                            <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
                           </div>
                         )}
                       </div>

@@ -1,22 +1,52 @@
 # 💈 Barber Manager
 
-Sistema de gestión profesional para barberías modernas. Administra citas, empleados, clientes y servicios en una plataforma completa y elegante.
+Sistema de gestión profesional para barberías modernas. Administra citas, empleados, clientes, inventario, punto de venta y más — en una plataforma completa y elegante.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.2-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwind-css)
+![Version](https://img.shields.io/badge/version-1.1-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Características
 
 ### 🔐 Autenticación por Roles
-- **Cliente**: Reserva de citas, historial de servicios, feedback
-- **Empleado**: Agenda diaria, control de horarios, estadísticas
-- **Administrador**: Dashboard completo, gestión de empleados, inventario, reportes
+- **Cliente**: Reserva de citas, historial, calificaciones, puntos de fidelidad
+- **Empleado**: Agenda diaria, control de jornada laboral persistente, estadísticas y comisiones
+- **Administrador**: Dashboard completo, gestión de empleados y clientes, inventario, POS, reportes y alertas
 
 ### 📅 Gestión de Citas
 - Sistema de reservas en tiempo real
-- Calendario interactivo
+- Reagendamiento de citas (M1)
+- Cancelación por cliente o administrador
+
+### ⭐ Calificaciones (M5)
+- Los clientes califican con 1-5 estrellas tras una cita completada
+- Comentario opcional
+
+### 💰 Comisiones (M2)
+- Porcentaje de comisión por empleado configurable
+- Cálculo automático al completar una cita
+
+### 🕐 Jornada Laboral Persistente (M3)
+- Estado "trabajando / no trabajando" se guarda en la base de datos
+- Persiste aunque se cierre o recargue el navegador
+
+### 🔑 Recuperación de Contraseña (M4)
+- Flujo de reset por email integrado con Supabase Auth
+
+### 🏆 Puntos de Fidelidad (M6)
+- 1 punto por dólar gastado en citas o POS
+- Historial de transacciones con saldo en tiempo real
+
+### 🛒 Punto de Venta — POS (M7)
+- Registro de ventas directas (efectivo, tarjeta, transferencia)
+- Items por servicio o producto
+- Descuentos y notas por venta
+
+### 🚨 Alertas de Calificación Baja (M8)
+- Alerta automática cuando un cliente califica con 1 o 2 estrellas
+- Panel de resolución en el dashboard de admin
 
 5. Ejecuta el proyecto:
 ```bash
@@ -102,13 +132,18 @@ pnpm predeploy    # Checklist pre-deployment
 
 ### Tablas Principales
 
-- `users`: Perfiles de usuario con roles
-- `appointments`: Citas con barberos
+- `users`: Perfiles con roles, `commission_rate` y `loyalty_points`
+- `appointments`: Citas con `rating`, `review_text` y `rescheduled_at`
 - `services`: Servicios ofrecidos
 - `inventory`: Productos e inventario
 - `inventory_movements`: Historial de movimientos
-- `time_logs`: Control de horarios de empleados
 - `business_settings`: Configuración del negocio
+- `attendance_logs`: Jornadas laborales de empleados (M3)
+- `employee_commissions`: Comisiones por cita completada (M2)
+- `loyalty_transactions`: Historial de puntos de fidelidad (M6)
+- `pos_sales`: Ventas del punto de venta (M7)
+- `pos_sale_items`: Líneas de detalle de ventas POS (M7)
+- `low_rating_alerts`: Alertas de calificaciones bajas (M8)
 
 ### Políticas de Seguridad (RLS)
 

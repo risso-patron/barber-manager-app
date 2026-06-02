@@ -18,6 +18,8 @@ const posSaleSchema = z.object({
   client_id: z.string().uuid().optional(),
   payment_method: z.enum(["cash", "card", "transfer"]),
   discount: z.number().min(0).default(0),
+  redeem_points: z.number().int().min(0).default(0),
+  tip: z.number().min(0).default(0),
   notes: z.string().max(500).optional(),
   items: z.array(posItemSchema).min(1, "Debe incluir al menos un ítem"),
 })
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     if (isDemoMode()) return NextResponse.json({ sales: DEMO_SALES })
 
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const body: unknown = await request.json()
     const parsed = posSaleSchema.safeParse(body)
@@ -101,11 +103,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, sale_id: "demo-new" })
     }
 
-    const { items, discount, ...saleData } = parsed.data
+    const { items, discount, redeem_points, tip, ...saleData } = parsed.data
+
+    // Redemption constants (must match frontend POINT_VALUE)
+    const POINT_VALUE = 0.1
+    const redemptionAmt = saleData.client_id && redeem_points > 0
+      ? parseFloat((redeem_points * POINT_VALUE).toFixed(2))
+      : 0
 
     // Compute totals
     const subtotal = items.reduce((sum, it) => sum + it.price * it.quantity, 0)
-    const total = Math.max(0, subtotal - discount)
+    const total = Math.max(0, subtotal - discount - redemptionAmt)
 
     const admin = createAdminSupabaseClient()
 
@@ -115,6 +123,7 @@ export async function POST(request: NextRequest) {
       .insert({
         ...saleData,
         discount,
+        tip: parseFloat(tip.toFixed(2)),
         subtotal: parseFloat(subtotal.toFixed(2)),
         total: parseFloat(total.toFixed(2)),
         created_by: user.id,
@@ -139,6 +148,28 @@ export async function POST(request: NextRequest) {
 
     const { error: itemsErr } = await admin.from("pos_sale_items").insert(lineItems)
     if (itemsErr) return NextResponse.json({ error: itemsErr.message }, { status: 500 })
+
+    // Loyalty redemption: deduct points and record transaction (Item 10)
+    if (redeem_points > 0 && saleData.client_id) {
+      const { data: clientRow } = await admin
+        .from("users")
+        .select("loyalty_points")
+        .eq("id", saleData.client_id)
+        .single()
+
+      const currentPoints = clientRow?.loyalty_points ?? 0
+      const newPoints = Math.max(0, currentPoints - redeem_points)
+
+      await Promise.all([
+        admin.from("users").update({ loyalty_points: newPoints }).eq("id", saleData.client_id!),
+        admin.from("loyalty_transactions").insert({
+          user_id: saleData.client_id,
+          points: -redeem_points,
+          type: "redeemed",
+          description: `Canje en POS — venta ${sale.id}`,
+        }),
+      ])
+    }
 
     return NextResponse.json({ success: true, sale_id: sale.id, total })
   })

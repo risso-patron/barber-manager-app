@@ -2,7 +2,7 @@ export type UserRole = "client" | "employee" | "admin"
 
 export type EmployeeSpecialty = "barbero" | "cajero" | "recepcionista" | "gerente"
 
-export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
+export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
 
 export interface User {
   id: string

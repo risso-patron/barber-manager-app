@@ -18,7 +18,7 @@ export interface AuthUser {
   email: string
   profile?: {
     name: string
-    role: "client" | "employee" | "admin"
+    role: "client" | "employee" | "admin" | "manager"
     phone?: string
     avatar_url?: string
   }
@@ -28,6 +28,14 @@ export interface UseAuthReturn {
   user: AuthUser | null
   isLoading: boolean
   isAuthenticated: boolean
+  /** true cuando el perfil tiene role === 'admin' */
+  isAdmin: boolean
+  /** true cuando el perfil tiene role === 'manager' */
+  isManager: boolean
+  /** true cuando el perfil tiene role === 'employee' */
+  isEmployee: boolean
+  /** true cuando el perfil tiene role === 'client' */
+  isClient: boolean
   error: string | null
   signUp: (data: SignUpData) => Promise<boolean>
   signIn: (data: SignInData) => Promise<boolean>
@@ -174,10 +182,16 @@ function useAuthInternal(): UseAuthReturn {
     setError(null)
   }, [])
 
+  const role = user?.profile?.role ?? null
+
   return {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isAdmin: role === "admin",
+    isManager: role === "manager",
+    isEmployee: role === "employee",
+    isClient: role === "client",
     error,
     signUp: handleSignUp,
     signIn: handleSignIn,

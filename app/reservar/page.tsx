@@ -41,13 +41,19 @@ interface Employee {
 }
 
 interface BookingData {
-  service?: Service
+  services: Service[]
   barber?: Employee
   date?: string
   time?: string
   name?: string
   phone?: string
   email?: string
+}
+
+function addTime(base: string, minutes: number): string {
+  const [h, m] = base.split(":").map(Number)
+  const total = h * 60 + m + minutes
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -57,7 +63,7 @@ const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUr
 export default function ReservarPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>("service")
-  const [booking, setBooking] = useState<BookingData>({})
+  const [booking, setBooking] = useState<BookingData>({ services: [] })
   const [showSignupModal, setShowSignupModal] = useState(false)
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -152,33 +158,40 @@ export default function ReservarPage() {
     setIsSubmitting(true)
     setSubmitError(null)
 
-    const res = await fetch("/api/bookings/public", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        barbershop: "barber-manager",
-        clientName: name,
-        clientPhone: phone,
-        clientEmail: email || undefined,
-        serviceId: booking.service!.id,
-        serviceName: booking.service!.name,
-        employeeId: booking.barber!.id,
-        employeeName: booking.barber!.name,
-        date: booking.date,
-        time: booking.time,
-        duration: booking.service!.duration,
-        price: booking.service!.price,
-      }),
-    })
+    const services = booking.services
+    let currentTime = booking.time!
 
-    const result = await res.json()
-    setIsSubmitting(false)
+    for (const svc of services) {
+      const res = await fetch("/api/bookings/public", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barbershop: "barber-manager",
+          clientName: name,
+          clientPhone: phone,
+          clientEmail: email || undefined,
+          serviceId: svc.id,
+          serviceName: svc.name,
+          employeeId: booking.barber!.id,
+          employeeName: booking.barber!.name,
+          date: booking.date,
+          time: currentTime,
+          duration: svc.duration,
+          price: svc.price,
+        }),
+      })
 
-    if (!res.ok || !result.success) {
-      setSubmitError(result.error || "Error al guardar la reserva. Intenta nuevamente.")
-      return
+      const result = await res.json() as { success?: boolean; error?: string }
+      if (!res.ok || !result.success) {
+        setSubmitError(result.error ?? "Error al guardar la reserva. Intenta nuevamente.")
+        setIsSubmitting(false)
+        return
+      }
+
+      currentTime = addTime(currentTime, svc.duration)
     }
 
+    setIsSubmitting(false)
     setBooking(prev => ({ ...prev, name, phone, email }))
     setStep("confirmation")
     setTimeout(() => setShowSignupModal(true), 2000)
@@ -228,9 +241,9 @@ export default function ReservarPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Scissors className="h-5 w-5" />
-                Selecciona tu servicio
+                Selecciona tus servicios
               </CardTitle>
-              <CardDescription>Elige el servicio que deseas</CardDescription>
+              <CardDescription>Puedes elegir uno o varios servicios</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading.services ? (
@@ -242,26 +255,79 @@ export default function ReservarPage() {
                   No hay servicios disponibles en este momento.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {services.map((service) => (
-                    <Card 
-                      key={service.id}
-                      className="cursor-pointer hover:border-blue-500 transition-colors"
-                      onClick={() => { setBooking(prev => ({ ...prev, service })); setStep("barber") }}
-                    >
-                      <CardContent className="pt-6">
-                        <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
-                        {service.description && (
-                          <p className="text-sm text-gray-600 mb-4">{service.description}</p>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-2xl font-bold text-blue-600">${service.price}</span>
-                          <Badge variant="outline">{service.duration} min</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {services.map((service) => {
+                      const selected = booking.services.some(s => s.id === service.id)
+                      return (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all ${
+                            selected
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-400"
+                              : "hover:border-blue-300"
+                          }`}
+                          onClick={() =>
+                            setBooking(prev => ({
+                              ...prev,
+                              services: selected
+                                ? prev.services.filter(s => s.id !== service.id)
+                                : [...prev.services, service],
+                            }))
+                          }
+                        >
+                          <CardContent className="pt-6 relative">
+                            {selected && (
+                              <span className="absolute top-3 right-3 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                ✓
+                              </span>
+                            )}
+                            <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
+                            {service.description && (
+                              <p className="text-sm text-gray-600 mb-4">{service.description}</p>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-2xl font-bold text-blue-600">${service.price}</span>
+                              <Badge variant="outline">{service.duration} min</Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+
+                  {/* Mini-cart */}
+                  {booking.services.length > 0 && (
+                    <div className="border rounded-lg bg-slate-50 p-4 mb-4">
+                      <h4 className="font-semibold mb-2 text-sm text-gray-700">Tu selección:</h4>
+                      <ul className="space-y-1 mb-3">
+                        {booking.services.map(s => (
+                          <li key={s.id} className="flex justify-between text-sm">
+                            <span>{s.name}</span>
+                            <span className="text-gray-600">{s.duration} min · <strong>${s.price}</strong></span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex justify-between text-sm font-bold border-t pt-2">
+                        <span>Total</span>
+                        <span>
+                          {booking.services.reduce((s, x) => s + x.duration, 0)} min
+                          {" · "}
+                          ${booking.services.reduce((s, x) => s + x.price, 0)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full gap-2"
+                    disabled={booking.services.length === 0}
+                    onClick={() => setStep("barber")}
+                  >
+                    Continuar con {booking.services.length} servicio{booking.services.length !== 1 ? "s" : ""}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
@@ -276,7 +342,8 @@ export default function ReservarPage() {
                 Selecciona tu barbero
               </CardTitle>
               <CardDescription>
-                Servicio: <strong>{booking.service?.name}</strong> - ${booking.service?.price}
+                {booking.services.map(s => s.name).join(" + ")}
+                {" · "}${booking.services.reduce((t, s) => t + s.price, 0)}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -345,7 +412,7 @@ export default function ReservarPage() {
                 Selecciona fecha y hora
               </CardTitle>
               <CardDescription>
-                {booking.service?.name} con {booking.barber?.name}
+                {booking.services.map(s => s.name).join(" + ")} con {booking.barber?.name}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -456,11 +523,13 @@ export default function ReservarPage() {
                   <CardContent className="pt-6">
                     <h4 className="font-semibold mb-2">Resumen de tu cita:</h4>
                     <ul className="space-y-1 text-sm">
-                      <li>📋 <strong>Servicio:</strong> {booking.service?.name}</li>
+                      {booking.services.map(s => (
+                        <li key={s.id}>📋 <strong>{s.name}</strong> — {s.duration} min · ${s.price}</li>
+                      ))}
                       <li>💈 <strong>Barbero:</strong> {booking.barber?.name}</li>
                       <li>📅 <strong>Fecha:</strong> {booking.date && formatDate(booking.date)}</li>
-                      <li>🕐 <strong>Hora:</strong> {booking.time}</li>
-                      <li>💰 <strong>Precio:</strong> ${booking.service?.price}</li>
+                      <li>🕐 <strong>Hora inicio:</strong> {booking.time}</li>
+                      <li className="font-semibold">💰 <strong>Total:</strong> ${booking.services.reduce((t, s) => t + s.price, 0)} · {booking.services.reduce((t, s) => t + s.duration, 0)} min</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -510,10 +579,12 @@ export default function ReservarPage() {
                 <CardContent className="pt-6">
                   <h4 className="font-semibold mb-4">Detalles de tu cita:</h4>
                   <div className="space-y-2 text-left">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Servicio:</span>
-                      <span className="font-semibold">{booking.service?.name}</span>
-                    </div>
+                    {booking.services.map((s, i) => (
+                      <div key={s.id} className="flex justify-between">
+                        <span className="text-gray-600">Servicio {i + 1}:</span>
+                        <span className="font-semibold">{s.name}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Barbero:</span>
                       <span className="font-semibold">{booking.barber?.name}</span>
@@ -523,12 +594,14 @@ export default function ReservarPage() {
                       <span className="font-semibold">{booking.date && formatDate(booking.date)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Hora:</span>
+                      <span className="text-gray-600">Hora inicio:</span>
                       <span className="font-semibold">{booking.time}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-gray-600">Total:</span>
-                      <span className="text-xl font-bold text-blue-600">${booking.service?.price}</span>
+                      <span className="text-xl font-bold text-blue-600">
+                        ${booking.services.reduce((t, s) => t + s.price, 0)}
+                      </span>
                     </div>
                   </div>
                 </CardContent>

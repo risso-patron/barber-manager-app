@@ -7,7 +7,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = useRequireAuth(["admin"])
+  const user = useRequireAuth(["admin", "manager"])
 
   if (!user) {
     return (

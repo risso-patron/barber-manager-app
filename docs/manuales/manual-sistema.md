@@ -1,6 +1,6 @@
 # Manual del Sistema
 
-**Barber Manager App — Versión 1.0**  
+**Barber Manager App — Versión 1.1**  
 **Perfil:** Desarrolladores y administradores técnicos  
 **Stack:** Next.js 15 (App Router) · TypeScript 5 · Supabase · Tailwind CSS · pnpm
 
@@ -148,13 +148,48 @@ barber-manager-app/
 
 ### Flujo de datos
 
+La arquitectura sigue un flujo **unidireccional estricto**. Ninguna capa puede saltarse a la siguiente sin pasar por los controles intermedios:
+
 ```
-Browser → middleware.ts (auth + rol check)
-        → App Router page.tsx
-        → Supabase client (browser) o API Route
-        → API Route → Supabase server client (SSR o admin)
-        → Supabase PostgreSQL (RLS activo)
+┌─────────────────────────────────────────────────────┐
+│  1. Browser / Cliente                               │
+│     React components + hooks (useAuth, useState)    │
+└──────────────────────┬──────────────────────────────┘
+                       │ HTTP request
+┌──────────────────────▼──────────────────────────────┐
+│  2. middleware.ts                                   │
+│     - Verifica sesión (cookie de Supabase)          │
+│     - Valida rol del usuario                        │
+│     - Redirige o deja pasar                         │
+└──────────────────────┬──────────────────────────────┘
+                       │
+           ┌───────────┴───────────┐
+           │                       │
+┌──────────▼──────────┐  ┌─────────▼────────────────┐
+│  3a. Page / RSC     │  │  3b. API Route            │
+│  (server component) │  │  app/api/*/route.ts       │
+│  Renderizado SSR    │  │  - Zod validation         │
+│  con datos iniciales│  │  - Rate limiting          │
+│                     │  │  - Rol check explícito    │
+└──────────┬──────────┘  └─────────┬────────────────┘
+           │                       │
+           └───────────┬───────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│  4. Supabase Client                                 │
+│     createServerSupabaseClient()  → respeta RLS     │
+│     createAdminSupabaseClient()   → bypasea RLS     │
+│     (el segundo solo para operaciones admin)        │
+└──────────────────────┬──────────────────────────────┘
+                       │ SQL query
+┌──────────────────────▼──────────────────────────────┐
+│  5. PostgreSQL + RLS (Supabase)                     │
+│     - Políticas RLS filtran filas por rol/uid       │
+│     - Última línea de defensa                       │
+└─────────────────────────────────────────────────────┘
 ```
+
+**Principio clave:** La UI no toma decisiones de acceso — solo muestra u oculta según el estado. El acceso real lo controlan el middleware (rutas), la API route (lógica de negocio) y RLS (datos).
 
 ---
 
@@ -173,6 +208,8 @@ Extiende `auth.users` de Supabase con datos del perfil.
 | `phone` | text | Teléfono |
 | `role` | text | `admin` / `employee` / `client` |
 | `avatar_url` | text | URL del avatar |
+| `commission_rate` | numeric | % de comisión del empleado (default 0) |
+| `loyalty_points` | integer | Puntos de fidelidad acumulados (default 0) |
 | `is_active` | boolean | Estado del usuario |
 | `created_at` | timestamptz | Fecha de creación |
 
@@ -203,6 +240,9 @@ Registro de todas las citas.
 | `status` | text | `pending` / `confirmed` / `completed` / `cancelled` |
 | `notes` | text | Notas adicionales |
 | `admin_notes` | text | Notas internas del admin |
+| `rating` | integer | Calificación del cliente (1-5, nullable) |
+| `review_text` | text | Comentario de la calificación (nullable) |
+| `rescheduled_at` | timestamptz | Fecha del último reagendamiento (nullable) |
 | `created_at` | timestamptz | |
 
 #### `inventory`
@@ -218,6 +258,85 @@ Stock de productos y herramientas.
 | `cost_per_unit` | numeric | Costo por unidad |
 | `supplier` | text | Proveedor |
 | `updated_at` | timestamptz | |
+
+#### `attendance_logs` (M3)
+Registro de jornadas laborales de empleados.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK → `users.id` |
+| `action` | text | `start` / `end` |
+| `created_at` | timestamptz | |
+
+#### `employee_commissions` (M2)
+Registro de comisiones por cita completada.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `appointment_id` | uuid | FK → `appointments.id` |
+| `employee_id` | uuid | FK → `users.id` |
+| `rate` | numeric | % de comisión aplicado |
+| `amount` | numeric | Monto calculado |
+| `created_at` | timestamptz | |
+
+#### `loyalty_transactions` (M6)
+Historial de puntos de fidelidad por usuario.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `user_id` | uuid | FK → `users.id` |
+| `points` | integer | Delta de puntos (positivo o negativo) |
+| `type` | text | `appointment` / `pos` / `adjustment` / `redemption` |
+| `description` | text | Descripción legible |
+| `created_at` | timestamptz | |
+
+#### `pos_sales` (M7)
+Ventas registradas en el punto de venta.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `client_id` | uuid | FK → `users.id` (nullable) |
+| `payment_method` | text | `cash` / `card` / `transfer` |
+| `subtotal` | numeric | Subtotal antes del descuento |
+| `discount` | numeric | Monto de descuento |
+| `total` | numeric | Total final |
+| `notes` | text | Notas de la venta |
+| `created_by` | uuid | FK → `users.id` (admin que registró) |
+| `created_at` | timestamptz | |
+
+#### `pos_sale_items` (M7)
+Líneas de detalle de cada venta POS.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `sale_id` | uuid | FK → `pos_sales.id` |
+| `item_type` | text | `service` / `product` |
+| `item_id` | uuid | FK al servicio o producto (nullable) |
+| `name` | text | Nombre del ítem |
+| `price` | numeric | Precio unitario |
+| `quantity` | integer | Cantidad |
+| `subtotal` | numeric | precio × cantidad |
+
+#### `low_rating_alerts` (M8)
+Alertas generadas cuando un cliente califica con 1 o 2 estrellas.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `appointment_id` | uuid | FK → `appointments.id` |
+| `client_id` | uuid | FK → `users.id` |
+| `employee_id` | uuid | FK → `users.id` |
+| `rating` | integer | Calificación (1 o 2) |
+| `review_text` | text | Comentario del cliente |
+| `is_resolved` | boolean | Si el admin ya resolvió la alerta |
+| `resolved_at` | timestamptz | Cuándo fue resuelta |
+| `resolved_by` | uuid | FK → `users.id` (quien resolvió) |
+| `created_at` | timestamptz | |
 
 ### Row Level Security (RLS)
 
@@ -271,13 +390,40 @@ const supabase = createServerSupabaseClient()
 
 ### Roles y su almacenamiento
 
-Los roles se almacenan en `users.role` y se leen al iniciar sesión. El hook `useAuth` expone:
+Los roles se almacenan en `users.role` y se leen al iniciar sesión.
+
+**Archivo:** `hooks/useAuth.tsx`
 
 ```typescript
-isAdmin: user?.role === 'admin'
-isEmployee: user?.role === 'employee'
-isClient: user?.role === 'client'
+interface AuthState {
+  // Objeto usuario de Supabase enriquecido con datos de `users`
+  user: (User & { role: string; full_name: string }) | null
+
+  // true mientras se verifica la sesión inicial (evita flash de login)
+  loading: boolean
+
+  // Atajos de rol para renderizado condicional en componentes
+  isAdmin: boolean     // user?.role === 'admin'
+  isEmployee: boolean  // user?.role === 'employee'
+  isClient: boolean    // user?.role === 'client'
+}
 ```
+
+**Uso típico en componentes:**
+
+```typescript
+const { user, isAdmin, isEmployee, isClient, loading } = useAuth()
+
+if (loading) return <Spinner />
+if (!user) return <Redirect to="/auth/login" />
+
+// Renderizado condicional por rol:
+{isAdmin && <AdminPanel />}
+{isEmployee && <EmployeeView />}
+{isClient && <ClientView />}
+```
+
+> `useAuth` NO reemplaza al middleware — es solo para la UI. El control de acceso real ocurre en el servidor.
 
 ---
 
@@ -285,47 +431,59 @@ isClient: user?.role === 'client'
 
 **Archivo:** `middleware.ts`
 
-### Rutas protegidas (requieren sesión activa)
+### Rutas por categoría de acceso
+
+#### Rutas exclusivas por rol
+
+| Prefijo | Rol permitido | Redirige a si otro rol accede |
+|---------|--------------|-------------------------------|
+| `/admin/*` | `admin` | `/dashboard` |
+| `/barber/*` | `employee` | `/dashboard` |
+| `/client/*` | `client` | `/dashboard` |
+
+#### Rutas genéricas protegidas (cualquier sesión activa)
 
 ```
-/dashboard/*
-/admin/*
-/barber/*
-/employee/*
-/client/*
+/dashboard     ← dispatcher; redirige según rol
+/employee/*    ← alias heredado, mismo acceso que /barber/*
 ```
 
-### Rutas públicas (sin login requerido)
+#### Rutas públicas (sin sesión requerida)
 
 ```
-/
+/                     ← landing page
 /auth/login
 /auth/register
-/reservar
-/book/[slug]
+/auth/forgot-password
+/auth/callback        ← magic link / OAuth callback
+/reservar             ← reserva pública sin cuenta
+/book/[slug]          ← reserva por enlace compartido
 /terms
 /privacy
-/api/*  (con sus propias validaciones internas)
+/api/*                ← cada endpoint valida rol internamente
 ```
 
 ### Matriz de redirecciones por rol
 
 | Rol | Ruta intentada | Resultado |
-|-----|---------------|-----------|
-| admin | `/admin/*` | Acceso permitido |
-| admin | `/barber/*` o `/client/*` | Redirect → `/dashboard` |
-| employee | `/barber/*` | Acceso permitido |
-| employee | `/admin/*` o `/client/*` | Redirect → `/dashboard` |
-| client | `/client/*` | Acceso permitido |
-| client | `/admin/*` o `/barber/*` | Redirect → `/dashboard` |
-| sin sesión | cualquier ruta protegida | Redirect → `/auth/login` |
+|-----|---------------|----------|
+| `admin` | `/admin/*` | ✅ Acceso permitido |
+| `admin` | `/barber/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/admin` |
+| `employee` | `/barber/*` | ✅ Acceso permitido |
+| `employee` | `/admin/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/barber` |
+| `client` | `/client/*` | ✅ Acceso permitido |
+| `client` | `/admin/*` o `/barber/*` | 🔄 Redirect → `/dashboard` → `/client` |
+| sin sesión | cualquier ruta protegida | 🔄 Redirect → `/auth/login?next={ruta}` |
 
 ### `/dashboard` — Dispatcher de roles
 
-La ruta `/dashboard` detecta el rol y redirige:
-- `admin` → `/admin`
-- `employee` → `/barber`
-- `client` → `/client`
+La ruta `/dashboard` no tiene UI propia; detecta el rol y redirige en el servidor:
+
+```
+admin    → /admin
+employee → /barber
+client   → /client
+```
 
 ---
 
@@ -338,6 +496,8 @@ La ruta `/dashboard` detecta el rol y redirige:
 | `/api/auth/login` | POST | No | Login con email/contraseña |
 | `/api/auth/register` | POST | No | Registro de nuevo usuario |
 | `/api/auth/logout` | POST | Sí | Cierre de sesión |
+| `/api/auth/forgot-password` | POST | No | Solicitar email de recuperación de contraseña |
+| `/api/auth/callback` | GET | No | Callback OAuth / magic link de Supabase |
 
 **POST `/api/auth/login`**
 
@@ -368,6 +528,8 @@ Rate limit: `loginLimiter` (máx. 5 intentos / 15 min por IP)
 | `/api/appointments` | POST | Sí | any | Crear cita (usuario autenticado) |
 | `/api/appointments/admin` | POST | Sí | admin | Admin crea cita con validación estricta |
 | `/api/appointments/[id]/cancel` | POST | Sí | client, admin | Cancelar una cita |
+| `/api/appointments/[id]/reschedule` | POST | Sí | client, admin | Reagendar una cita (fecha/hora) |
+| `/api/appointments/[id]/rate` | POST | Sí | client | Calificar una cita completada (1-5) |
 
 **POST `/api/appointments`**
 
@@ -497,6 +659,82 @@ Query param: `?id=uuid`
 | `/api/clients` | POST | Sí | admin | Crear cliente |
 | `/api/clients` | PATCH | Sí | admin | Actualizar cliente |
 | `/api/clients` | DELETE | Sí | admin | Eliminar cliente |
+
+---
+
+### Asistencia / Jornada laboral (M3)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/attendance` | GET | Sí | employee | Obtener estado actual de jornada |
+| `/api/attendance` | POST | Sí | employee | Registrar inicio o fin de jornada |
+
+**POST `/api/attendance`**
+
+Body:
+```json
+{ "action": "start" | "end" }
+```
+
+---
+
+### Puntos de fidelidad (M6)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/loyalty` | GET | Sí | client, admin | Saldo y últimas 5 transacciones |
+| `/api/loyalty` | POST | Sí | admin | Ajuste manual de puntos |
+
+**POST `/api/loyalty`**
+
+Body:
+```json
+{
+  "user_id": "uuid",
+  "points": "integer (positivo o negativo)",
+  "description": "string"
+}
+```
+
+---
+
+### Punto de venta (M7)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/pos` | GET | Sí | admin | Historial de ventas POS |
+| `/api/pos` | POST | Sí | admin | Registrar nueva venta POS |
+
+**POST `/api/pos`**
+
+Body:
+```json
+{
+  "client_id": "uuid (opcional)",
+  "payment_method": "cash | card | transfer",
+  "items": [
+    { "item_type": "service|product", "item_id": "uuid (opcional)", "name": "string", "price": 0, "quantity": 1 }
+  ],
+  "discount": 0,
+  "notes": "string (opcional)"
+}
+```
+
+---
+
+### Alertas de calificación baja (M8)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/alerts` | GET | Sí | admin | Listar alertas sin resolver (o todas con `?resolved=true`) |
+| `/api/alerts` | PATCH | Sí | admin | Marcar alerta como resuelta |
+
+**PATCH `/api/alerts`**
+
+Body:
+```json
+{ "id": "uuid", "is_resolved": true }
+```
 
 ---
 
@@ -662,6 +900,14 @@ Configura hooks que ejecutan:
 | `16-client-messages-gifts.sql` | Tablas para mensajes y regalos de clientes |
 | `17-appointment-status-guard.sql` | Guard: previene cambios de status inválidos |
 | `18-rls-client-cancel.sql` | RLS: clientes pueden cancelar sus propias citas |
+| `19-business-settings-rls-and-seed.sql` | Configuración del negocio y RLS |
+| `20-add-specialty-enum.sql` | Migación: enum de especialidades |
+| `21-add-ratings-to-appointments.sql` | M5: columnas `rating`, `review_text` en appointments |
+| `22-add-commission-system.sql` | M2: tabla `employee_commissions`, columna `commission_rate` en users, trigger automático |
+| `23-add-attendance-logs.sql` | M3: tabla `attendance_logs` para persistencia de jornada laboral |
+| `24-add-loyalty-points.sql` | M6: columna `loyalty_points` en users, tabla `loyalty_transactions` |
+| `25-add-pos-system.sql` | M7: tablas `pos_sales` y `pos_sale_items` |
+| `26-add-low-rating-alerts.sql` | M8: tabla `low_rating_alerts` + trigger `trg_low_rating_alert` |
 
 ### Instalación inicial limpia
 

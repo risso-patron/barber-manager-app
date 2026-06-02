@@ -1,6 +1,6 @@
 # Manual del Cliente
 
-**Barber Manager App — Versión 1.0**  
+**Barber Manager App — Versión 1.1**  
 **Perfil:** Cliente de la barbería  
 **Acceso:** Puede usar la app con o sin cuenta registrada
 
@@ -14,12 +14,15 @@
 4. [Reservar una cita (con cuenta)](#4-reservar-una-cita-con-cuenta)
 5. [Reservar una cita (sin cuenta)](#5-reservar-una-cita-sin-cuenta)
 6. [Gestionar mis citas](#6-gestionar-mis-citas)
-7. [Cancelar una cita](#7-cancelar-una-cita)
-8. [Historial de citas](#8-historial-de-citas)
-9. [Mi perfil](#9-mi-perfil)
-10. [Beneficios: Regalos y cupones](#10-beneficios-regalos-y-cupones)
-11. [Mensajes](#11-mensajes)
-12. [Preguntas frecuentes](#12-preguntas-frecuentes)
+7. [Reagendar una cita](#7-reagendar-una-cita)
+8. [Cancelar una cita](#8-cancelar-una-cita)
+9. [Calificar una cita](#9-calificar-una-cita)
+10. [Historial de citas](#10-historial-de-citas)
+11. [Puntos de fidelidad](#11-puntos-de-fidelidad)
+12. [Mi perfil](#12-mi-perfil)
+13. [Beneficios: Regalos y cupones](#13-beneficios-regalos-y-cupones)
+14. [Mensajes](#14-mensajes)
+15. [Preguntas frecuentes](#15-preguntas-frecuentes)
 
 ---
 
@@ -59,7 +62,12 @@ Si es la primera vez que usás la app, podés crear tu cuenta para gestionar tus
 
 ### Olvidé mi contraseña
 
-Por el momento no hay un flujo de recuperación de contraseña integrado en la app. Contactar a la barbería para que el administrador gestione el reseteo.
+1. En la pantalla de login, hacer clic en **¿Olvidaste tu contraseña?**
+2. Ingresar tu email y hacer clic en **Enviar instrucciones**
+3. Revisar tu correo y hacer clic en el enlace de restablecimiento
+4. Ingresar la nueva contraseña (mínimo 8 caracteres, mayúscula, minúscula y número)
+5. Confirmar la nueva contraseña y hacer clic en **Guardar nueva contraseña**
+6. El sistema te redirige al login para que ingreses con tu nueva contraseña
 
 ---
 
@@ -74,6 +82,7 @@ Al ingresar, tu panel muestra una vista general con:
 | Mi perfil | Resumen con tu nombre, email y teléfono. Botón para editar. |
 | Próximas citas | Lista de tus citas confirmadas o pendientes |
 | Historial | Acceso rápido a tus citas pasadas |
+| Puntos de fidelidad | Saldo de puntos acumulados y últimas transacciones |
 | Beneficios / Regalos | Códigos de regalo o cupones disponibles para vos |
 | Mensajes | Bandeja de mensajes de la barbería |
 | Mi carrito | Productos disponibles para comprar |
@@ -172,7 +181,8 @@ Lista de citas con estado **Pendiente** o **Confirmada**:
 | Estado | Pendiente / Confirmada |
 
 Acciones disponibles:
-- **Cancelar** — ver sección 7
+- **Reagendar** — ver sección 7
+- **Cancelar** — ver sección 8
 
 ### Citas completadas
 
@@ -180,7 +190,26 @@ Lista de citas con estado **Completada** (ya fueron atendidas) o **Cancelada**.
 
 ---
 
-## 7. Cancelar una cita
+## 7. Reagendar una cita
+
+> **Disponible para:** citas en estado **Pendiente** o **Confirmada** cuya fecha aún no haya pasado.
+
+Si necesitás cambiar la fecha u hora de una cita **sin cancelarla**, podés reagendarla:
+
+1. Ir a `/client/appointments`
+2. Localizar la cita que querés reagendar
+3. Hacer clic en **Reagendar**
+4. Se abre el modal de reagendamiento con:
+   - Selector de **nueva fecha** (mínimo: mañana)
+   - Selector de **nueva hora** (formato 24hs)
+5. Hacer clic en **Confirmar reagendamiento**
+6. La cita se actualiza con la nueva fecha/hora y el estado permanece igual
+
+> **Nota:** Si la nueva fecha es anterior a hoy el sistema rechazará el cambio.
+
+---
+
+## 8. Cancelar una cita
 
 > **Importante:** Solo podés cancelar citas que aún **no hayan pasado** y que estén en estado Pendiente o Confirmada.
 
@@ -202,7 +231,31 @@ Lista de citas con estado **Completada** (ya fueron atendidas) o **Cancelada**.
 
 ---
 
-## 8. Historial de citas
+## 9. Calificar una cita
+
+Una vez que tu cita queda con estado **Completada**, podés dejar una calificación y reseña para la barbería.
+
+### Cómo calificar
+
+1. Ir al **historial de citas** (`/client/history`) o al panel principal
+2. Localizar la cita completada
+3. Hacer clic en **Calificar** (o el ícono de estrella)
+4. Se abre el modal de calificación:
+
+| Campo | Obligatorio | Notas |
+|-------|------------|-------|
+| Calificación | Sí | Escala de 1 a 5 estrellas (★★★★★) |
+| Reseña / comentario | No | Texto libre, máximo 500 caracteres |
+
+5. Hacer clic en **Enviar calificación**
+
+> Cada cita se puede calificar **una sola vez**. Una vez enviada, la calificación no se puede editar.
+
+> Las calificaciones de 1–2★ generan una **alerta interna** que el administrador verá en su dashboard para dar seguimiento.
+
+---
+
+## 10. Historial de citas
 
 **Ruta:** `/client/history`
 
@@ -234,10 +287,37 @@ Cada tarjeta muestra:
 - **Hora**
 - **Monto** pagado
 - **Notas** del administrador o barbero (si las hay)
+- **Calificación** que dejaste (si ya calificaste)
 
 ---
 
-## 9. Mi perfil
+## 11. Puntos de fidelidad
+
+**Sección:** Fidelidad en el panel de cliente
+
+Acumulás **1 punto por cada dólar** gastado en citas completadas o en compras directas en la barbería (POS).
+
+### Ver tu saldo
+
+En tu panel de cliente, la sección **Fidelidad** muestra:
+- Tu saldo actual de puntos (número grande)
+- La descripción: “Ganás 1 punto por cada dólar gastado en citas y compras”
+- Las últimas 5 transacciones con delta verde (ganaste) o rojo (canjeaste)
+
+### Tipos de transacciones
+
+| Tipo | Signo | Descripción |
+|------|-------|-------------|
+| Completado | +Nº | Puntos ganados por una cita completada |
+| POS | +Nº | Puntos ganados por una compra directa |
+| Ajuste | +Nº | Puntos agregados manualmente por el admin |
+| Canje | −Nº | Puntos restados al canjear un beneficio |
+
+> El canje de puntos por beneficios (descuentos, productos) lo gestiona el administrador de la barbería directamente.
+
+---
+
+## 12. Mi perfil
 
 Desde el panel de cliente → sección **Mi perfil** → botón **"Ver perfil completo"**:
 
@@ -249,7 +329,7 @@ Para editar, hacer clic en **Editar** → modificar los campos → **Guardar**.
 
 ---
 
-## 10. Beneficios: Regalos y cupones
+## 13. Beneficios: Regalos y cupones
 
 **Sección:** Mi carrito / Ofertas en el panel de cliente
 
@@ -271,7 +351,7 @@ En el panel de cliente → tarjeta **"Beneficios / Regalos"**:
 
 ---
 
-## 11. Mensajes
+## 14. Mensajes
 
 **Sección:** Mensajes en el panel de cliente
 
@@ -286,25 +366,31 @@ En el panel de cliente → tarjeta **"Mensajes"** → **"Ver mensajes"**:
 
 ---
 
-## 12. Preguntas frecuentes
+## 15. Preguntas frecuentes
 
 **¿Puedo reservar sin tener cuenta?**  
 Sí. Usá el enlace público de la barbería (`/reservar` o el link que te compartieron) para reservar sin registrarte.
 
-**¿Cómo sé si mi reserva fue confirmada?**  
-Al hacer la reserva, queda con estado **Pendiente**. La barbería la confirmará y el estado cambiará a **Confirmada**. Podés verificarlo en `/client/appointments`.
-
 **¿Puedo cambiar la hora de una cita ya reservada?**  
-Actualmente no hay opción de reprogramación directa. La recomendación es cancelar la cita y crear una nueva.
+Sí. Desde `/client/appointments`, localizá la cita y hacé clic en **Reagendar**. Podés cambiar fecha y hora siempre que la cita esté en estado Pendiente o Confirmada y la fecha no haya pasado.
+
+**¿Cómo sé si mi reserva fue confirmada?**  
+Al hacer la reserva queda con estado **Pendiente**. La barbería la confirmará y el estado cambiará a **Confirmada**. Podés verificarlo en `/client/appointments`.
+
+**Olvidé mi contraseña, ¿qué hago?**  
+En la pantalla de login hacé clic en **¿Olvidaste tu contraseña?**, ingresá tu email y seguí las instrucciones que llegarán a tu correo.
+
+**¿Para qué sirven los puntos de fidelidad?**  
+Acumulás 1 punto por cada dólar gastado. Los puntos se canjean por beneficios (descuentos, productos) a discreción de la barbería. Podés ver tu saldo y el historial en tu panel.
 
 **¿Mis datos están seguros?**  
 Sí. La aplicación utiliza Supabase con cifrado en tránsito (HTTPS) y Row Level Security (RLS) en la base de datos, lo que significa que solo vos podés ver tus propias citas.
 
 **¿Puedo tener más de una cuenta?**  
-Técnicamente sí, pero no es recomendable. El historial y los beneficios están atados a cada cuenta individualmente.
+Técnicamente sí, pero no es recomendable. El historial y los puntos de fidelidad están atados a cada cuenta individualmente.
 
 **¿La app funciona en el celular?**  
 Sí. La aplicación es responsive y funciona en Chrome, Safari y Firefox en dispositivos móviles.
 
 **¿Qué hago si no puedo iniciar sesión?**  
-Verificá que el email y la contraseña sean correctos. Si el problema persiste, contactá a la barbería para que el administrador verifique tu cuenta.
+Verificá que el email y la contraseña sean correctos. Si olvidaste la contraseña usá el flujo de recuperación desde el login.
