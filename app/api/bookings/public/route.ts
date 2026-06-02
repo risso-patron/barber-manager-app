@@ -186,28 +186,43 @@ export async function POST(request: NextRequest) {
       createdAt: appointment.created_at,
     }
 
-    // Enviar notificaciones
+    // Encolar notificación (procesada de forma asíncrona por la Edge Function)
     try {
-      await fetch(`${request.nextUrl.origin}/api/notifications/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "new_booking",
-          clientName: data.clientName,
-          clientEmail: data.clientEmail,
-          clientPhone: data.clientPhone,
-          serviceName: data.serviceName,
-          employeeName: data.employeeName,
+      const shopName = data.barbershop
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (l: string) => l.toUpperCase())
+      const messageSms =
+        `Hola ${data.clientName}! Tu cita en ${shopName} está confirmada: ` +
+        `${data.date} a las ${data.time} con ${data.employeeName}. ` +
+        `Servicio: ${data.serviceName}. Total: $${data.price}.`
+      const messageEmail =
+        `Hola ${data.clientName},\n\n` +
+        `Tu reserva ha sido confirmada.\n\n` +
+        `Fecha: ${data.date}\nHora: ${data.time}\n` +
+        `Barbero: ${data.employeeName}\nServicio: ${data.serviceName}\n` +
+        `Total: $${data.price}\n\n` +
+        `Ante cualquier duda: ${barbershopPhone}\n\n¡Te esperamos!`
+
+      await supabase.from("notification_queue").insert({
+        type: "appointment_created",
+        recipient_phone: data.clientPhone,
+        recipient_email: data.clientEmail || null,
+        recipient_name: data.clientName,
+        message_sms: messageSms,
+        message_email: messageEmail,
+        subject_email: `✅ Reserva confirmada — ${shopName}`,
+        metadata: {
+          appointment_id: appointment.id,
+          service_name: data.serviceName,
+          employee_name: data.employeeName,
           date: data.date,
           time: data.time,
           price: data.price,
-          barbershopName: data.barbershop.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
-          barbershopPhone: barbershopPhone
-        })
+        },
       })
     } catch (error) {
-      console.error("Error enviando notificaciones:", error)
-      // No fallar la reserva si las notificaciones fallan
+      console.error("[bookings/public] Error encolando notificación:", error)
+      // No fallar la reserva si la notificación falla
     }
 
     return NextResponse.json({
