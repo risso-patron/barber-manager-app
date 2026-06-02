@@ -196,6 +196,17 @@ export function LoginForm() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Iniciar Sesión
             </Button>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                className="p-0 text-sm text-muted-foreground h-auto"
+                onClick={() => router.push("/auth/forgot-password")}
+              >
+                ¿Olvidaste tu contraseña?
+              </Button>
+            </div>
           </form>
 
           <div className="mt-4 text-center">

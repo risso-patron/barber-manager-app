@@ -19,7 +19,8 @@ import {
   UserCheck,
   Calendar,
   ArrowLeft,
-  KeyRound
+  KeyRound,
+  DollarSign
 } from "lucide-react"
 import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
@@ -33,7 +34,7 @@ const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseA
 
 const BARBER_SPECIALTIES = ["barbero"]
 
-type EmployeeWithSpecialty = Employee & { specialty?: string | null }
+type EmployeeWithSpecialty = Employee & { specialty?: string | null; commission_rate?: number | null }
 
 export default function EmployeesPage() {
   const router = useRouter()
@@ -71,7 +72,7 @@ export default function EmployeesPage() {
     }
     supabase
       .from("users")
-      .select("id, name, email, phone, role, avatar_url, specialty")
+      .select("id, name, email, phone, role, avatar_url, specialty, commission_rate")
       .neq("role", "client")
       .neq("role", "admin")
       .order("name")
@@ -133,7 +134,7 @@ export default function EmployeesPage() {
 
   const handleUpdateEmployee = async (employee: Omit<EmployeeWithSpecialty, "id"> | EmployeeWithSpecialty) => {
     const updatedEmployee = employee as EmployeeWithSpecialty
-    const { id, avatar, specialty, role, name, email, phone } = updatedEmployee
+    const { id, avatar, specialty, role, name, email, phone, commission_rate } = updatedEmployee
     if (!supabase) {
       setEmployees(employees.map(emp => emp.id === id ? { ...updatedEmployee } : emp))
       setEditingEmployee(null)
@@ -148,12 +149,13 @@ export default function EmployeesPage() {
         role,
         specialty: specialty || null,
         avatar_url: avatar || null,
+        commission_rate: commission_rate ?? null,
       })
       .eq("id", id)
       .select()
       .single()
     if (!error && data) setEmployees(employees.map(emp =>
-      emp.id === id ? { ...data, avatar: data.avatar_url, specialty: data.specialty } : emp
+      emp.id === id ? { ...data, avatar: data.avatar_url, specialty: data.specialty, commission_rate: data.commission_rate } : emp
     ))
     setEditingEmployee(null)
   }
@@ -393,6 +395,12 @@ export default function EmployeesPage() {
                   <Phone className="h-4 w-4" />
                   <span>{employee.phone}</span>
                 </div>
+                {employee.commission_rate != null && employee.commission_rate > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-emerald-700">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))

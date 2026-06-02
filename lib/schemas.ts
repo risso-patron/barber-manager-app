@@ -66,6 +66,37 @@ export const updateProfileSchema = z.object({
 })
 
 /**
+ * Password recovery schemas
+ */
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, "El email es requerido")
+    .email("Email inválido")
+    .toLowerCase()
+    .trim(),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "La contraseña debe tener al menos 8 caracteres")
+      .max(VALIDATION.PASSWORD_MAX_LENGTH)
+      .regex(/[A-Z]/, "Debe contener al menos una mayúscula")
+      .regex(/[a-z]/, "Debe contener al menos una minúscula")
+      .regex(/[0-9]/, "Debe contener al menos un número"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  })
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
+
+/**
  * Appointment schemas
  */
 export const createAppointmentSchema = z.object({
@@ -83,6 +114,21 @@ export const updateAppointmentSchema = z.object({
   feedback: z.string().max(1000).optional(),
   rating: z.number().min(1).max(5).optional(),
 })
+
+export const rescheduleAppointmentSchema = z.object({
+  appointment_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (formato: YYYY-MM-DD)")
+    .refine((d) => new Date(d) > new Date(new Date().toDateString()), {
+      message: "La nueva fecha debe ser futura",
+    }),
+  appointment_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Hora inválida (formato: HH:MM)"),
+  reason: z.string().max(500, "El motivo no puede exceder 500 caracteres").optional(),
+})
+
+export type RescheduleAppointmentInput = z.infer<typeof rescheduleAppointmentSchema>
 
 /**
  * Service schemas
@@ -117,6 +163,43 @@ export const createInventoryMovementSchema = z.object({
   reason: z.string().max(500).optional(),
   created_by: z.string().uuid(),
 })
+
+/**
+ * Rating schemas
+ */
+export const submitRatingSchema = z.object({
+  rating: z.number().int().min(1, "La calificación mínima es 1").max(5, "La calificación máxima es 5"),
+  review_text: z.string().max(1000, "La reseña no puede superar los 1000 caracteres").optional(),
+})
+
+export type SubmitRatingInput = z.infer<typeof submitRatingSchema>
+
+/**
+ * Commission schemas
+ */
+export const updateCommissionRateSchema = z.object({
+  commission_rate: z
+    .number()
+    .min(0, "El porcentaje no puede ser negativo")
+    .max(100, "El porcentaje no puede superar 100")
+    .transform((v) => parseFloat((v / 100).toFixed(4))),
+})
+
+export type UpdateCommissionRateInput = z.infer<typeof updateCommissionRateSchema>
+
+/**
+ * Loyalty schemas
+ */
+export const adjustLoyaltySchema = z.object({
+  user_id: z.string().uuid("ID de cliente inválido"),
+  points: z
+    .number()
+    .int("Los puntos deben ser un número entero")
+    .refine((v) => v !== 0, "El ajuste no puede ser cero"),
+  description: z.string().max(200, "La descripción no puede superar 200 caracteres").optional(),
+})
+
+export type AdjustLoyaltyInput = z.infer<typeof adjustLoyaltySchema>
 
 /**
  * Type inference helpers

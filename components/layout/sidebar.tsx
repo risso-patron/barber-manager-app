@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User, Share2 } from "lucide-react"
+import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User, Share2, ShoppingCart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
@@ -48,6 +48,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           { href: "/admin/employees", label: "Empleados", icon: Users },
           { href: "/admin/services", label: "Servicios", icon: Scissors },
           { href: "/admin/inventory", label: "Inventario", icon: Package },
+          { href: "/admin/pos", label: "Punto de Venta", icon: ShoppingCart },
           { href: "/admin/reports", label: "Reportes", icon: BarChart3 },
           { href: "/admin/share", label: "Compartir", icon: Share2 },
           { href: "/admin/settings", label: "Configuración", icon: Settings },

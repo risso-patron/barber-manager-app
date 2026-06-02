@@ -17,6 +17,17 @@ interface DashboardStats {
   pendingAppointments: number
 }
 
+interface LowRatingAlert {
+  id: string
+  appointment_id: string
+  rating: number
+  review_text: string | null
+  is_resolved: boolean
+  created_at: string
+  client: { id: string; name: string } | null
+  employee: { id: string; name: string } | null
+}
+
 interface RevenueAppointment {
   service: { price: number | null } | null
 }
@@ -50,6 +61,7 @@ export default function AdminDashboard() {
     monthlyRevenue: 0,
     pendingAppointments: 0,
   })
+  const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
 
   useEffect(() => {
     const loadStats = async () => {
@@ -97,6 +109,12 @@ export default function AdminDashboard() {
         console.warn("No se pudieron cargar estadísticas admin, usando datos demo:", error)
         setStats(DEMO_STATS)
       }
+
+      // Low-rating alerts (non-critical — don't block main stats)
+      fetch("/api/alerts")
+        .then((r) => r.json())
+        .then((d: { alerts?: LowRatingAlert[] }) => { if (Array.isArray(d.alerts)) setAlerts(d.alerts) })
+        .catch(() => { /* non-critical */ })
     }
 
     loadStats()
@@ -121,6 +139,7 @@ export default function AdminDashboard() {
     { label: "Empleados",     sub: `${stats.activeEmployees} activos`,        href: "/admin/employees",    alert: false },
     { label: "Servicios",     sub: "Catálogo",                                href: "/admin/services",     alert: false },
     { label: "Inventario",    sub: "Stock y productos",                       href: "/admin/inventory",    alert: false },
+    { label: "Punto de Venta", sub: "Ventas directas",                        href: "/admin/pos",          alert: false },
     { label: "Reportes",      sub: "Análisis y métricas",                     href: "/admin/reports",      alert: false },
     { label: "Configuración", sub: "Ajustes del sistema",                     href: "/admin/settings",     alert: false },
   ]
@@ -276,20 +295,47 @@ export default function AdminDashboard() {
               Alertas
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ display: "flex", gap: "14px" }}>
-                <div style={{ width: "1px", background: "#cc2222", alignSelf: "stretch", flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>Stock bajo</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>2 productos necesitan reposición</p>
+              {/* Low-rating alerts */}
+              {alerts.length > 0 ? (
+                alerts.slice(0, 4).map((alert) => (
+                  <div key={alert.id} style={{ display: "flex", gap: "14px" }}>
+                    <div style={{ width: "3px", background: alert.rating === 1 ? "#cc2222" : "#f59e0b", alignSelf: "stretch", flexShrink: 0, borderRadius: "2px" }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>
+                          {"★".repeat(alert.rating)}{"☆".repeat(5 - alert.rating)}
+                        </p>
+                        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#1a1a18" }}>
+                          {alert.client?.name ?? "Cliente"}
+                        </p>
+                      </div>
+                      {alert.review_text && (
+                        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "2px", fontStyle: "italic" }}>
+                          &ldquo;{alert.review_text}&rdquo;
+                        </p>
+                      )}
+                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.38)", marginTop: "3px" }}>
+                        {alert.employee?.name ?? ""} · {new Date(alert.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ display: "flex", gap: "14px" }}>
+                  <div style={{ width: "1px", background: "rgba(26,26,24,0.12)", alignSelf: "stretch", flexShrink: 0 }} />
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.40)" }}>Sin alertas pendientes</p>
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: "14px" }}>
-                <div style={{ width: "1px", background: "rgba(26,26,24,0.28)", alignSelf: "stretch", flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>Citas pendientes</p>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>{stats.pendingAppointments} citas esperando confirmación</p>
+              )}
+              {/* Pending appointments */}
+              {stats.pendingAppointments > 0 && (
+                <div style={{ display: "flex", gap: "14px" }}>
+                  <div style={{ width: "3px", background: "rgba(26,26,24,0.28)", alignSelf: "stretch", flexShrink: 0, borderRadius: "2px" }} />
+                  <div>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px", color: "#1a1a18" }}>Citas pendientes</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.52)", marginTop: "3px" }}>{stats.pendingAppointments} esperando confirmación</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

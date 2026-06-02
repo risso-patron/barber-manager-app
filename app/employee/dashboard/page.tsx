@@ -16,20 +16,35 @@ export default function EmployeeDashboard() {
   const router = useRouter()
   const user = useRequireAuth(["employee", "admin"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [commissionRate, setCommissionRate] = useState<number | null>(null)
   const [isWorking, setIsWorking] = useState(false)
   const [workStartTime, setWorkStartTime] = useState<string | null>(null)
   const [workEndTime, setWorkEndTime] = useState<string | null>(null)
+  const [attendanceId, setAttendanceId] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<Array<{ id: string; message: string; createdAt: string }>>([])
 
   const loadAppointments = useCallback(async (employeeId: string, employeeName?: string) => {
-    const { data } = await supabase
-      .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes, rating, feedback, created_at,
-        client:users!appointments_client_id_fkey(id, name, phone),
-        service:services(id, name, price, duration)`)
-      .eq("barber_id", employeeId)
-      .order("appointment_date", { ascending: false })
+    // Fetch appointments + commission_rate in parallel
+    const [aptsResult, userResult] = await Promise.all([
+      supabase!
+        .from("appointments")
+        .select(`id, appointment_date, appointment_time, status, notes, rating, feedback, commission_amount, created_at,
+          client:users!appointments_client_id_fkey(id, name, phone),
+          service:services(id, name, price, duration)`)
+        .eq("barber_id", employeeId)
+        .order("appointment_date", { ascending: false }),
+      supabase!
+        .from("users")
+        .select("commission_rate")
+        .eq("id", employeeId)
+        .single(),
+    ])
 
+    if (userResult.data?.commission_rate != null) {
+      setCommissionRate(userResult.data.commission_rate)
+    }
+
+    const data = aptsResult.data
     if (data) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setAppointments((data as any[]).map(a => ({
@@ -49,6 +64,7 @@ export default function EmployeeDashboard() {
         notes: a.notes || "",
         rating: a.rating ?? undefined,
         feedback: a.feedback ?? undefined,
+        commission_amount: a.commission_amount ?? undefined,
         createdAt: a.created_at,
       })))
     }
@@ -94,13 +110,17 @@ export default function EmployeeDashboard() {
       )
       .subscribe()
 
-      // Check if already working (from localStorage)
-      const workStatus = localStorage.getItem(`work_status_${user.id}`)
-      if (workStatus) {
-        const status = JSON.parse(workStatus)
-        setIsWorking(status.isWorking)
-        setWorkStartTime(status.startTime)
-      }
+      // Restore work session from database
+      void fetch("/api/attendance")
+        .then((r) => r.json())
+        .then((session: { id?: string; check_in?: string } | null) => {
+          if (session?.id && session?.check_in) {
+            setAttendanceId(session.id)
+            setIsWorking(true)
+            setWorkStartTime(session.check_in)
+          }
+        })
+        .catch(() => { /* non-critical */ })
 
     return () => {
       void supabase.removeChannel(channel)
@@ -127,6 +147,18 @@ export default function EmployeeDashboard() {
     const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
     const todayRevenue = today.filter(apt => apt.status === "completed").reduce((sum, apt) => sum + apt.price, 0)
 
+    // Commission this calendar month
+    const now = new Date()
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+    const thisMonthCompleted = completed.filter(apt => apt.date.startsWith(monthStr))
+    // Use stored commission_amount when available; fall back to live calculation
+    const monthCommission = thisMonthCompleted.reduce((sum, apt) => {
+      const stored = (apt as unknown as { commission_amount?: number }).commission_amount
+      if (stored != null) return sum + stored
+      if (commissionRate != null) return sum + apt.price * commissionRate
+      return sum
+    }, 0)
+
     return {
       todayAppointments: today.length,
       pendingToday: pending.length,
@@ -137,8 +169,10 @@ export default function EmployeeDashboard() {
       todayRevenue,
       avgRating,
       ratedCount: rated.length,
+      monthCommission,
+      commissionPct: commissionRate != null ? commissionRate * 100 : null,
     }
-  }, [appointments, todayDate])
+  }, [appointments, todayDate, commissionRate])
 
   const todayAppointments = useMemo(() => {
     return appointments
@@ -157,25 +191,33 @@ export default function EmployeeDashboard() {
       .slice(0, 5)
   }, [appointments, todayDate])
 
-  const handleClockIn = () => {
-    const now = new Date().toISOString()
-    setIsWorking(true)
-    setWorkStartTime(now)
-    if (user) {
-      localStorage.setItem(`work_status_${user.id}`, JSON.stringify({
-        isWorking: true,
-        startTime: now
-      }))
+  const handleClockIn = async () => {
+    try {
+      const res = await fetch("/api/attendance", { method: "POST" })
+      const data = (await res.json()) as { id?: string; check_in?: string }
+      if (data.id && data.check_in) {
+        setAttendanceId(data.id)
+        setIsWorking(true)
+        setWorkStartTime(data.check_in)
+      }
+    } catch {
+      // Fallback: update UI optimistically
+      setIsWorking(true)
+      setWorkStartTime(new Date().toISOString())
     }
   }
 
-  const handleClockOut = () => {
+  const handleClockOut = async () => {
     const now = new Date().toISOString()
     setIsWorking(false)
     setWorkEndTime(now)
-    if (user) {
-      localStorage.removeItem(`work_status_${user.id}`)
-      // In a real app, save work session to database
+    if (attendanceId) {
+      try {
+        await fetch(`/api/attendance/${attendanceId}`, { method: "PATCH" })
+      } catch {
+        // Non-critical: session is visually closed regardless
+      }
+      setAttendanceId(null)
     }
   }
 
@@ -325,7 +367,7 @@ export default function EmployeeDashboard() {
                 {getWorkDuration()}
               </p>
               <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.45)", marginTop: "3px" }}>
-                Inicio · {workStartTime && formatTime(workStartTime)}
+                Inicio · {workStartTime && formatTime(workStartTime!)}
               </p>
             </div>
           ) : (
@@ -436,7 +478,7 @@ export default function EmployeeDashboard() {
           {[
             { value: String(stats.totalCompleted), label: "Clientes atendidos" },
             { value: `$${stats.totalRevenue}`,     label: "Ingresos totales" },
-            { value: stats.avgRating !== null ? stats.avgRating.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
+            { value: stats.avgRating !== null ? stats.avgRating!.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
           ].map((s, i) => (
             <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid rgba(26,26,24,0.12)" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{s.value}</p>
@@ -444,6 +486,25 @@ export default function EmployeeDashboard() {
             </div>
           ))}
         </div>
+
+        {/* ── Comisiones del mes ─────────────── */}
+        {stats.commissionPct != null && (
+          <>
+            <div className="pb-3">
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>Comisiones este mes</p>
+            </div>
+            <div className="grid grid-cols-2" style={{ borderTop: "1px solid rgba(26,26,24,0.12)", marginBottom: "60px" }}>
+              <div className="orno-row" style={{ padding: "22px 20px 22px 0", borderRight: "1px solid rgba(26,26,24,0.12)" }}>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>${stats.monthCommission.toFixed(2)}</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.40)", marginTop: "4px" }}>Comisión acumulada</p>
+              </div>
+              <div className="orno-row" style={{ padding: "22px 0 22px 20px" }}>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{stats.commissionPct?.toFixed(0) ?? "0"}%</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.40)", marginTop: "4px" }}>Tu tasa de comisión</p>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── Notificaciones ────────────────── */}
         {notifications.length > 0 && (

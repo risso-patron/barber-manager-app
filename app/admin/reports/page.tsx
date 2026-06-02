@@ -33,7 +33,8 @@ import {
   Activity,
   Clock,
   Target,
-  ArrowLeft
+  ArrowLeft,
+  Star
 } from "lucide-react"
 
 type ReportPeriod = "today" | "week" | "month" | "year"
@@ -48,11 +49,13 @@ interface ReportAppointment {
   serviceName: string
   price: number
   duration: number
+  rating?: number | null
 }
 
 interface ReportEmployee {
   id: string
   name: string
+  commission_rate?: number | null
 }
 
 interface DbAppointmentRow {
@@ -61,6 +64,7 @@ interface DbAppointmentRow {
   status: string
   client_id: string
   barber_id: string
+  rating?: number | null
   service: { name: string; price: number; duration: number } | null
   barber: { id: string; name: string } | null
 }
@@ -93,13 +97,13 @@ export default function ReportsPage() {
     const [appointmentsResult, employeesResult] = await Promise.all([
       supabase
         .from("appointments")
-        .select(`id, appointment_date, status, client_id, barber_id,
+        .select(`id, appointment_date, status, client_id, barber_id, rating,
           service:services(name, price, duration),
           barber:users!appointments_barber_id_fkey(id, name)`)
         .order("appointment_date", { ascending: false }),
       supabase
         .from("users")
-        .select("id, name")
+        .select("id, name, commission_rate")
         .eq("role", "employee")
         .order("name"),
     ])
@@ -116,6 +120,7 @@ export default function ReportsPage() {
           serviceName: a.service?.name || "Sin servicio",
           price: a.service?.price || 0,
           duration: a.service?.duration || 0,
+          rating: a.rating ?? null,
         }))
       )
     }
@@ -400,6 +405,73 @@ export default function ReportsPage() {
       previousCompleted: previousMetrics.completed,
     }
   }, [filteredAppointments, previousPeriodAppointments, period, selectedEmployee, appointments]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ratingStats = useMemo(() => {
+    const completed = filteredAppointments.filter((a) => a.status === "completed")
+    const rated = completed.filter((a) => a.rating != null)
+    const totalRatings = rated.length
+    const avgRating =
+      totalRatings > 0
+        ? rated.reduce((sum, a) => sum + (a.rating ?? 0), 0) / totalRatings
+        : null
+
+    const distribution = [5, 4, 3, 2, 1].map((star) => ({
+      star,
+      count: rated.filter((a) => a.rating === star).length,
+    }))
+
+    // Per-barber avg
+    const barberMap: Record<string, { sum: number; count: number }> = {}
+    rated.forEach((a) => {
+      if (!barberMap[a.employeeName]) barberMap[a.employeeName] = { sum: 0, count: 0 }
+      barberMap[a.employeeName].sum += a.rating ?? 0
+      barberMap[a.employeeName].count += 1
+    })
+    const barberRatings = Object.entries(barberMap)
+      .map(([name, { sum, count }]) => ({
+        name,
+        avg: parseFloat((sum / count).toFixed(1)),
+        count,
+      }))
+      .sort((a, b) => b.avg - a.avg)
+
+    return { totalRatings, avgRating, distribution, barberRatings }
+  }, [filteredAppointments])
+
+  const commissionStats = useMemo(() => {
+    // Build a rate map from loaded employees
+    const rateMap = new Map<string, number>()
+    employees.forEach((e) => {
+      if (e.commission_rate != null) rateMap.set(e.id, e.commission_rate)
+    })
+
+    const completed = filteredAppointments.filter((a) => a.status === "completed")
+
+    const empMap: Record<string, { name: string; services: number; gross: number; commission: number; rate: number | null }> = {}
+    completed.forEach((a) => {
+      if (!empMap[a.employeeId]) {
+        empMap[a.employeeId] = {
+          name: a.employeeName,
+          services: 0,
+          gross: 0,
+          commission: 0,
+          rate: rateMap.get(a.employeeId) ?? null,
+        }
+      }
+      empMap[a.employeeId].services += 1
+      empMap[a.employeeId].gross += a.price
+      const rate = rateMap.get(a.employeeId)
+      if (rate != null) {
+        empMap[a.employeeId].commission += parseFloat((a.price * rate).toFixed(2))
+      }
+    })
+
+    const rows = Object.values(empMap).sort((a, b) => b.gross - a.gross)
+    const totalCommission = rows.reduce((sum, r) => sum + r.commission, 0)
+    const totalGross = rows.reduce((sum, r) => sum + r.gross, 0)
+
+    return { rows, totalCommission, totalGross }
+  }, [filteredAppointments, employees])
 
   const handleExportExcel = async () => {
     const XLSX = await import("xlsx")
@@ -934,6 +1006,149 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ratings Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5 text-yellow-500" />
+            Satisfacción del Cliente
+          </CardTitle>
+          <CardDescription>Calificaciones recibidas en el período</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {ratingStats.totalRatings === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              No hay calificaciones en este período.
+            </p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Overall avg */}
+              <div className="flex flex-col items-center justify-center gap-1">
+                <p className="text-6xl font-bold text-yellow-500">
+                  {ratingStats.avgRating?.toFixed(1)}
+                </p>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-5 w-5 ${
+                        s <= Math.round(ratingStats.avgRating ?? 0)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {ratingStats.totalRatings} calificación{ratingStats.totalRatings !== 1 ? "es" : ""}
+                </p>
+              </div>
+
+              {/* Distribution */}
+              <div className="space-y-1">
+                {ratingStats.distribution.map(({ star, count }) => (
+                  <div key={star} className="flex items-center gap-2 text-sm">
+                    <span className="w-4 text-right text-muted-foreground">{star}</span>
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 shrink-0" />
+                    <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-yellow-400 h-full rounded-full"
+                        style={{
+                          width:
+                            ratingStats.totalRatings > 0
+                              ? `${(count / ratingStats.totalRatings) * 100}%`
+                              : "0%",
+                        }}
+                      />
+                    </div>
+                    <span className="w-4 text-muted-foreground">{count}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Per-barber */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Por barbero</p>
+                {ratingStats.barberRatings.map(({ name, avg, count }) => (
+                  <div key={name} className="flex items-center justify-between text-sm">
+                    <span className="truncate max-w-[140px]">{name}</span>
+                    <span className="flex items-center gap-1 text-yellow-600 font-medium shrink-0">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      {avg}
+                      <span className="text-muted-foreground font-normal">({count})</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Liquidaciones ──────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-emerald-600" />
+            Liquidaciones de Comisiones
+          </CardTitle>
+          <CardDescription>
+            Comisiones devengadas en el período · Solo empleados con tasa configurada
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {commissionStats.rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No hay datos de comisiones para este período. Configura la tasa de comisión en Gestión de Empleados.
+            </p>
+          ) : (
+            <>
+              {/* Totals row */}
+              <div className="grid grid-cols-2 gap-4 mb-5">
+                <div className="rounded-lg bg-emerald-50 p-4 text-center">
+                  <p className="text-2xl font-bold text-emerald-700">${commissionStats.totalCommission.toFixed(2)}</p>
+                  <p className="text-xs text-emerald-600 mt-1 uppercase tracking-wide">Total a liquidar</p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-700">${commissionStats.totalGross.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide">Ingresos brutos</p>
+                </div>
+              </div>
+
+              {/* Per-employee table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-2 font-medium text-muted-foreground">Empleado</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Citas</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Ingresos</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">% Com.</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Comisión</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commissionStats.rows.map((row) => (
+                      <tr key={row.name} className="border-b last:border-0">
+                        <td className="py-3 font-medium">{row.name}</td>
+                        <td className="py-3 text-right text-muted-foreground">{row.services}</td>
+                        <td className="py-3 text-right">${row.gross.toFixed(2)}</td>
+                        <td className="py-3 text-right text-muted-foreground">
+                          {row.rate != null ? `${(row.rate * 100).toFixed(0)}%` : "—"}
+                        </td>
+                        <td className="py-3 text-right font-semibold text-emerald-700">
+                          {row.rate != null ? `$${row.commission.toFixed(2)}` : "Sin tasa"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary */}
       <Card>

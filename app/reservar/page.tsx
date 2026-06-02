@@ -36,6 +36,8 @@ interface Employee {
   id: string
   name: string
   specialty?: string
+  avg_rating?: number | null
+  total_ratings?: number | null
 }
 
 interface BookingData {
@@ -97,7 +99,27 @@ export default function ReservarPage() {
           .eq("role", "employee")
           .order("name")
         
-        if (employeesData) setEmployees(employeesData as Employee[])
+        if (employeesData) {
+          // Fetch avg ratings from the view
+          const { data: ratingsData } = await supabase
+            .from("barber_avg_ratings")
+            .select("barber_id, avg_rating, total_ratings")
+
+          const ratingsMap = new Map(
+            (ratingsData ?? []).map((r: { barber_id: string; avg_rating: number | null; total_ratings: number | null }) => [
+              r.barber_id,
+              { avg_rating: r.avg_rating, total_ratings: r.total_ratings },
+            ])
+          )
+
+          setEmployees(
+            (employeesData as Employee[]).map((e) => ({
+              ...e,
+              avg_rating: ratingsMap.get(e.id)?.avg_rating ?? null,
+              total_ratings: ratingsMap.get(e.id)?.total_ratings ?? null,
+            }))
+          )
+        }
         setIsLoading(prev => ({ ...prev, employees: false }))
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -284,9 +306,18 @@ export default function ReservarPage() {
                         <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                           <User className="h-8 w-8 text-blue-600" />
                         </div>
-                        <h3 className="font-semibold mb-2">{barber.name}</h3>
+                        <h3 className="font-semibold mb-1">{barber.name}</h3>
                         {barber.specialty && (
-                          <p className="text-sm text-gray-600">{barber.specialty}</p>
+                          <p className="text-sm text-gray-600 mb-1">{barber.specialty}</p>
+                        )}
+                        {barber.avg_rating != null ? (
+                          <div className="flex items-center justify-center gap-1 text-sm">
+                            <span className="text-yellow-500">★</span>
+                            <span className="font-medium">{barber.avg_rating}</span>
+                            <span className="text-gray-400">({barber.total_ratings})</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">Sin calificaciones</p>
                         )}
                       </CardContent>
                     </Card>

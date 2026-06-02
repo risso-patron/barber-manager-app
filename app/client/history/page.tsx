@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { RescheduleModal } from "@/components/client/RescheduleModal"
+import { RatingModal } from "@/components/client/RatingModal"
 import { 
   Calendar, 
   Clock, 
@@ -28,6 +30,8 @@ interface Appointment {
   status: "pending" | "confirmed" | "completed" | "cancelled"
   price: number
   notes?: string
+  rating?: number | null
+  review_text?: string | null
 }
 
 interface AppointmentRow {
@@ -36,6 +40,8 @@ interface AppointmentRow {
   appointment_time?: string | null
   status: Appointment["status"]
   notes?: string | null
+  rating?: number | null
+  review_text?: string | null
   barber?: { id: string; name: string } | null
   service?: { id: string; name: string; price?: number } | null
 }
@@ -50,6 +56,14 @@ export default function ClientHistoryPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([])
 
+  const handleRescheduleSuccess = (id: string, newDate: string, newTime: string) => {
+    setAllAppointments((prev) =>
+      prev.map((apt) =>
+        apt.id === id ? { ...apt, date: newDate, time: newTime, status: "confirmed" } : apt
+      )
+    )
+  }
+
   useEffect(() => {
     if (!user) return
     if (!supabase) {
@@ -59,7 +73,7 @@ export default function ClientHistoryPage() {
 
     supabase
       .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes,
+      .select(`id, appointment_date, appointment_time, status, notes, rating, review_text,
         barber:users!appointments_barber_id_fkey(id, name),
         service:services(id, name, price)`)
       .eq("client_id", user.id)
@@ -74,6 +88,8 @@ export default function ClientHistoryPage() {
           status: a.status,
           price: a.service?.price || 0,
           notes: a.notes || undefined,
+          rating: a.rating ?? null,
+          review_text: a.review_text ?? null,
         })))
       })
   }, [user])
@@ -98,6 +114,10 @@ export default function ClientHistoryPage() {
     const completed = appointments.filter(apt => apt.status === "completed")
     const cancelled = appointments.filter(apt => apt.status === "cancelled")
     const totalSpent = completed.reduce((sum, apt) => sum + apt.price, 0)
+    const rated = completed.filter(apt => apt.rating != null)
+    const avgRating = rated.length > 0
+      ? (rated.reduce((sum, apt) => sum + (apt.rating ?? 0), 0) / rated.length).toFixed(1)
+      : null
     
     // Favorite service
     const serviceCounts = completed.reduce((acc, apt) => {
@@ -123,7 +143,9 @@ export default function ClientHistoryPage() {
       cancelled: cancelled.length,
       totalSpent,
       favoriteService: favoriteService ? { name: favoriteService[0], count: favoriteService[1] } : null,
-      favoriteBarber: favoriteBarber ? { name: favoriteBarber[0], count: favoriteBarber[1] } : null
+      favoriteBarber: favoriteBarber ? { name: favoriteBarber[0], count: favoriteBarber[1] } : null,
+      avgRating,
+      ratedCount: rated.length,
     }
   }, [appointments])
 
@@ -203,9 +225,13 @@ export default function ClientHistoryPage() {
             <Star className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.8 ⭐</div>
+            <div className="text-2xl font-bold">
+              {stats.avgRating ? `${stats.avgRating} ⭐` : "—"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Calificación promedio
+              {stats.ratedCount > 0
+                ? `${stats.ratedCount} cita${stats.ratedCount > 1 ? "s" : ""} calificada${stats.ratedCount > 1 ? "s" : ""}`
+                : "Sin calificaciones aún"}
             </p>
           </CardContent>
         </Card>
@@ -351,12 +377,30 @@ export default function ClientHistoryPage() {
                       )}
                     </div>
 
-                    {apt.status === "completed" && (
-                      <Button size="sm" variant="outline">
-                        <Star className="h-4 w-4 mr-1" />
-                        Calificar
-                      </Button>
-                    )}
+                    <div className="flex flex-col gap-2 items-end shrink-0">
+                      {(apt.status === "pending" || apt.status === "confirmed") && (
+                        <RescheduleModal
+                          appointment={apt}
+                          onSuccess={(newDate, newTime) =>
+                            handleRescheduleSuccess(apt.id, newDate, newTime)
+                          }
+                        />
+                      )}
+                      {apt.status === "completed" && (
+                        <RatingModal
+                          appointment={apt}
+                          onSuccess={(rating, reviewText) =>
+                            setAllAppointments((prev) =>
+                              prev.map((a) =>
+                                a.id === apt.id
+                                  ? { ...a, rating, review_text: reviewText ?? null }
+                                  : a
+                              )
+                            )
+                          }
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

@@ -9,9 +9,10 @@ import { NextRequest, NextResponse } from "next/server"
  */
 
 interface BookingNotification {
-  type: "new_booking" | "confirmation" | "reminder" | "cancellation"
+  type: "new_booking" | "confirmation" | "reminder" | "cancellation" | "reschedule"
   clientName: string
   clientEmail?: string
+  employeeEmail?: string
   clientPhone: string
   serviceName: string
   employeeName: string
@@ -20,6 +21,9 @@ interface BookingNotification {
   price: number
   barbershopName: string
   barbershopPhone: string
+  reason?: string | null
+  previousDate?: string
+  previousTime?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +76,8 @@ function getEmailSubject(type: BookingNotification["type"]): string {
       return "⏰ Recordatorio de Tu Cita"
     case "cancellation":
       return "❌ Cita Cancelada"
+    case "reschedule":
+      return "📅 Cita Reprogramada"
     default:
       return "Notificación de Barbería"
   }
@@ -158,6 +164,8 @@ function getEmailMessage(type: BookingNotification["type"]): string {
       return "Este es un recordatorio de tu cita programada para mañana."
     case "cancellation":
       return "Tu cita ha sido cancelada. Si esto fue un error, por favor contáctanos."
+    case "reschedule":
+      return `Tu cita ha sido reprogramada al ${new Date(data.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las ${data.time}.${data.reason ? ` Motivo: ${data.reason}` : ""}`
     default:
       return "Información sobre tu cita."
   }
@@ -195,6 +203,8 @@ function getWhatsAppGreeting(type: BookingNotification["type"]): string {
       return "⏰ *Recordatorio de tu cita de mañana*"
     case "cancellation":
       return "❌ *Tu cita ha sido cancelada*"
+    case "reschedule":
+      return "📅 *Tu cita ha sido reprogramada*"
     default:
       return "*Información de tu cita*"
   }

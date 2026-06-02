@@ -20,12 +20,14 @@ import {
   Trash2,
   UserPlus,
   TrendingUp,
-  Eye
+  Eye,
+  Gift
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
 import { DEMO_CLIENTS } from "@/lib/demo-appointments"
 import { ClientModal } from "@/components/admin/clients/client-modal"
 import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
+import { LoyaltyModal } from "@/components/admin/clients/loyalty-modal"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -40,6 +42,7 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [loyaltyClient, setLoyaltyClient] = useState<Client | null>(null)
 
   // Load clients from Supabase (or demo data)
   useEffect(() => {
@@ -50,18 +53,19 @@ export default function ClientsPage() {
     }
     supabase
       .from("users")
-      .select("id, name, email, phone, created_at")
+      .select("id, name, email, phone, created_at, loyalty_points")
       .eq("role", "client")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (!data) return
-        setClients(data.map((u: { id: string; name: string; email: string; phone: string | null; created_at: string }) => ({
+        setClients(data.map((u: { id: string; name: string; email: string; phone: string | null; created_at: string; loyalty_points?: number }) => ({
           id: u.id,
           name: u.name,
           email: u.email,
           phone: u.phone || "",
           createdAt: u.created_at,
           isActive: true,
+          loyalty_points: u.loyalty_points ?? 0,
         })))
       })
   }, [user])
@@ -270,9 +274,14 @@ export default function ClientsPage() {
                         ) : (
                           <Badge variant="secondary">Inactivo</Badge>
                         )}
+                        {/* Loyalty points badge */}
+                        {(client as Client & { loyalty_points?: number }).loyalty_points != null && (
+                          <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                            <Gift className="h-3 w-3" />
+                            <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
+                          </div>
+                        )}
                       </div>
-                      
-                      <div className="flex flex-wrap gap-4 mt-1 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Mail className="h-3 w-3" />
                           <span>{client.email}</span>
@@ -324,6 +333,17 @@ export default function ClientsPage() {
                             Editar
                           </button>
 
+                          <button
+                            onClick={() => {
+                              setLoyaltyClient(client)
+                              setActiveDropdown(null)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-amber-700"
+                          >
+                            <Gift className="h-4 w-4" />
+                            Puntos
+                          </button>
+
                           <div className="border-t my-1"></div>
 
                           <button
@@ -371,6 +391,22 @@ export default function ClientsPage() {
           onClose={() => setDeletingClient(null)}
           onConfirm={() => handleDeleteClient(deletingClient.id)}
           clientName={deletingClient.name}
+        />
+      )}
+      {loyaltyClient && (
+        <LoyaltyModal
+          client={loyaltyClient as Client & { loyalty_points?: number }}
+          onClose={() => setLoyaltyClient(null)}
+          onAdjusted={(newPoints) => {
+            setClients((prev) =>
+              prev.map((c) =>
+                c.id === loyaltyClient.id
+                  ? { ...c, loyalty_points: newPoints } as Client & { loyalty_points: number }
+                  : c
+              )
+            )
+            setLoyaltyClient(null)
+          }}
         />
       )}
     </div>

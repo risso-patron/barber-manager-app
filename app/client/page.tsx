@@ -96,6 +96,8 @@ export default function ClientDashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [messages, setMessages] = useState<ClientMessage[]>([])
   const [gifts, setGifts] = useState<ClientGift[]>([])
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null)
+  const [loyaltyTx, setLoyaltyTx] = useState<Array<{ id: string; points: number; type: string; description: string | null; created_at: string }>>([]) 
 
   useEffect(() => {
     if (!user) return
@@ -164,6 +166,15 @@ export default function ClientDashboard() {
       .then(({ data }) => {
         if (data) setGifts(data as ClientGift[])
       })
+
+    // Loyalty points
+    fetch("/api/loyalty")
+      .then((r) => r.json())
+      .then((d: { points?: number; transactions?: Array<{ id: string; points: number; type: string; description: string | null; created_at: string }> }) => {
+        if (typeof d.points === "number") setLoyaltyPoints(d.points)
+        if (Array.isArray(d.transactions)) setLoyaltyTx(d.transactions)
+      })
+      .catch(() => { /* non-critical */ })
 
   }, [user])
 
@@ -390,6 +401,49 @@ export default function ClientDashboard() {
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {/* ── Puntos de fidelidad ───────────── */}
+        {loyaltyPoints !== null && (
+          <>
+            <div className="pt-10 pb-3">
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+                Fidelidad
+              </p>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", paddingTop: "24px", paddingBottom: "8px" }}>
+              <div className="flex items-end gap-3 mb-1">
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(40px,6vw,64px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em", color: "#1a1a18" }}>
+                  {loyaltyPoints.toLocaleString("es-ES")}
+                </p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginBottom: "10px" }}>
+                  puntos
+                </p>
+              </div>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.40)" }}>
+                Ganas 1 punto por cada dólar en servicios completados
+              </p>
+            </div>
+            {loyaltyTx.length > 0 && (
+              <div style={{ borderTop: "1px solid rgba(26,26,24,0.08)", marginBottom: "12px" }}>
+                {loyaltyTx.slice(0, 5).map((tx) => (
+                  <div key={tx.id} className="orno-row" style={{ padding: "12px 0", borderBottom: "1px solid rgba(26,26,24,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#1a1a18" }}>
+                        {tx.description ?? (tx.type === "earn" ? "Cita completada" : tx.type === "redeem" ? "Canje" : "Ajuste")}
+                      </p>
+                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.35)", marginTop: "2px" }}>
+                        {new Date(tx.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "13px", fontWeight: 500, color: tx.points > 0 ? "#16a34a" : "#cc2222" }}>
+                      {tx.points > 0 ? `+${tx.points}` : String(tx.points)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 

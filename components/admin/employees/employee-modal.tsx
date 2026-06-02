@@ -7,11 +7,16 @@ import { Label } from "@/components/ui/label"
 import { X, Check } from "lucide-react"
 import type { Employee } from "@/lib/demo-appointments"
 
+interface EmployeeWithCommission extends Employee {
+  specialty?: string | null
+  commission_rate?: number | null
+}
+
 interface EmployeeModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (employee: Omit<Employee, "id"> | Employee) => void
-  employee?: Employee
+  onSave: (employee: Omit<EmployeeWithCommission, "id"> | EmployeeWithCommission) => void
+  employee?: EmployeeWithCommission
 }
 
 // Los 4 niveles de acceso del sistema — determinan qué ve cada empleado
@@ -51,6 +56,9 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     role: defaultRole,
     specialty: defaultSpecialty,
     avatar: employee?.avatar || "",
+    commission_rate: employee?.commission_rate != null
+      ? parseFloat((employee.commission_rate * 100).toFixed(2))
+      : 0,
   })
 
   const handleSpecialtyChange = (value: string) => {
@@ -60,10 +68,16 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const payload = {
+      ...formData,
+      commission_rate: formData.commission_rate > 0
+        ? parseFloat((formData.commission_rate / 100).toFixed(4))
+        : null,
+    }
     if (employee) {
-      onSave({ ...formData, id: employee.id })
+      onSave({ ...payload, id: employee.id })
     } else {
-      onSave(formData)
+      onSave(payload)
     }
   }
 
@@ -145,6 +159,35 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
               {selectedSpec && (
                 <p className="text-xs text-gray-500">{selectedSpec.desc}</p>
               )}
+            </div>
+
+            {/* Comisión */}
+            <div className="space-y-2">
+              <Label htmlFor="commission_rate">
+                Comisión{" "}
+                <span className="text-muted-foreground font-normal">(% sobre servicio, opcional)</span>
+              </Label>
+              <div className="relative">
+                <input
+                  id="commission_rate"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={formData.commission_rate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })
+                  }
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm"
+                  placeholder="0"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                {formData.commission_rate > 0
+                  ? `En una cita de $100 → comisión $${formData.commission_rate.toFixed(2)}`
+                  : "Sin comisión configurada"}
+              </p>
             </div>
 
             {/* Avatar — 15 presets */}
