@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
 import { isDemoMode } from "@/lib/demo-config"
+import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 // ----------- Zod schema ----------------------------------------------------
@@ -171,6 +172,7 @@ export async function POST(request: NextRequest) {
       ])
     }
 
+    revalidatePath("/admin/pos")
     return NextResponse.json({ success: true, sale_id: sale.id, total })
   })
 }

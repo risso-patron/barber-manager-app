@@ -44,6 +44,8 @@ export default function ClientsPage() {
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [loyaltyClient, setLoyaltyClient] = useState<Client | null>(null)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 25
 
   // Load clients from Supabase (or demo data)
   useEffect(() => {
@@ -80,6 +82,12 @@ export default function ClientsPage() {
              client.phone.includes(searchTerm)
     })
   }, [clients, searchTerm])
+
+  // Reset page when search changes
+  useEffect(() => { setPage(0) }, [searchTerm])
+
+  const totalPages = Math.ceil(filteredClients.length / PAGE_SIZE)
+  const pagedClients = filteredClients.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   // Statistics
   const stats = useMemo(() => {
@@ -244,7 +252,14 @@ export default function ClientsPage() {
       {/* Clients Table/Grid */}
       <Card>
         <CardHeader>
-          <CardTitle>Listado de Clientes ({filteredClients.length})</CardTitle>
+          <CardTitle>
+            Listado de Clientes ({filteredClients.length})
+            {totalPages > 1 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                — página {page + 1} de {totalPages}
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -254,7 +269,8 @@ export default function ClientsPage() {
                 <p className="text-gray-600">No se encontraron clientes</p>
               </div>
             ) : (
-              filteredClients.map((client) => (
+              <>
+                {pagedClients.map((client) => (
                 <div 
                   key={client.id} 
                   className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-white"
@@ -370,7 +386,35 @@ export default function ClientsPage() {
                     )}
                   </div>
                 </div>
-              ))
+              ))}
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <span className="text-sm text-gray-500">
+                    {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredClients.length)} de {filteredClients.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0}
+                      onClick={() => setPage(p => p - 1)}
+                    >
+                      ← Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage(p => p + 1)}
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         </CardContent>

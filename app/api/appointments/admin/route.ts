@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { z } from "zod"
+import { revalidatePath } from "next/cache"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 
 const appointmentAdminSchema = z.object({
@@ -57,5 +58,6 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  revalidatePath("/admin/appointments")
   return NextResponse.json({ appointment: data })
 }

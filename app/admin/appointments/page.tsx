@@ -83,6 +83,8 @@ export default function AppointmentsPage() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 25
 
   // Load appointments from Supabase (or demo data)
   useEffect(() => {
@@ -182,6 +184,12 @@ export default function AppointmentsPage() {
       return matchesSearch && matchesStatus && matchesDate
     })
   }, [appointments, searchTerm, filterStatus, filterDate])
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0) }, [searchTerm, filterStatus, filterDate])
+
+  const totalPages = Math.ceil(filteredAppointments.length / PAGE_SIZE)
+  const pagedAppointments = filteredAppointments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   // Statistics
   const stats = useMemo(() => {
@@ -435,7 +443,14 @@ export default function AppointmentsPage() {
       {/* Appointments List */}
       <Card>
         <CardHeader>
-          <CardTitle>Citas ({filteredAppointments.length})</CardTitle>
+          <CardTitle>
+            Citas ({filteredAppointments.length})
+            {totalPages > 1 && (
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                — página {page + 1} de {totalPages}
+              </span>
+            )}
+          </CardTitle>
           <CardDescription>
             {filterDate ? `Mostrando citas para ${filterDate}` : "Mostrando todas las citas"}
           </CardDescription>
@@ -448,7 +463,8 @@ export default function AppointmentsPage() {
                 <p className="text-gray-600">No se encontraron citas</p>
               </div>
             ) : (
-              filteredAppointments.map((appointment) => (
+              <>
+                {pagedAppointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
@@ -609,7 +625,35 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
                 </div>
-              ))
+              ))}
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <span className="text-sm text-gray-500">
+                    {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredAppointments.length)} de {filteredAppointments.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 0}
+                      onClick={() => setPage(p => p - 1)}
+                    >
+                      ← Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage(p => p + 1)}
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         </CardContent>
