@@ -1,6 +1,6 @@
 # Barber Manager — Centro de Documentación
 
-**Versión:** 1.1 — Junio 2026  
+**Versión:** 1.2 — Junio 2026  
 **Aplicación:** Barber Manager App (Next.js 15 + Supabase)
 
 ---
@@ -15,6 +15,22 @@
 | [Manual del Sistema](manual-sistema.md) | Desarrolladores y administradores técnicos | API, seguridad, variables de entorno, base de datos y despliegue |
 
 ---
+
+## Novedades v1.2 (Junio 2026)
+
+| # | Mejora | Afecta a |
+|---|--------|----------|
+| 9 | **Checkout unificado Cita→POS** — desde la lista de citas del admin, un clic abre el POS pre-cargado con el cliente y el servicio de la cita | Admin |
+| 10 | **Canje de puntos en POS** — al cobrar en el POS se pueden descontar puntos de fidelidad del cliente | Admin |
+| 11 | **Calendario semanal del empleado** — vista de 7 días con las citas del barbero en grid por hora | Empleado |
+| 12 | **Bloqueos de agenda** — el barbero puede registrar ausencias, descansos y vacaciones que bloquean reservas | Empleado, Admin |
+| 13 | **Propinas (tip)** — campo de propina en el POS; queda registrado en la venta | Admin |
+| 14 | **Carrito multi-servicios en reserva pública** — los clientes pueden seleccionar varios servicios en una sola reserva | Cliente |
+| 15 | **Badge no-show** — nuevo estado `no_show` en citas con color y botón de acción dedicados | Admin |
+| 16 | **Cache revalidation** — las páginas admin se actualizan automáticamente tras crear citas o registrar ventas | Admin |
+| 17 | **Paginación en tablas admin** — citas y clientes muestran 25 filas por página con controles de navegación | Admin |
+| 18 | **Cola de notificaciones** — cada reserva encola un mensaje; procesado de forma asíncrona por una Edge Function | Sistema |
+| 19 | **Notificaciones reales** — email vía Resend y WhatsApp vía Twilio activos en producción | Sistema |
 
 ## Novedades v1.1 (Junio 2026)
 
@@ -74,7 +90,7 @@ Público (sin login)
 
 | Rol | Nivel de acceso | Funcionalidades principales |
 |-----|----------------|-----------------------------|
-| **Administrador** | CRUD total sobre todos los recursos | Gestión de citas (todas), empleados, clientes, servicios, inventario (CRUD), POS, reportes financieros, configuración del negocio, alertas de baja calificación, ajuste manual de puntos de fidelidad |
-| **Empleado** | Operativo — solo sus propios datos | Ver y gestionar sus citas del día, cambiar estado de citas asignadas, registrar inicio/fin de jornada, ver sus estadísticas personales e ingresos del mes |
-| **Cliente** | Usuario final — solo sus propios datos | Reservar citas (con o sin cuenta), reagendar, cancelar, calificar citas completadas, ver historial, acumular y consultar puntos de fidelidad, mensajes, perfil |
-| **Público** | Solo lectura pública | Reservar sin cuenta (`/reservar`), reservar por enlace (`/book/[slug]`), recuperar contraseña |
+| **Administrador** | CRUD total sobre todos los recursos | Gestión de citas (todas, con no-show), empleados, clientes (tabla paginada), servicios, inventario (CRUD), POS (con propinas y canje de puntos), reportes financieros, configuración del negocio, alertas de baja calificación, ajuste manual de puntos de fidelidad |
+| **Empleado** | Operativo — solo sus propios datos | Ver y gestionar sus citas del día, calendario semanal, registrar bloqueos de agenda, cambiar estado de citas asignadas, registrar inicio/fin de jornada, ver estadísticas e ingresos del mes |
+| **Cliente** | Usuario final — solo sus propios datos | Reservar citas (con carrito multi-servicios, con o sin cuenta), reagendar, cancelar, calificar citas completadas, ver historial, acumular y canjear puntos de fidelidad, mensajes, perfil |
+| **Público** | Solo lectura pública | Reservar sin cuenta (`/reservar`) con carrito multi-servicios, reservar por enlace (`/book/[slug]`), recuperar contraseña |

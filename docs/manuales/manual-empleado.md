@@ -1,6 +1,6 @@
 # Manual del Empleado / Barbero
 
-**Barber Manager App — Versión 1.1**  
+**Barber Manager App — Versión 1.2**  
 **Perfil:** Empleado / Barbero  
 **Ruta de acceso:** `/barber` (redirige automáticamente desde `/dashboard` si el rol es `employee`)
 
@@ -13,8 +13,10 @@
 3. [Estado de trabajo](#3-estado-de-trabajo)
 4. [Mis citas del día](#4-mis-citas-del-día)
 5. [Gestionar el estado de una cita](#5-gestionar-el-estado-de-una-cita)
-6. [Estadísticas personales y comisiones](#6-estadísticas-personales-y-comisiones)
-7. [Preguntas frecuentes](#7-preguntas-frecuentes)
+6. [Calendario semanal](#6-calendario-semanal)
+7. [Bloqueos de agenda](#7-bloqueos-de-agenda)
+8. [Estadísticas personales y comisiones](#8-estadísticas-personales-y-comisiones)
+9. [Preguntas frecuentes](#9-preguntas-frecuentes)
 
 ---
 
@@ -108,6 +110,7 @@ La lista central del dashboard muestra todas las citas asignadas a **vos** para 
 | Confirmada | Azul | La cita está confirmada |
 | Completada | Verde | Servicio realizado |
 | Cancelada | Rojo | La cita fue cancelada |
+| No-show | Gris oscuro | El cliente no se presentó |
 
 ### Acceder a los detalles de una cita
 
@@ -147,12 +150,79 @@ Este paso es importante porque el sistema usa las citas completadas para calcula
 
 Si el cliente no se presentó a su cita:
 1. Localizar la cita
-2. Hacer clic en **No show** o **Cancelar**
-3. El estado cambia a **Cancelada**
+2. Hacer clic en **No show**
+3. El estado cambia a **No-show** (gris oscuro)
+
+> Usar **No-show** en lugar de Cancelada cuando el cliente simplemente no aparece. El administrador puede ver la diferencia en los reportes.
 
 ---
 
-## 6. Estadísticas personales y comisiones
+## 6. Calendario semanal
+
+**Pestaña:** Calendario (dentro de tu panel en `/employee/schedule`)
+
+Muestra una grilla de **7 días** con todas tus citas distribuidas en franjas horarias.
+
+### Cómo leer el calendario
+
+- El eje vertical representa las horas del día (de 08:00 a 20:00)
+- Cada columna es un día de la semana (lunes a domingo)
+- Las citas aparecen como bloques de color en la hora y día correspondientes
+- El alto de cada bloque es proporcional a la duración del servicio
+- Los bloques muestran el nombre del cliente y el servicio
+
+### Navegar entre semanas
+
+Usar los botones **← Anterior** y **Siguiente →** para moverse entre semanas. El botón **Hoy** vuelve a la semana actual.
+
+### Ver detalle de una cita
+
+Hacer clic en cualquier bloque del calendario para ver el detalle completo de esa cita (cliente, servicio, precio, estado).
+
+---
+
+## 7. Bloqueos de agenda
+
+**Pestaña:** Bloqueos (dentro de tu panel en `/employee/schedule`)
+
+Permite registrar períodos en los que no estás disponible para atender clientes. Los bloqueos impiden que el sistema asigne reservas en ese tramo horario.
+
+### Tipos de bloqueo
+
+| Tipo | Cuándo usarlo |
+|------|---------------|
+| **Descanso** (`break`) | Pausa corta dentro de la jornada (almuerzo, etc.) |
+| **Ausencia** (`absence`) | Falta justificada (enfermedad, trámite, etc.) |
+| **Personal** (`personal`) | Asunto personal |
+| **Vacaciones** (`vacation`) | Período de vacaciones |
+
+### Registrar un bloqueo
+
+1. Ir a la pestaña **Bloqueos**
+2. Completar el formulario:
+
+| Campo | Obligatorio | Notas |
+|-------|------------|-------|
+| Fecha | Sí | El día del bloqueo |
+| Hora de inicio | Sí | Formato 24hs (HH:MM) |
+| Hora de fin | Sí | Debe ser posterior a la hora de inicio |
+| Tipo | Sí | Descanso / Ausencia / Personal / Vacaciones |
+| Motivo | Sí | Descripción breve (ej. "Almuerzo", "Cita médica") |
+
+3. Hacer clic en **Guardar bloqueo**
+4. El bloqueo aparece en la lista de bloqueos activos y en el calendario
+
+### Eliminar un bloqueo
+
+1. En la lista de bloqueos, localizar el que quieras eliminar
+2. Hacer clic en el botón **Eliminar** (icono de papelera)
+3. El bloqueo se borra y el tramo vuelve a estar disponible para reservas
+
+> **Nota:** Los administradores también pueden ver y eliminar tus bloqueos desde su panel.
+
+---
+
+## 8. Estadísticas personales y comisiones
 
 Las 4 tarjetas en la parte superior del dashboard muestran tus métricas:
 
@@ -177,7 +247,7 @@ Los ingresos que se muestran en tu dashboard son el **precio total del servicio*
 
 ---
 
-## 7. Preguntas frecuentes
+## 9. Preguntas frecuentes
 
 **¿Puedo ver las citas de otro barbero?**  
 No. El sistema solo te muestra las citas asignadas a tu usuario. Para ver citas de otros empleados, se necesita acceso de administrador.
@@ -193,6 +263,12 @@ No, son el total del precio del servicio. Tu comisión se calcula automáticamen
 
 **¿Por qué al recargar la página el estado de "trabajando" no se pierde?**  
 A partir de la versión 1.1 el estado de jornada laboral se guarda en la base de datos y se recupera automáticamente al volver a ingresar.
+
+**¿Puedo registrar bloqueos desde el celular?**  
+Sí. La pestaña de bloqueos es completamente responsive y funciona desde el móvil.
+
+**¿Qué pasa si un cliente intenta reservar en un horario que bloqueé?**  
+El sistema no le mostrará ese horario como disponible. El bloqueo actúa de forma transparente para el cliente.
 
 **¿Puedo usar la app desde el celular?**  
 Sí. La aplicación es responsive y funciona en móvil. Se recomienda usar el navegador Chrome o Safari actualizados.

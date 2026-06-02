@@ -1,6 +1,6 @@
 # Manual del Cliente
 
-**Barber Manager App — Versión 1.1**  
+**Barber Manager App — Versión 1.2**  
 **Perfil:** Cliente de la barbería  
 **Acceso:** Puede usar la app con o sin cuenta registrada
 
@@ -95,11 +95,19 @@ Al ingresar, tu panel muestra una vista general con:
 
 El flujo de reserva guiado tiene **4 pasos**:
 
-### Paso 1: Elegí el servicio
+### Paso 1: Elegí los servicios
 
 - Se muestran todos los servicios activos de la barbería
 - Cada tarjeta indica: **nombre**, **descripción**, **precio** y **duración**
-- Hacer clic en el servicio que querés → queda seleccionado (se resalta)
+- Hacer clic en una tarjeta **la agrega al carrito**; hacer clic otra vez **la quita**
+- Podes seleccionar **varios servicios** en la misma reserva
+
+**Panel mini-carrito (lateral o inferior):**
+- Muestra los servicios seleccionados con el precio de cada uno
+- Indica el **total acumulado** ($) y la **duración total** (minutos)
+- Botón **"Continuar con N servicios"** (deshabilitado si no hay ningún servicio seleccionado)
+
+> **Consejo:** Podes combinar servicios como "Corte" + "Barba" en una sola reserva. El barbero los realiza en secuencia.
 
 ### Paso 2: Elegí el barbero
 
@@ -125,6 +133,8 @@ Revisar y completar:
 | Email | Sí | Pre-completado con tu email |
 | Notas adicionales | No | Podés dejar indicaciones especiales al barbero |
 
+El resumen muestra **todos los servicios seleccionados** con el total a pagar.
+
 Hacer clic en **Confirmar reserva**.
 
 ### Confirmación
@@ -142,7 +152,9 @@ Al confirmar exitosamente:
 
 Si no tenés cuenta o no querés crear una, podés reservar directamente desde el enlace público de la barbería.
 
-### El flujo es idéntico (4 pasos), con una diferencia en el Paso 4:
+### El flujo es idéntico (4 pasos), con estas diferencias:
+
+**Paso 1:** igual que la reserva con cuenta: podés elegir **uno o varios servicios** con el mini-carrito.
 
 **Paso 4: Tus datos de contacto**
 

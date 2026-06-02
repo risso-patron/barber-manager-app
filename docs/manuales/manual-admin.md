@@ -1,6 +1,6 @@
 # Manual del Administrador
 
-**Barber Manager App — Versión 1.1**  
+**Barber Manager App — Versión 1.2**  
 **Perfil:** Administrador (dueño o gestor de la barbería)  
 **Ruta de acceso:** `/admin`
 
@@ -167,8 +167,29 @@ Los estados posibles son:
 | Confirmada | Azul | El cliente o admin confirmó |
 | Completada | Verde | Servicio realizado exitosamente |
 | Cancelada | Rojo | Cita anulada (con razón opcional) |
+| No-show | Gris oscuro | El cliente no se presentó |
 
 Cambio de estado desde la tabla: menú (⋮) → seleccionar el nuevo estado.
+
+> **Consejo:** Usar **No-show** en lugar de Cancelada cuando el cliente simplemente no aparece. Esto permite distinguir cancelaciones voluntarias de ausencias en los reportes.
+
+### Paginación de la tabla
+
+La tabla muestra **25 citas por página**. El título de la sección indica la página actual (ej. "Citas — página 1 de 4") y debajo de la lista aparecen los controles:
+
+- **Anterior / Siguiente** para navegar entre páginas
+- Indicador **"X–Y de N citas"** que muestra el rango visible
+
+> Al cambiar cualquier filtro (búsqueda, estado o fecha), la tabla vuelve automáticamente a la página 1.
+
+### Ir al POS desde una cita (checkout unificado)
+
+Desde la tabla de citas es posible pasar directamente al POS con el cliente y el servicio pre-cargados:
+
+1. Menú (⋮) de la cita → **Cobrar en POS**
+2. El sistema abre el Punto de Venta con el cliente y el servicio ya seleccionados
+3. Agregar propina, aplicar canje de puntos o añadir productos extra si se desea
+4. Hacer clic en **Cobrar** para finalizar la transacción
 
 ---
 
@@ -307,6 +328,10 @@ Muestra la base de clientes con:
 
 Filtro por: nombre, email o teléfono.
 
+### Paginación de la tabla de clientes
+
+La tabla muestra **25 clientes por página**. Los controles de navegación (Anterior / Siguiente e indicador de rango) aparecen debajo de la lista cuando hay más de 25 resultados. Al cambiar el filtro de búsqueda la tabla vuelve automáticamente a la página 1.
+
 ### Crear un cliente
 
 1. Hacer clic en **+ Nuevo Cliente**
@@ -426,10 +451,12 @@ La pantalla está dividida en dos paneles:
 - Lista de ítems con controles de cantidad (+/−) y botón de eliminar
 - Selector de **cliente** (opcional) — si se elige un cliente, la venta acumula puntos de fidelidad
 - Si hay cliente seleccionado: muestra puntos actuales y cuántos ganará con esta venta
+- Campo de **propina (tip)** — monto opcional en dólares que se suma al total y queda registrado en la venta
+- Campo de **canje de puntos** — si el cliente tiene puntos, se puede ingresar la cantidad a descontar (1 punto = $1 de descuento)
 - Campo de **descuento** ($) aplicado sobre el subtotal
 - Selector de **método de pago:** Efectivo / Tarjeta / Transferencia
 - Campo de **notas** opcionales
-- Resumen: subtotal, descuento, **total**
+- Resumen: subtotal, descuento, puntos canjeados, propina, **total**
 - Botón **"Cobrar $X.XX"** para registrar la venta
 
 ### Registrar una venta
@@ -438,15 +465,35 @@ La pantalla está dividida en dos paneles:
 2. Hacer clic en los servicios o productos del catálogo para agregarlos
 3. Ajustar cantidades con los botones +/−
 4. Seleccionar el cliente si lo hay (opcional)
-5. Elegir el método de pago
-6. Aplicar descuento si corresponde
-7. Hacer clic en **"Cobrar"**
-8. El sistema muestra una confirmación verde con el total cobrado
-9. El carrito se limpia automáticamente para la siguiente venta
+5. Ingresar propina si el cliente deja una
+6. Canjear puntos si el cliente quiere usarlos como descuento
+7. Elegir el método de pago
+8. Aplicar descuento adicional si corresponde
+9. Hacer clic en **"Cobrar"**
+10. El sistema muestra una confirmación verde con el total cobrado
+11. El carrito se limpia automáticamente para la siguiente venta
+
+### Propinas (tip)
+
+El campo **Propina** permite registrar el monto que el cliente deja como propina:
+- Se suma al total de la venta pero se registra por separado en la base de datos
+- Queda visible en el historial de ventas POS
+- No se incluye en el cálculo de puntos de fidelidad (solo el subtotal genera puntos)
+
+### Canje de puntos de fidelidad en POS
+
+Si el cliente tiene puntos acumulados, puede usarlos como descuento directo:
+1. Seleccionar el cliente en el selector
+2. El sistema muestra los **puntos disponibles** del cliente
+3. Ingresar la cantidad de puntos a canjear en el campo **"Canjear puntos"**
+   - Máximo: el saldo de puntos del cliente (no se puede canjear más de lo que tiene)
+   - 1 punto = $1 de descuento
+4. El total se recalcula automáticamente
+5. Al cobrar, los puntos se descuentan del saldo del cliente
 
 ### Puntos de fidelidad en POS
 
-Si se selecciona un cliente en la venta, el sistema asigna automáticamente **1 punto por cada dólar** del total de la venta (la misma regla que las citas).
+Si se selecciona un cliente en la venta, el sistema asigna automáticamente **1 punto por cada dólar** del total de la venta (después de descuentos y puntos canjeados, antes de la propina).
 
 ---
 

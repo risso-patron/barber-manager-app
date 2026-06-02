@@ -1,6 +1,6 @@
 # Manual del Sistema
 
-**Barber Manager App — Versión 1.1**  
+**Barber Manager App — Versión 1.2**  
 **Perfil:** Desarrolladores y administradores técnicos  
 **Stack:** Next.js 15 (App Router) · TypeScript 5 · Supabase · Tailwind CSS · pnpm
 
@@ -63,6 +63,11 @@ cp .env.example .env.local
 | `APP_ENV` | String | Entorno: `production`, `staging`, `development` | `NODE_ENV` |
 | `UPSTASH_REDIS_REST_URL` | URL | URL de Upstash Redis para rate limiting persistente | — |
 | `UPSTASH_REDIS_REST_TOKEN` | String | Token de Upstash Redis | — |
+| `RESEND_API_KEY` | String | Clave de API de Resend para envío de emails de notificación | — |
+| `RESEND_FROM_EMAIL` | Email | Dirección remitente de los emails de notificación (ej. `noreply@tudominio.com`) | — |
+| `TWILIO_ACCOUNT_SID` | String | SID de cuenta Twilio para WhatsApp | — |
+| `TWILIO_AUTH_TOKEN` | String | Token de autenticación de Twilio | — |
+| `TWILIO_WHATSAPP_FROM` | String | Número de WhatsApp sender Twilio con prefijo `whatsapp:+` (ej. `whatsapp:+14155238886`) | — |
 
 > Sin `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, el rate limiting usa memoria en proceso (no es seguro en entornos serverless con múltiples instancias).
 
@@ -237,7 +242,7 @@ Registro de todas las citas.
 | `service_id` | uuid | FK → `services.id` |
 | `appointment_date` | date | Fecha de la cita |
 | `appointment_time` | time | Hora de la cita |
-| `status` | text | `pending` / `confirmed` / `completed` / `cancelled` |
+| `status` | text | `pending` / `confirmed` / `completed` / `cancelled` / `no_show` |
 | `notes` | text | Notas adicionales |
 | `admin_notes` | text | Notas internas del admin |
 | `rating` | integer | Calificación del cliente (1-5, nullable) |
@@ -303,6 +308,8 @@ Ventas registradas en el punto de venta.
 | `payment_method` | text | `cash` / `card` / `transfer` |
 | `subtotal` | numeric | Subtotal antes del descuento |
 | `discount` | numeric | Monto de descuento |
+| `redeemed_points` | integer | Puntos canjeados como descuento (1 punto = $1) |
+| `tip` | numeric | Propina registrada en la venta |
 | `total` | numeric | Total final |
 | `notes` | text | Notas de la venta |
 | `created_by` | uuid | FK → `users.id` (admin que registró) |
@@ -337,6 +344,45 @@ Alertas generadas cuando un cliente califica con 1 o 2 estrellas.
 | `resolved_at` | timestamptz | Cuándo fue resuelta |
 | `resolved_by` | uuid | FK → `users.id` (quien resolvió) |
 | `created_at` | timestamptz | |
+
+#### `schedule_blocks` (v1.2 — Item 12)
+Bloqueos de agenda creados por empleados o administradores.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `employee_id` | uuid | FK → `users.id` |
+| `block_date` | date | Día del bloqueo |
+| `start_time` | time | Hora de inicio |
+| `end_time` | time | Hora de fin |
+| `reason` | text | Motivo del bloqueo |
+| `block_type` | text | `break` / `absence` / `personal` / `vacation` |
+| `created_at` | timestamptz | |
+
+RLS: los empleados pueden leer/insertar/eliminar sus propios bloqueos; los admins tienen acceso completo.
+
+#### `notification_queue` (v1.2 — Item 18)
+Cola asíncrona de notificaciones (email y WhatsApp).
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | uuid | PK |
+| `type` | text | `appointment_created` / `reminder` / `cancellation` / `confirmation` |
+| `recipient_phone` | text | Teléfono del destinatario (nullable si hay email) |
+| `recipient_email` | text | Email del destinatario (nullable si hay phone) |
+| `recipient_name` | text | Nombre legible del destinatario |
+| `message_sms` | text | Texto del mensaje WhatsApp/SMS |
+| `message_email` | text | Cuerpo del email (nullable) |
+| `subject_email` | text | Asunto del email (nullable) |
+| `status` | text | `pending` / `processing` / `sent` / `failed` |
+| `error_message` | text | Último mensaje de error (si falló) |
+| `attempts` | integer | Número de intentos realizados (default 0) |
+| `metadata` | jsonb | Datos extra (appointment_id, etc.) |
+| `created_at` | timestamptz | |
+| `sent_at` | timestamptz | Cuándo se envió exitosamente |
+
+Constraint: `recipient_phone IS NOT NULL OR recipient_email IS NOT NULL`.
+RLS: solo admin/manager pueden SELECT y UPDATE.
 
 ### Row Level Security (RLS)
 
@@ -738,7 +784,105 @@ Body:
 
 ---
 
-## 9. Rate limiting
+### Cola de notificaciones (v1.2 — Item 18)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/notifications/queue` | POST | No | — | Encolar una notificación (email y/o WhatsApp) |
+
+**POST `/api/notifications/queue`**
+
+Body:
+```json
+{
+  "type": "appointment_created | reminder | cancellation | confirmation",
+  "recipient_phone": "string (opcional si hay email)",
+  "recipient_email": "string (opcional si hay phone)",
+  "recipient_name": "string",
+  "message_sms": "string",
+  "message_email": "string (opcional)",
+  "subject_email": "string (opcional)",
+  "metadata": { ... }
+}
+```
+
+Regla: al menos uno de `recipient_phone` o `recipient_email` debe estar presente.
+
+Respuesta exitosa (201):
+```json
+{ "success": true, "id": "uuid" }
+```
+
+---
+
+### Bloqueos de agenda (v1.2 — Item 12)
+
+| Endpoint | Método | Auth | Rol | Descripción |
+|----------|--------|------|-----|-------------|
+| `/api/schedule-blocks` | GET | Sí | employee, admin | Listar bloqueos del empleado autenticado (o de uno específico vía `?employee_id=`) |
+| `/api/schedule-blocks` | POST | Sí | employee, admin | Crear un bloqueo de agenda |
+| `/api/schedule-blocks/[id]` | DELETE | Sí | employee, admin | Eliminar un bloqueo |
+
+---
+
+---
+
+## 8.1. Edge Functions
+
+Las Edge Functions de Supabase corren en el runtime Deno y se despliegan con la CLI de Supabase.
+
+### `process-notification-queue`
+
+**Archivo:** `supabase/functions/process-notification-queue/index.ts`
+
+Procesa en lote las notificaciones pendientes de la tabla `notification_queue`. Es activada por un **Database Webhook** cada vez que se inserta un nuevo registro con `status = 'pending'`.
+
+#### Variables de entorno (inyectar en Supabase Dashboard)
+
+| Variable | Fuente | Descripción |
+|----------|--------|---------|
+| `SUPABASE_URL` | Automática | URL del proyecto |
+| `SUPABASE_SERVICE_ROLE_KEY` | Manual | Necesaria para leer/escribir `notification_queue` |
+| `RESEND_API_KEY` | Manual | Envío de emails vía Resend |
+| `RESEND_FROM_EMAIL` | Manual | Remitente de los emails |
+| `TWILIO_ACCOUNT_SID` | Manual | Autenticación Twilio |
+| `TWILIO_AUTH_TOKEN` | Manual | Autenticación Twilio |
+| `TWILIO_WHATSAPP_FROM` | Manual | Número sender WhatsApp (formato `whatsapp:+XXXXXXXXXXX`) |
+
+> **Importante:** En Edge Functions usar `Deno.env.get('VARIABLE')`, NO `process.env.VARIABLE`.
+
+#### Lógica de procesamiento
+
+1. Consulta hasta **10 registros** con `status = 'pending'` ordenados por `created_at ASC`
+2. Para cada registro:
+   - Marca como `processing`
+   - Intenta enviar email (si `recipient_email` y `RESEND_API_KEY` presentes) vía Resend REST API
+   - Intenta enviar WhatsApp (si `recipient_phone` y vars de Twilio presentes) vía Twilio Messages API
+   - En éxito: marca como `sent`, registra `sent_at`
+   - En error: si `attempts < 3` vuelve a `pending`; si `attempts >= 3` marca como `failed` con `error_message`
+3. Normalización de teléfono: si `recipient_phone` no empieza con `whatsapp:`, agrega el prefijo automáticamente
+
+#### Despliegue
+
+```bash
+# Instalar CLI si no la tenés
+npm install -g supabase
+
+# Desplegar la Edge Function
+supabase functions deploy process-notification-queue --project-ref fxnxwowikkhjvjoddnga
+```
+
+#### Configurar Database Webhook en Supabase
+
+1. Ir a **Supabase Dashboard → Database → Webhooks**
+2. Crear nuevo webhook:
+   - **Tabla:** `notification_queue`
+   - **Eventos:** `INSERT`
+   - **URL:** `https://fxnxwowikkhjvjoddnga.supabase.co/functions/v1/process-notification-queue`
+   - **Headers:** `Authorization: Bearer {SUPABASE_ANON_KEY}`
+3. Guardar
+
+A partir de ese momento, cada reserva creada que inserte en `notification_queue` dispara automáticamente el procesamiento.
 
 **Archivo:** `lib/rate-limit.ts`
 
@@ -908,6 +1052,11 @@ Configura hooks que ejecutan:
 | `24-add-loyalty-points.sql` | M6: columna `loyalty_points` en users, tabla `loyalty_transactions` |
 | `25-add-pos-system.sql` | M7: tablas `pos_sales` y `pos_sale_items` |
 | `26-add-low-rating-alerts.sql` | M8: tabla `low_rating_alerts` + trigger `trg_low_rating_alert` |
+| `27-add-multiservice-cart.sql` | Item 14: soporte multi-servicios en reservas |
+| `28-add-pos-tip-points.sql` | Items 10 y 13: campos `tip` y `redeemed_points` en `pos_sales` |
+| `29-appointment-no-show-status.sql` | Item 15: nuevo valor `no_show` en el enum `appointment_status` |
+| `30-schedule-blocks.sql` | Item 12: tabla `schedule_blocks` para bloqueos de agenda |
+| `31-notification-queue.sql` | Item 18: tabla `notification_queue` para cola de notificaciones async |
 
 ### Instalación inicial limpia
 
