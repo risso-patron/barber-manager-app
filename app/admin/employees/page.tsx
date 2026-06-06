@@ -169,7 +169,7 @@ export default function EmployeesPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ padding: 32 }}>
       {/* Error banner */}
       {apiError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
@@ -178,43 +178,37 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      {/* Contraseña temporal del nuevo empleado */}
+      {/* Contráseña temporal del nuevo empleado */}
       {newEmployeePassword && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-md text-sm">
-          <p className="font-semibold text-green-800 mb-1">✓ Empleado creado exitosamente</p>
-          <p className="text-green-700">
+        <div style={{ padding: "14px 18px", background: "#0F2E1A", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10, fontSize: 13 }}>
+          <p style={{ fontWeight: 600, color: "#22C55E", marginBottom: 4 }}>✓ Empleado creado exitosamente</p>
+          <p style={{ color: "#F0F0F0" }}>
             Contraseña temporal de <strong>{newEmployeePassword.name}</strong>:{" "}
-            <code className="bg-green-100 px-2 py-0.5 rounded font-mono">{newEmployeePassword.password}</code>
+            <code style={{ background: "rgba(34,197,94,0.15)", padding: "2px 8px", borderRadius: 4, fontFamily: "var(--font-dm-mono), monospace", color: "#22C55E" }}>{newEmployeePassword.password}</code>
           </p>
-          <p className="text-green-600 text-xs mt-1">Compartí esta contraseña con el empleado para que pueda iniciar sesión.</p>
-          <button onClick={() => setNewEmployeePassword(null)} className="mt-2 text-xs text-green-700 underline">Cerrar</button>
+          <p style={{ color: "#8A8A8A", fontSize: 11, marginTop: 4 }}>Compartí esta contraseña con el empleado para que pueda iniciar sesión.</p>
+          <button onClick={() => setNewEmployeePassword(null)} style={{ marginTop: 8, fontSize: 11, color: "#22C55E", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Cerrar</button>
         </div>
       )}
 
       {/* Resultado de reset de contraseña */}
       {resetPasswordResult && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm">
-          <p className="font-semibold text-blue-800 mb-1">🔑 Contraseña reseteada</p>
-          <p className="text-blue-700">
+        <div style={{ padding: "14px 18px", background: "#1A1A2E", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 10, fontSize: 13 }}>
+          <p style={{ fontWeight: 600, color: "#818CF8", marginBottom: 4 }}>🔑 Contraseña reseteada</p>
+          <p style={{ color: "#F0F0F0" }}>
             Nueva contraseña temporal de <strong>{resetPasswordResult.name}</strong>:{" "}
-            <code className="bg-blue-100 px-2 py-0.5 rounded font-mono">{resetPasswordResult.password}</code>
+            <code style={{ background: "rgba(129,140,248,0.15)", padding: "2px 8px", borderRadius: 4, fontFamily: "var(--font-dm-mono), monospace", color: "#818CF8" }}>{resetPasswordResult.password}</code>
           </p>
-          <p className="text-blue-600 text-xs mt-1">Compartí esta contraseña con el empleado. La anterior ya no sirve.</p>
-          <button onClick={() => setResetPasswordResult(null)} className="mt-2 text-xs text-blue-700 underline">Cerrar</button>
+          <p style={{ color: "#8A8A8A", fontSize: 11, marginTop: 4 }}>Compartí esta contraseña con el empleado. La anterior ya no sirve.</p>
+          <button onClick={() => setResetPasswordResult(null)} style={{ marginTop: 8, fontSize: 11, color: "#818CF8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Cerrar</button>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Empleados</h1>
-            <p className="text-gray-600 mt-1">Administra barberos y personal de la barbería</p>
-          </div>
+        <div>
+          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Empleados</h1>
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra barberos y personal de la barbería</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -228,34 +222,32 @@ export default function EmployeesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Empleados</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Total Empleados</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.total}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-7 w-7" style={{ color: "#E53935" }} />
             </div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Barberos</p>
-                <p className="text-2xl font-bold">{stats.barbers}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Barberos</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.barbers}</p>
               </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
+              <UserCheck className="h-7 w-7" style={{ color: "#22C55E" }} />
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Staff</p>
-                <p className="text-2xl font-bold">{stats.employees}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Staff</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.employees}</p>
               </div>
-              <Users className="h-8 w-8 text-purple-600" />
+              <Users className="h-7 w-7" style={{ color: "#818CF8" }} />
             </div>
           </CardContent>
         </Card>
@@ -301,11 +293,14 @@ export default function EmployeesPage() {
           </div>
         ) : (
           filteredEmployees.map((employee) => (
-            <Card key={employee.id} className="hover:shadow-lg transition-shadow">
+            <Card key={employee.id} className="hover:shadow-lg transition-shadow" style={{ border: "1px solid #2E2E2E" }}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                      style={{ background: ["#1E3A5F","#1A3325","#3D1A1A","#2A1A3D","#1A2E3D"][parseInt(employee.id, 36) % 5] || "#1E3A5F", border: "2px solid #252525" }}
+                    >
                       {employee.avatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={employee.avatar} alt={employee.name} className="w-full h-full object-cover" />
@@ -335,46 +330,33 @@ export default function EmployeesPage() {
                     </Button>
 
                     {activeDropdown === employee.id && (
-                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
+                      <div className="absolute right-0 mt-2 w-40 rounded-md shadow-lg border z-50" style={{ background: "#1A1A1A", borderColor: "#2E2E2E" }}>
                         <div className="py-1">
                           <button
-                            onClick={() => {
-                              setEditingEmployee(employee)
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                            onClick={() => { setEditingEmployee(employee); setActiveDropdown(null) }}
+                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                           >
                             <Edit className="h-4 w-4" />
                             Editar
                           </button>
-
                           <button
-                            onClick={() => {
-                              // TODO: Ver agenda del empleado
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                            onClick={() => { setActiveDropdown(null) }}
+                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                           >
                             <Calendar className="h-4 w-4" />
                             Ver Agenda
                           </button>
-
                           <button
                             onClick={() => handleResetPassword(employee)}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-yellow-50 flex items-center gap-2 text-yellow-700"
+                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F59E0B" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2A2000" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                           >
                             <KeyRound className="h-4 w-4" />
                             Resetear Clave
                           </button>
-
-                          <div className="border-t my-1"></div>
-
+                          <div style={{ height: 1, background: "#252525", margin: "4px 0" }} />
                           <button
-                            onClick={() => {
-                              setDeletingEmployee(employee)
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
+                            onClick={() => { setDeletingEmployee(employee); setActiveDropdown(null) }}
+                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 font-medium" style={{ color: "#EF4444" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1F1212" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                           >
                             <Trash2 className="h-4 w-4" />
                             Eliminar
@@ -387,16 +369,16 @@ export default function EmployeesPage() {
               </CardHeader>
 
               <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm" style={{ color: "#8A8A8A" }}>
                   <Mail className="h-4 w-4" />
                   <span>{employee.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm" style={{ color: "#8A8A8A" }}>
                   <Phone className="h-4 w-4" />
                   <span>{employee.phone}</span>
                 </div>
                 {employee.commission_rate != null && employee.commission_rate > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <div className="flex items-center gap-2 text-sm" style={{ color: "#22C55E" }}>
                     <DollarSign className="h-4 w-4" />
                     <span>Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
                   </div>

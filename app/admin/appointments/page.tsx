@@ -42,11 +42,11 @@ import { AppointmentModal } from "@/components/admin/appointments/appointment-mo
 import { DeleteConfirmModal } from "@/components/admin/appointments/delete-confirm-modal"
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-300",
-  completed: "bg-green-100 text-green-800 border-green-300",
-  cancelled: "bg-red-100 text-red-800 border-red-300",
-  no_show:   "bg-orange-100 text-orange-800 border-orange-300",
+  pending:   "orno-status-pending   border",
+  confirmed: "orno-status-confirmed border",
+  completed: "orno-status-completed border",
+  cancelled: "orno-status-cancelled border",
+  no_show:   "orno-status-no_show   border",
 }
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -330,18 +330,12 @@ export default function AppointmentsPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ padding: 32 }}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Citas</h1>
-            <p className="text-gray-600 mt-1">Administra todas las citas de la barbería</p>
-          </div>
+        <div>
+          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Citas</h1>
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra todas las citas de la barbería</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -355,46 +349,43 @@ export default function AppointmentsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Citas</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Total Citas</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.total}</p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-7 w-7" style={{ color: "#E53935" }} />
             </div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Hoy</p>
-                <p className="text-2xl font-bold">{stats.today}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Hoy</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.today}</p>
               </div>
-              <Clock className="h-8 w-8 text-green-600" />
+              <Clock className="h-7 w-7" style={{ color: "#22C55E" }} />
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Pendientes</p>
-                <p className="text-2xl font-bold">{stats.pending}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Pendientes</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.pending}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-7 w-7" style={{ color: "#F59E0B" }} />
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Confirmadas</p>
-                <p className="text-2xl font-bold">{stats.confirmed}</p>
+                <p className="text-sm" style={{ color: "#8A8A8A" }}>Confirmadas</p>
+                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.confirmed}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-blue-600" />
+              <CheckCircle className="h-7 w-7" style={{ color: "#818CF8" }} />
             </div>
           </CardContent>
         </Card>
@@ -467,7 +458,7 @@ export default function AppointmentsPage() {
                 {pagedAppointments.map((appointment) => (
                 <div
                   key={appointment.id}
-                  className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    className="border rounded-lg p-4 transition-colors" style={{ borderColor: "#2E2E2E", background: "#1A1A1A" }} onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#222222" }} onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#1A1A1A" }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
@@ -538,14 +529,14 @@ export default function AppointmentsPage() {
                       </Button>
 
                       {activeDropdown === appointment.id && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
+                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg border z-50" style={{ background: "#1A1A1A", borderColor: "#2E2E2E" }}>
                           <div className="py-1">
                             <button
                               onClick={() => {
                                 setEditingAppointment(appointment)
                                 setActiveDropdown(null)
                               }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                             >
                               <Edit className="h-4 w-4" />
                               Editar
@@ -577,9 +568,9 @@ export default function AppointmentsPage() {
                                   setActiveDropdown(null)
                                   router.push(`/admin/pos?appointment_id=${appointment.id}`)
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#818CF8" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                               >
-                                <ShoppingCart className="h-4 w-4 text-indigo-600" />
+                                <ShoppingCart className="h-4 w-4" style={{ color: "#818CF8" }} />
                                 Cobrar en POS
                               </button>
                             )}
@@ -590,7 +581,7 @@ export default function AppointmentsPage() {
                                   handleStatusChange(appointment.id, "no_show")
                                   setActiveDropdown(null)
                                 }}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 flex items-center gap-2 text-orange-700"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F97316" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2A1500" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                               >
                                 <XCircle className="h-4 w-4" />
                                 No se presentó
@@ -600,21 +591,21 @@ export default function AppointmentsPage() {
                             {(appointment.status === "pending" || appointment.status === "confirmed") && (
                               <button
                                 onClick={() => handleStatusChange(appointment.id, "cancelled")}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#8A8A8A" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                               >
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4" style={{ color: "#EF4444" }} />
                                 Cancelar
                               </button>
                             )}
 
-                            <div className="border-t my-1"></div>
+                            <div style={{ height: 1, background: "#252525", margin: "4px 0" }} />
 
                             <button
                               onClick={() => {
                                 setDeletingAppointment(appointment)
                                 setActiveDropdown(null)
                               }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
+                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 font-medium" style={{ color: "#EF4444" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1F1212" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                             >
                               <Trash2 className="h-4 w-4" />
                               Eliminar

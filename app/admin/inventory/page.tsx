@@ -204,19 +204,19 @@ export default function InventoryPage() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case "producto": return "bg-blue-100 text-blue-800"
-      case "herramienta": return "bg-purple-100 text-purple-800"
-      case "suministro": return "bg-green-100 text-green-800"
-      default: return "bg-gray-100 text-gray-800"
+      case "producto":    return "orno-cat-producto"
+      case "herramienta": return "orno-cat-herramienta"
+      case "suministro":  return "orno-cat-suministro"
+      default:            return "orno-cat-default"
     }
   }
 
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case "disponible": return "bg-green-100 text-green-800"
-      case "bajo": return "bg-yellow-100 text-yellow-800"
-      case "agotado": return "bg-red-100 text-red-800"
-      default: return "bg-gray-100 text-gray-800"
+      case "disponible": return "orno-stock-ok"
+      case "bajo":       return "orno-stock-low"
+      case "agotado":    return "orno-stock-out"
+      default:           return "orno-cat-default"
     }
   }
 
@@ -232,23 +232,17 @@ export default function InventoryPage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div style={{ padding: 32 }}>
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#1F1212", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between" }}>
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="font-bold ml-4">✕</button>
+          <button onClick={() => setError(null)} style={{ fontWeight: 700, marginLeft: 16, background: "none", border: "none", color: "#EF4444", cursor: "pointer" }}>✕</button>
         </div>
       )}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Inventario</h1>
-            <p className="text-muted-foreground">Gestiona productos, herramientas y suministros</p>
-          </div>
+        <div>
+          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Inventario</h1>
+          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Gestiona productos, herramientas y suministros</p>
         </div>
         <Button onClick={() => { setSelectedItem(null); setIsModalOpen(true) }}>
           <Plus className="mr-2 h-4 w-4" />
@@ -272,10 +266,10 @@ export default function InventoryPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertTriangle className="h-4 w-4" style={{ color: "#F59E0B" }} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.lowStock}</div>
+            <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, color: "#F59E0B" }}>{stats.lowStock}</div>
             <p className="text-xs text-muted-foreground">Requieren atención</p>
           </CardContent>
         </Card>
@@ -283,10 +277,10 @@ export default function InventoryPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agotados</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <TrendingDown className="h-4 w-4" style={{ color: "#EF4444" }} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.outOfStock}</div>
+            <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, color: "#EF4444" }}>{stats.outOfStock}</div>
             <p className="text-xs text-muted-foreground">Sin stock</p>
           </CardContent>
         </Card>
@@ -325,7 +319,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por categoría"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md bg-white text-gray-900"
+              className="px-3 py-2 border rounded-md text-sm" style={{ background: "hsl(var(--input))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
             >
               <option value="all">Todas las categorías</option>
               <option value="producto">Productos</option>
@@ -336,7 +330,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por estado"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md bg-white text-gray-900"
+              className="px-3 py-2 border rounded-md text-sm" style={{ background: "hsl(var(--input))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
             >
               <option value="all">Todos los estados</option>
               <option value="disponible">Disponible</option>
@@ -372,7 +366,7 @@ export default function InventoryPage() {
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                  <tr key={item.id} className="border-b" style={{ borderColor: "#252525" }} onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "#222222" }} onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent" }}>
                     <td className="py-3 px-4">
                       <div>
                         <div className="font-medium">{item.name}</div>
