@@ -281,7 +281,7 @@ export default function EmployeeDashboard() {
   if (!user) return null
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fafaf9", color: "#1a1a18" }}>
+    <div style={{ padding: 32, paddingBottom: 80 }}>
       <style>{`
         @keyframes ornoFadeUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -294,149 +294,95 @@ export default function EmployeeDashboard() {
         .orno-row:nth-child(4) { animation-delay: 0.22s; }
         .orno-row:nth-child(5) { animation-delay: 0.28s; }
         .orno-btn { transition: background 0.15s, color 0.15s; }
-        .orno-btn:hover { background: rgba(26,26,24,0.06) !important; }
-        .orno-complete:hover { color: rgba(26,26,24,0.9) !important; }
-        .orno-cancel:hover { color: #cc2222 !important; }
-        .orno-exit:hover { color: #cc2222 !important; }
+        .orno-btn:hover { background: rgba(240,240,240,0.06) !important; }
+        .orno-complete:hover { color: #F0F0F0 !important; }
+        .orno-cancel:hover { color: #E53935 !important; }
         .orno-pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
       `}</style>
 
-      {/* Header */}
-      <header style={{ borderBottom: "1px solid rgba(26,26,24,0.12)" }}>
-        <div className="max-w-5xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
-          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "100px", width: "auto" }} />
-          <div className="flex items-center gap-6">
-            {isWorking && (
-              <span className="orno-pulse" style={{ display: "inline-block", width: "7px", height: "7px", borderRadius: "50%", background: "#4ade80" }} />
-            )}
-            {/* Nav por especialidad */}
-            {(() => {
-              const specialty = (user as { specialty?: string | null }).specialty
-              const navItems: { label: string; href: string }[] = [
-                { label: "Agenda", href: "/employee/schedule" },
-                { label: "Horario", href: "/employee/time-tracking" },
-              ]
-              if (specialty === "barbero" || specialty === "gerente") {
-                navItems.push({ label: "Estadísticas", href: "/employee/stats" })
-              }
-              if (specialty === "cajero" || specialty === "gerente") {
-                navItems.push({ label: "Inventario", href: "/admin/inventory" })
-              }
-              if (specialty === "recepcionista" || specialty === "gerente") {
-                navItems.push({ label: "Clientes", href: "/admin/clients" })
-              }
-              navItems.push({ label: "Perfil", href: "/employee/profile" })
-              return navItems.map(item => (
-                <button
-                  key={item.href}
-                  onClick={() => router.push(item.href)}
-                  style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "rgba(26,26,24,0.9)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(26,26,24,0.55)")}
-                >
-                  {item.label}
-                </button>
-              ))
-            })()}
-            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.04em" }}>
-              {(user as { name?: string }).name || user.email}
-            </span>
-            <button
-              className="orno-exit"
-              onClick={handleLogout}
-              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
-            >
-              Salir
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-8">
-
 
         {/* ── Jornada ──────────────────────── */}
         <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>Jornada</p>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Jornada</p>
         </div>
-        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ borderTop: "1px solid #252525", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {isWorking ? (
             <div>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "28px", fontWeight: 300, color: "#1a1a18" }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "28px", fontWeight: 300, color: "#F0F0F0" }}>
                 {getWorkDuration()}
               </p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.45)", marginTop: "3px" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
                 Inicio · {workStartTime && formatTime(workStartTime!)}
               </p>
             </div>
           ) : (
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 300, color: "rgba(26,26,24,0.35)" }}>Sin jornada activa</p>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 300, color: "rgba(240,240,240,0.25)" }}>Sin jornada activa</p>
           )}
           <button
             className="orno-btn"
             onClick={isWorking ? handleClockOut : handleClockIn}
-            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: isWorking ? "#cc2222" : "rgba(26,26,24,0.65)", background: "none", border: "1px solid currentColor", padding: "8px 16px", cursor: "pointer", transition: "color 0.2s" }}
+            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: isWorking ? "#cc2222" : "#8A8A8A", background: "none", border: "1px solid currentColor", padding: "8px 16px", cursor: "pointer", transition: "color 0.2s" }}
           >
             {isWorking ? "Finalizar" : "Iniciar"}
           </button>
         </div>
 
         {/* ── Stats ─────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
+        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid #252525" }}>
           {[
             { value: String(stats.todayAppointments), label: "Citas hoy",     sub: `${stats.confirmedToday} conf. · ${stats.pendingToday} pend.` },
             { value: String(stats.weekAppointments),  label: "Esta semana",   sub: "Programadas" },
             { value: String(stats.totalCompleted),    label: "Completadas",   sub: "Total histórico" },
             { value: `$${stats.todayRevenue}`,        label: "Ingresos hoy",  sub: `Total $${stats.totalRevenue}` },
           ].map((s, i) => (
-            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 3 ? "1px solid rgba(26,26,24,0.12)" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
+            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 3 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginTop: "4px" }}>{s.label}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.28)", marginTop: "2px" }}>{s.sub}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px" }}>{s.sub}</p>
             </div>
           ))}
         </div>
 
         {/* ── Agenda de hoy ─────────────────── */}
         <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
             Agenda · {new Date(todayDate!).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
-        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
+        <div style={{ borderTop: "1px solid #252525" }}>
           {todayAppointments.length === 0 ? (
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "rgba(26,26,24,0.30)", padding: "24px 0" }}>Sin citas para hoy</p>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>Sin citas para hoy</p>
           ) : (
             todayAppointments.map((apt, i) => (
-              <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(26,26,24,0.07)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
-                <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(26,26,24,0.28)", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
+              <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+                <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#1a1a18" }}>{apt.time} · {apt.clientName}</p>
-                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: apt.status === "confirmed" ? "rgba(26,26,24,0.55)" : apt.status === "completed" ? "rgba(26,26,24,0.28)" : "#cc2222", textTransform: "uppercase" }}>
+                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>{apt.time} · {apt.clientName}</p>
+                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: apt.status === "confirmed" ? "#8A8A8A" : apt.status === "completed" ? "#555555" : "#cc2222", textTransform: "uppercase" }}>
                     {apt.status === "confirmed" ? "Conf." : apt.status === "completed" ? "Ok" : apt.status === "pending" ? "Pend." : "—"}
                   </span>
                 </div>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.42)", marginTop: "3px" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
                   {apt.serviceName} · {apt.duration} min · ${apt.price}
                 </p>
                 {apt.notes && (
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.28)", marginTop: "2px", fontStyle: "italic" }}>{apt.notes}</p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px", fontStyle: "italic" }}>{apt.notes}</p>
                 )}
                 {apt.status === "confirmed" && (
                   <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
                     <button
                       className="orno-btn orno-complete"
                       onClick={() => handleCompleteAppointment(apt.id)}
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,24,0.50)", background: "none", border: "1px solid rgba(26,26,24,0.20)", padding: "5px 12px", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", background: "none", border: "1px solid #2E2E2E", padding: "5px 12px", cursor: "pointer", transition: "color 0.15s, border-color 0.15s" }}
                     >
                       Completar
                     </button>
                     <button
                       className="orno-btn orno-cancel"
                       onClick={() => handleCancelAppointment(apt.id)}
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,24,0.30)", background: "none", border: "none", padding: "5px 0", cursor: "pointer", transition: "color 0.15s" }}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", background: "none", border: "none", padding: "5px 0", cursor: "pointer", transition: "color 0.15s" }}
                     >
                       Cancelar
                     </button>
@@ -449,40 +395,40 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* ── Próximas citas ────────────────── */}
-        {upcomingAppointments.length > 0 && (
-          <>
-            <div className="pt-8 pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>Próximas citas</p>
-            </div>
-            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
-              {upcomingAppointments.map((apt, i) => (
-                <div key={apt.id} className="orno-row" style={{ padding: "14px 0", borderBottom: "1px solid rgba(26,26,24,0.07)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
-                  <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(26,26,24,0.28)", minWidth: "18px", paddingTop: "2px" }}>{String(i + 1).padStart(2, "0")}</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", fontWeight: 400, color: "#1a1a18" }}>
-                      {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {apt.time} · {apt.clientName}
-                    </p>
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.38)", marginTop: "2px" }}>{apt.serviceName}</p>
-                  </div>
+      {upcomingAppointments.length > 0 && (
+        <>
+          <div style={{ paddingTop: 24, paddingBottom: 12 }}>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Próximas citas</p>
+          </div>
+          <div style={{ borderTop: "1px solid #252525" }}>
+            {upcomingAppointments.map((apt, i) => (
+              <div key={apt.id} className="orno-row" style={{ padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+                <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "2px" }}>{String(i + 1).padStart(2, "0")}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", fontWeight: 400, color: "#F0F0F0" }}>
+                    {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {apt.time} · {apt.clientName}
+                  </p>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "2px" }}>{apt.serviceName}</p>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
         {/* ── Rendimiento ───────────────────── */}
         <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>Rendimiento</p>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Rendimiento</p>
         </div>
-        <div className="grid grid-cols-3" style={{ borderTop: "1px solid rgba(26,26,24,0.12)", marginBottom: "60px" }}>
+        <div className="grid grid-cols-3" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
           {[
             { value: String(stats.totalCompleted), label: "Clientes atendidos" },
             { value: `$${stats.totalRevenue}`,     label: "Ingresos totales" },
             { value: stats.avgRating !== null ? stats.avgRating!.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
           ].map((s, i) => (
-            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid rgba(26,26,24,0.12)" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
+            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{s.value}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.40)", marginTop: "4px" }}>{s.label}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>{s.label}</p>
             </div>
           ))}
         </div>
@@ -491,29 +437,28 @@ export default function EmployeeDashboard() {
         {stats.commissionPct != null && (
           <>
             <div className="pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>Comisiones este mes</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Comisiones este mes</p>
             </div>
-            <div className="grid grid-cols-2" style={{ borderTop: "1px solid rgba(26,26,24,0.12)", marginBottom: "60px" }}>
-              <div className="orno-row" style={{ padding: "22px 20px 22px 0", borderRight: "1px solid rgba(26,26,24,0.12)" }}>
+            <div className="grid grid-cols-2" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
+              <div className="orno-row" style={{ padding: "22px 20px 22px 0", borderRight: "1px solid #252525" }}>
                 <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>${stats.monthCommission.toFixed(2)}</p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.40)", marginTop: "4px" }}>Comisión acumulada</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Comisión acumulada</p>
               </div>
               <div className="orno-row" style={{ padding: "22px 0 22px 20px" }}>
                 <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{stats.commissionPct?.toFixed(0) ?? "0"}%</p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(26,26,24,0.40)", marginTop: "4px" }}>Tu tasa de comisión</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Tu tasa de comisión</p>
               </div>
             </div>
           </>
         )}
 
-        {/* ── Notificaciones ────────────────── */}
-        {notifications.length > 0 && (
+      {notifications.length > 0 && (
           <>
-            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", paddingTop: "20px", marginBottom: "48px" }}>
+            <div style={{ borderTop: "1px solid #252525", paddingTop: "20px", marginBottom: "48px" }}>
               {notifications.slice(0, 5).map((item) => (
-                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(26,26,24,0.06)" }}>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.55)" }}>{item.message}</p>
-                  <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "10px", color: "rgba(26,26,24,0.25)" }}>
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A" }}>{item.message}</p>
+                  <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "10px", color: "#555555" }}>
                     {new Date(item.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -522,7 +467,6 @@ export default function EmployeeDashboard() {
           </>
         )}
 
-      </main>
     </div>
   )
 }
