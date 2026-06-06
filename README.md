@@ -1,4 +1,4 @@
-# 💈 Barber Manager
+# 💈 Ornó 
 
 Sistema de gestión profesional para barberías modernas. Administra citas, empleados, clientes, inventario, punto de venta y más — en una plataforma completa y elegante.
 
