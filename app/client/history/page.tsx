@@ -171,8 +171,159 @@ export default function ClientHistoryPage() {
 
   if (!user) return null
 
+  const statusColor: Record<string, string> = {
+    confirmed: "#22C55E",
+    pending:   "#F59E0B",
+    completed: "#8A8A8A",
+    cancelled: "#E53935",
+  }
+
   return (
-    <div className="p-8">
+    <div style={{ padding: "24px 32px 80px" }}>
+      <style>{`
+        @keyframes ornoFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .orno-row { animation: ornoFadeUp 0.35s ease both; }
+        .orno-row:nth-child(1) { animation-delay: 0.04s; }
+        .orno-row:nth-child(2) { animation-delay: 0.10s; }
+        .orno-row:nth-child(3) { animation-delay: 0.16s; }
+        .orno-row:nth-child(4) { animation-delay: 0.22s; }
+        .orno-row:nth-child(5) { animation-delay: 0.28s; }
+        .orno-input { background: #111 !important; border: 1px solid #2E2E2E !important; color: #F0F0F0 !important; }
+        .orno-input::placeholder { color: #555555 !important; }
+        .orno-select { background: #111; border: 1px solid #2E2E2E; color: #F0F0F0; padding: 8px 12px; outline: none; border-radius: 4px; font-family: var(--font-dm-sans); font-size: 12px; cursor: pointer; }
+        .orno-select option { background: #1A1A1A; }
+      `}</style>
+
+      {/* Header */}
+      <div className="pt-8 pb-3">
+        <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(28px,4vw,40px)", fontWeight: 300, color: "#F0F0F0", letterSpacing: "-0.02em" }}>Historial</p>
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>Todas tus citas anteriores</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid #252525", marginBottom: "32px" }}>
+        {[
+          { value: String(stats.total),     label: "Total citas",   sub: `${stats.completed} completadas` },
+          { value: `$${stats.totalSpent}`,  label: "Total gastado", sub: `$${stats.completed > 0 ? (stats.totalSpent / stats.completed).toFixed(0) : 0} prom.` },
+          { value: stats.avgRating ? `${stats.avgRating}★` : "—", label: "Satisfacción", sub: stats.ratedCount > 0 ? `${stats.ratedCount} calificadas` : "Sin datos" },
+          { value: String(stats.cancelled), label: "Canceladas", sub: "Total" },
+        ].map((s, i) => (
+          <div key={i} className="orno-row" style={{ padding: "20px 0", borderRight: i < 3 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,34px)", fontWeight: 300, lineHeight: 1, color: "#F0F0F0" }}>{s.value}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px" }}>{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Favorites */}
+      {(stats.favoriteService || stats.favoriteBarber) && (
+        <div className="grid gap-4 md:grid-cols-2" style={{ marginBottom: "32px" }}>
+          {stats.favoriteService && (
+            <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: "8px", padding: "20px" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A8A8A", marginBottom: "8px" }}>Servicio favorito</p>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#F0F0F0" }}>{stats.favoriteService.name}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "4px" }}>{stats.favoriteService.count} veces solicitado</p>
+            </div>
+          )}
+          {stats.favoriteBarber && (
+            <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: "8px", padding: "20px" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A8A8A", marginBottom: "8px" }}>Barbero favorito</p>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#F0F0F0" }}>{stats.favoriteBarber.name}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "4px" }}>{stats.favoriteBarber.count} citas atendidas</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filters */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "24px" }}>
+        <div style={{ flex: 1, minWidth: "200px", position: "relative" }}>
+          <Search style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#555555" }} />
+          <Input
+            placeholder="Buscar por servicio o barbero..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="orno-input pl-9"
+            style={{ paddingLeft: "36px" }}
+          />
+        </div>
+        <select
+          aria-label="Filtrar por estado"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="orno-select"
+        >
+          <option value="all">Todos los estados</option>
+          <option value="completed">Completadas</option>
+          <option value="cancelled">Canceladas</option>
+          <option value="confirmed">Confirmadas</option>
+          <option value="pending">Pendientes</option>
+        </select>
+      </div>
+
+      {/* Timeline */}
+      <div style={{ borderTop: "1px solid #252525" }}>
+        {filteredAppointments.length === 0 ? (
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>Sin resultados para los filtros actuales</p>
+        ) : (
+          filteredAppointments.map((apt, i) => (
+            <div key={apt.id} className="orno-row" style={{ padding: "18px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+              <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>{apt.serviceName}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: statusColor[apt.status] ?? "#555555" }}>
+                      {getStatusText(apt.status)}
+                    </span>
+                    {apt.price > 0 && (
+                      <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "12px", color: "#8A8A8A" }}>${apt.price}</span>
+                    )}
+                  </div>
+                </div>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
+                  {new Date(apt.date).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
+                  {apt.time ? ` · ${apt.time}` : ""}
+                  {apt.employeeName ? ` · ${apt.employeeName}` : ""}
+                </p>
+                {apt.notes && (
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "3px", fontStyle: "italic" }}>{apt.notes}</p>
+                )}
+                <div style={{ display: "flex", gap: "12px", marginTop: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  {(apt.status === "pending" || apt.status === "confirmed") && (
+                    <RescheduleModal
+                      appointment={apt}
+                      onSuccess={(newDate, newTime) => handleRescheduleSuccess(apt.id, newDate, newTime)}
+                    />
+                  )}
+                  {apt.status === "completed" && (
+                    <RatingModal
+                      appointment={apt}
+                      onSuccess={(rating, reviewText) =>
+                        setAllAppointments((prev) =>
+                          prev.map((a) => a.id === apt.id ? { ...a, rating, review_text: reviewText ?? null } : a)
+                        )
+                      }
+                    />
+                  )}
+                  {apt.status === "completed" && apt.rating != null && apt.rating > 0 && (
+                    <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#F59E0B" }}>
+                      {"★".repeat(apt.rating)}{"☆".repeat(5 - apt.rating)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Historial de Citas</h1>
         <p className="text-muted-foreground">Revisa todas tus citas anteriores y estadísticas</p>

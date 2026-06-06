@@ -199,14 +199,14 @@ export default function ClientDashboard() {
   const unreadCount = messages.filter(m => !m.is_read).length + gifts.filter(g => !g.is_redeemed).length
 
   const STATUS_DARK: Record<string, string> = {
-    confirmed: "#cc2222",
-    pending:   "rgba(26,26,24,0.45)",
-    completed: "rgba(26,26,24,0.30)",
-    cancelled: "rgba(26,26,24,0.20)",
+    confirmed: "#E53935",
+    pending:   "#F59E0B",
+    completed: "#22C55E",
+    cancelled: "#555555",
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fafaf9", color: "#1a1a18" }}>
+    <div>
       <style>{`
         @keyframes ornoFadeUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -218,52 +218,26 @@ export default function ClientDashboard() {
         .orno-row:nth-child(3) { animation-delay: 0.19s; }
         .orno-row:nth-child(4) { animation-delay: 0.26s; }
         .orno-action { transition: background 0.16s; }
-        .orno-action:hover { background: rgba(26,26,24,0.04) !important; }
-        .orno-action:hover .orno-arrow { color: #cc2222; transform: translateX(3px); }
+        .orno-action:hover { background: rgba(240,240,240,0.05) !important; }
+        .orno-action:hover .orno-arrow { color: #E53935; transform: translateX(3px); }
         .orno-arrow { transition: color 0.16s, transform 0.16s; display: inline-block; }
-        .orno-exit:hover { color: #cc2222 !important; }
       `}</style>
 
-      {/* Header */}
-      <header style={{ borderBottom: "1px solid rgba(26,26,24,0.12)" }}>
-        <div className="max-w-4xl mx-auto px-8 pt-5 pb-0 flex items-center justify-between">
-          <img src="/orno_logo.svg" alt="Ornō" style={{ height: "100px", width: "auto" }} />
-          <div className="flex items-center gap-6">
-            {unreadCount > 0 && (
-              <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#cc2222", letterSpacing: "0.08em" }}>
-                {unreadCount} nuevo{unreadCount !== 1 ? "s" : ""}
-              </span>
-            )}
-            <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.04em" }}>
-              {user.profile?.name || user.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="orno-exit"
-              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.38)", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", background: "none", border: "none", padding: 0, transition: "color 0.2s" }}
-            >
-              Salir
-            </button>
-          </div>
-        </div>
-      </header>
+      <main style={{ padding: "24px 32px 80px" }}>
 
-      <main className="max-w-4xl mx-auto px-8">
-
-        {/* ── Próxima cita ─────────────────── */}
         <div className="pt-10 pb-4">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
             Próxima cita
           </p>
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", paddingTop: "28px", paddingBottom: "28px" }}>
+        <div style={{ borderTop: "1px solid #252525", paddingTop: "28px", paddingBottom: "28px" }}>
           {nextAppointment ? (
             <div>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(28px,4vw,44px)", fontWeight: 300, letterSpacing: "-0.01em", lineHeight: 1.1, marginBottom: "8px" }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(28px,4vw,44px)", fontWeight: 300, letterSpacing: "-0.01em", lineHeight: 1.1, marginBottom: "8px", color: "#F0F0F0" }}>
                 {nextAppointment.service}
               </p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.04em" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A", letterSpacing: "0.04em" }}>
                 {new Date(nextAppointment.date).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
                 {nextAppointment.time ? ` · ${nextAppointment.time}` : ""}
                 {nextAppointment.barber ? ` · ${nextAppointment.barber}` : ""}
@@ -271,13 +245,13 @@ export default function ClientDashboard() {
             </div>
           ) : (
             <div>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,34px)", fontWeight: 300, color: "rgba(26,26,24,0.35)", letterSpacing: "-0.01em" }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,34px)", fontWeight: 300, color: "#555555", letterSpacing: "-0.01em" }}>
                 Sin citas pendientes
               </p>
               <button
                 onClick={() => router.push("/client/book")}
                 className="orno-action"
-                style={{ marginTop: "12px", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#cc2222", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                style={{ marginTop: "12px", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E53935", background: "none", border: "none", padding: 0, cursor: "pointer" }}
               >
                 Reservar ahora →
               </button>
@@ -286,27 +260,27 @@ export default function ClientDashboard() {
         </div>
 
         {/* ── Stats ─────────────────────────── */}
-        <div className="grid grid-cols-3" style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
+        <div className="grid grid-cols-3" style={{ borderTop: "1px solid #252525" }}>
           {[
             { value: String(appointments.length),     label: "Próximas" },
             { value: String(pastAppointments.length),  label: "Visitas" },
             { value: String(unreadCount),              label: "Sin leer" },
           ].map((s, i) => (
-            <div key={i} className="orno-row" style={{ padding: "24px 0", borderRight: i < 2 ? "1px solid rgba(26,26,24,0.12)" : "none", paddingLeft: i > 0 ? "28px" : 0, paddingRight: i < 2 ? "28px" : 0 }}>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(32px,4vw,48px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginTop: "4px" }}>{s.label}</p>
+            <div key={i} className="orno-row" style={{ padding: "24px 0", borderRight: i < 2 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "28px" : 0, paddingRight: i < 2 ? "28px" : 0 }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(32px,4vw,48px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em", color: "#F0F0F0" }}>{s.value}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* ── Acciones ──────────────────────── */}
         <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
             Acciones
           </p>
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
+        <div style={{ borderTop: "1px solid #252525" }}>
           {[
             { label: "Reservar cita", sub: "Elige servicio y horario", path: "/client/book" },
             { label: "Mis citas",     sub: "Próximas y pendientes",    path: "/client/appointments" },
@@ -316,13 +290,13 @@ export default function ClientDashboard() {
               key={i}
               className="orno-action orno-row"
               onClick={() => router.push(a.path)}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", background: "transparent", border: "none", borderBottom: "1px solid rgba(26,26,24,0.07)", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", textAlign: "left" }}
             >
               <div>
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#1a1a18" }}>{a.label}</p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.40)", marginTop: "2px" }}>{a.sub}</p>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#F0F0F0" }}>{a.label}</p>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "2px" }}>{a.sub}</p>
               </div>
-              <span className="orno-arrow" style={{ fontSize: "18px", color: "rgba(26,26,24,0.30)" }}>→</span>
+              <span className="orno-arrow" style={{ fontSize: "18px", color: "#555555" }}>→</span>
             </button>
           ))}
         </div>
@@ -331,25 +305,25 @@ export default function ClientDashboard() {
         {appointments.length > 0 && (
           <>
             <div className="pt-10 pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
                 Agenda
               </p>
             </div>
-            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)" }}>
+            <div style={{ borderTop: "1px solid #252525" }}>
               {appointments.slice(0, 4).map((apt, i) => (
-                <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(26,26,24,0.07)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
-                  <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(26,26,24,0.28)", minWidth: "18px", paddingTop: "3px" }}>
+                <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                  <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#1a1a18" }}>{apt.service}</p>
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.42)", marginTop: "3px" }}>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>{apt.service}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
                       {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
                       {apt.time ? ` · ${apt.time}` : ""}
                       {apt.barber ? ` · ${apt.barber}` : ""}
                     </p>
                   </div>
-                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", color: STATUS_DARK[apt.status] ?? "rgba(26,26,24,0.35)", paddingTop: "3px", textTransform: "uppercase" }}>
+                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", color: STATUS_DARK[apt.status] ?? "#555555", paddingTop: "3px", textTransform: "uppercase" }}>
                     {apt.status === "confirmed" ? "Conf." : apt.status === "pending" ? "Pend." : apt.status === "completed" ? "Ok" : "—"}
                   </span>
                 </div>
@@ -362,25 +336,25 @@ export default function ClientDashboard() {
         {(messages.length > 0 || gifts.length > 0) && (
           <>
             <div className="pt-10 pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
                 Mensajes y regalos
               </p>
             </div>
-            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", marginBottom: "60px" }}>
+            <div style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
               {messages.map((m) => (
-                <div key={m.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(26,26,24,0.07)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
-                  <div style={{ width: "3px", alignSelf: "stretch", background: m.is_read ? "rgba(26,26,24,0.10)" : "#cc2222", borderRadius: "2px", flexShrink: 0 }} />
+                <div key={m.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "20px" }}>
+                  <div style={{ width: "3px", alignSelf: "stretch", background: m.is_read ? "#2E2E2E" : "#E53935", borderRadius: "2px", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    {m.subject && <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#1a1a18" }}>{m.subject}</p>}
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "rgba(26,26,24,0.55)", marginTop: "3px" }}>{m.message}</p>
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.28)", marginTop: "6px" }}>
+                    {m.subject && <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#F0F0F0" }}>{m.subject}</p>}
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A", marginTop: "3px" }}>{m.message}</p>
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "6px" }}>
                       {new Date(m.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
                     </p>
                   </div>
                   {!m.is_read && (
                     <button
                       onClick={() => handleMarkRead(m.id)}
-                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,24,0.38)", background: "none", border: "none", cursor: "pointer", paddingTop: "3px" }}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", background: "none", border: "none", cursor: "pointer", paddingTop: "3px" }}
                     >
                       Leído
                     </button>
@@ -388,13 +362,13 @@ export default function ClientDashboard() {
                 </div>
               ))}
               {gifts.map((g) => (
-                <div key={g.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(26,26,24,0.07)", display: "flex", alignItems: "flex-start", gap: "20px", opacity: g.is_redeemed ? 0.45 : 1 }}>
-                  <div style={{ width: "3px", alignSelf: "stretch", background: g.is_redeemed ? "rgba(26,26,24,0.10)" : "rgba(26,26,24,0.40)", borderRadius: "2px", flexShrink: 0 }} />
+                <div key={g.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "20px", opacity: g.is_redeemed ? 0.45 : 1 }}>
+                  <div style={{ width: "3px", alignSelf: "stretch", background: g.is_redeemed ? "#2E2E2E" : "#555555", borderRadius: "2px", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#1a1a18" }}>{g.title}</p>
-                    <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "rgba(26,26,24,0.50)", letterSpacing: "0.14em", marginTop: "4px" }}>{g.code}</p>
-                    {g.description && <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.40)", marginTop: "3px" }}>{g.description}</p>}
-                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.28)", marginTop: "4px" }}>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", color: "#F0F0F0" }}>{g.title}</p>
+                    <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#8A8A8A", letterSpacing: "0.14em", marginTop: "4px" }}>{g.code}</p>
+                    {g.description && <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "3px" }}>{g.description}</p>}
+                    <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "4px" }}>
                       {g.is_redeemed ? "Canjeado" : "Presenta este código en la barbería"}
                     </p>
                   </div>
@@ -408,36 +382,36 @@ export default function ClientDashboard() {
         {loyaltyPoints !== null && (
           <>
             <div className="pt-10 pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
                 Fidelidad
               </p>
             </div>
-            <div style={{ borderTop: "1px solid rgba(26,26,24,0.12)", paddingTop: "24px", paddingBottom: "8px" }}>
+            <div style={{ borderTop: "1px solid #252525", paddingTop: "24px", paddingBottom: "8px" }}>
               <div className="flex items-end gap-3 mb-1">
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(40px,6vw,64px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em", color: "#1a1a18" }}>
+                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(40px,6vw,64px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em", color: "#F0F0F0" }}>
                   {loyaltyPoints.toLocaleString("es-ES")}
                 </p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(26,26,24,0.45)", marginBottom: "10px" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#8A8A8A", marginBottom: "10px" }}>
                   puntos
                 </p>
               </div>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "rgba(26,26,24,0.40)" }}>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555" }}>
                 Ganas 1 punto por cada dólar en servicios completados
               </p>
             </div>
             {loyaltyTx.length > 0 && (
-              <div style={{ borderTop: "1px solid rgba(26,26,24,0.08)", marginBottom: "12px" }}>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", marginBottom: "12px" }}>
                 {loyaltyTx.slice(0, 5).map((tx) => (
-                  <div key={tx.id} className="orno-row" style={{ padding: "12px 0", borderBottom: "1px solid rgba(26,26,24,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div key={tx.id} className="orno-row" style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div>
-                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#1a1a18" }}>
+                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#F0F0F0" }}>
                         {tx.description ?? (tx.type === "earn" ? "Cita completada" : tx.type === "redeem" ? "Canje" : "Ajuste")}
                       </p>
-                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "rgba(26,26,24,0.35)", marginTop: "2px" }}>
+                      <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px" }}>
                         {new Date(tx.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>
-                    <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "13px", fontWeight: 500, color: tx.points > 0 ? "#16a34a" : "#cc2222" }}>
+                    <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "13px", fontWeight: 500, color: tx.points > 0 ? "#22C55E" : "#E53935" }}>
                       {tx.points > 0 ? `+${tx.points}` : String(tx.points)}
                     </span>
                   </div>

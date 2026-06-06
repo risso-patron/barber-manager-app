@@ -55,6 +55,7 @@ export default function ClientAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null)
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming")
 
   useEffect(() => {
     if (!user) return
@@ -222,8 +223,167 @@ export default function ClientAppointmentsPage() {
 
   if (!user) return null
 
+  const statusLabel: Record<string, string> = {
+    confirmed: "Conf.",
+    pending:   "Pend.",
+    completed: "Ok",
+    cancelled: "—",
+  }
+  const statusColor: Record<string, string> = {
+    confirmed: "#22C55E",
+    pending:   "#F59E0B",
+    completed: "#8A8A8A",
+    cancelled: "#E53935",
+  }
+  const displayList = activeTab === "upcoming" ? upcoming : past
+
   return (
-    <div className="p-8">
+    <div style={{ padding: "24px 32px 80px" }}>
+      <style>{`
+        @keyframes ornoFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .orno-row { animation: ornoFadeUp 0.35s ease both; }
+        .orno-row:nth-child(1) { animation-delay: 0.04s; }
+        .orno-row:nth-child(2) { animation-delay: 0.10s; }
+        .orno-row:nth-child(3) { animation-delay: 0.16s; }
+        .orno-row:nth-child(4) { animation-delay: 0.22s; }
+        .orno-row:nth-child(5) { animation-delay: 0.28s; }
+        .orno-btn { transition: background 0.15s, color 0.15s; }
+        .orno-btn:hover { background: rgba(240,240,240,0.06) !important; }
+      `}</style>
+
+      {/* Header */}
+      <div className="pt-8 pb-3">
+        <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(28px,4vw,40px)", fontWeight: 300, color: "#F0F0F0", letterSpacing: "-0.02em" }}>Mis citas</p>
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>Próximas y pasadas</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid #252525", marginBottom: "32px" }}>
+        {[
+          { value: String(upcoming.length),           label: "Próximas" },
+          { value: String(past.length),               label: "Pasadas" },
+          { value: String(upcoming.filter(a => a.status === "confirmed").length), label: "Confirmadas" },
+          { value: String(upcoming.filter(a => a.status === "pending").length),   label: "Pendientes" },
+        ].map((s, i) => (
+          <div key={i} className="orno-row" style={{ padding: "20px 0", borderRight: i < 3 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(24px,3vw,36px)", fontWeight: 300, lineHeight: 1, color: "#F0F0F0" }}>{s.value}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: "24px", borderBottom: "1px solid #252525", marginBottom: "24px" }}>
+        {(["upcoming", "past"] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
+              background: "none", border: "none", padding: "12px 0", cursor: "pointer",
+              color: activeTab === tab ? "#F0F0F0" : "#555555",
+              borderBottom: activeTab === tab ? "1px solid #E53935" : "1px solid transparent",
+              marginBottom: "-1px", transition: "color 0.15s",
+            }}
+          >
+            {tab === "upcoming" ? `Próximas (${upcoming.length})` : `Pasadas (${past.length})`}
+          </button>
+        ))}
+        <div style={{ marginLeft: "auto" }}>
+          <button
+            className="orno-btn"
+            onClick={() => router.push("/client/book")}
+            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#E53935", background: "none", border: "1px solid rgba(229,57,53,0.3)", padding: "8px 14px", cursor: "pointer", borderRadius: "4px" }}
+          >
+            + Nueva cita
+          </button>
+        </div>
+      </div>
+
+      {/* List */}
+      <div style={{ borderTop: "1px solid #252525" }}>
+        {displayList.length === 0 ? (
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>
+            {activeTab === "upcoming" ? "Sin citas próximas" : "Sin citas pasadas"}
+          </p>
+        ) : (
+          displayList.map((apt, i) => (
+            <div key={apt.id} className="orno-row" style={{ padding: "18px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+              <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 400, color: "#F0F0F0" }}>
+                    {apt.serviceName}
+                  </p>
+                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: statusColor[apt.status] ?? "#555555" }}>
+                    {statusLabel[apt.status] ?? apt.status}
+                  </span>
+                </div>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
+                  {new Date(apt.date).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}
+                  {apt.time ? ` · ${apt.time}` : ""}
+                  {apt.employeeName ? ` · ${apt.employeeName}` : ""}
+                  {apt.duration ? ` · ${apt.duration} min` : ""}
+                </p>
+                {apt.notes && (
+                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "3px", fontStyle: "italic" }}>{apt.notes}</p>
+                )}
+                {activeTab === "upcoming" && apt.status !== "cancelled" && (
+                  <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                    <button
+                      className="orno-btn"
+                      onClick={() => router.push("/client/book")}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", background: "none", border: "1px solid #2E2E2E", padding: "5px 12px", cursor: "pointer" }}
+                    >
+                      Reagendar
+                    </button>
+                    <button
+                      className="orno-btn"
+                      onClick={() => handleCancelClick(apt)}
+                      style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", background: "none", border: "none", padding: "5px 0", cursor: "pointer" }}
+                      onMouseEnter={e => (e.currentTarget.style.color = "#E53935")}
+                      onMouseLeave={e => (e.currentTarget.style.color = "#555555")}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {activeTab === "upcoming" && past.length > 0 && (
+        <button
+          className="orno-btn"
+          onClick={() => setActiveTab("past")}
+          style={{ marginTop: "24px", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          Ver historial ({past.length}) →
+        </button>
+      )}
+
+      {appointmentToCancel && (
+        <CancelAppointmentModal
+          isOpen={cancelModalOpen}
+          onClose={() => { setCancelModalOpen(false); setAppointmentToCancel(null) }}
+          onConfirm={handleCancelConfirm}
+          appointmentDetails={{
+            serviceName: appointmentToCancel.serviceName,
+            date: appointmentToCancel.date,
+            time: appointmentToCancel.time,
+            employeeName: appointmentToCancel.employeeName,
+          }}
+        />
+      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+    </div>
+  )
+}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={() => router.push("/client")}>
