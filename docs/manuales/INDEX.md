@@ -1,6 +1,6 @@
 # Barber Manager — Centro de Documentación
 
-**Versión:** 1.2 — Junio 2026  
+**Versión:** 1.3 — Junio 2026  
 **Aplicación:** Barber Manager App (Next.js 15 + Supabase)
 
 ---
@@ -15,6 +15,13 @@
 | [Manual del Sistema](manual-sistema.md) | Desarrolladores y administradores técnicos | API, seguridad, variables de entorno, base de datos y despliegue |
 
 ---
+
+## Novedades v1.3 (Junio 2026)
+
+| # | Mejora | Afecta a |
+|---|--------|----------|
+| 20 | **Refresh visual módulo cliente (Orno)** — nuevo layout con sidebar desktop, navegación inferior mobile y pantallas de citas/historial rediseñadas | Cliente |
+| 21 | **Estabilización de vistas críticas** — ajustes de estructura JSX en páginas de clientes para mejorar confiabilidad en desarrollo | Cliente, Sistema |
 
 ## Novedades v1.2 (Junio 2026)
 

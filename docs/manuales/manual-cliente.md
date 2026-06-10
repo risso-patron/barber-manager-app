@@ -1,8 +1,17 @@
 # Manual del Cliente
 
-**Barber Manager App — Versión 1.2**  
+**Barber Manager App — Versión 1.3**  
 **Perfil:** Cliente de la barbería  
 **Acceso:** Puede usar la app con o sin cuenta registrada
+
+---
+
+## Novedades v1.3
+
+- Se renovó la interfaz del módulo cliente con estilo editorial oscuro (tema Orno).
+- Navegación optimizada: sidebar en escritorio y barra inferior en móvil.
+- Pantalla de citas mejorada con pestañas claras de **Próximas** y **Pasadas**.
+- Historial de citas rediseñado para una lectura más rápida de estados y acciones.
 
 ---
 
@@ -86,6 +95,12 @@ Al ingresar, tu panel muestra una vista general con:
 | Beneficios / Regalos | Códigos de regalo o cupones disponibles para vos |
 | Mensajes | Bandeja de mensajes de la barbería |
 | Mi carrito | Productos disponibles para comprar |
+
+### Navegación del módulo cliente
+
+- **Escritorio:** barra lateral fija con accesos a Inicio, Reservar, Mis citas e Historial.
+- **Celular:** barra inferior fija con los mismos accesos principales.
+- El tema visual es consistente en todas las pantallas del cliente para facilitar lectura y uso diario.
 
 ---
 
@@ -195,6 +210,15 @@ Lista de citas con estado **Pendiente** o **Confirmada**:
 Acciones disponibles:
 - **Reagendar** — ver sección 7
 - **Cancelar** — ver sección 8
+
+### Navegación por pestañas
+
+La pantalla separa las citas en dos pestañas:
+
+- **Próximas:** citas pendientes o confirmadas.
+- **Pasadas:** citas completadas o canceladas.
+
+Esto permite encontrar acciones pendientes con mayor rapidez.
 
 ### Citas completadas
 

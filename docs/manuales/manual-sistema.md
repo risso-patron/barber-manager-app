@@ -1,8 +1,10 @@
 # Manual del Sistema
 
-**Barber Manager App — Versión 1.2**  
+**Barber Manager App — Versión 1.3**  
 **Perfil:** Desarrolladores y administradores técnicos  
 **Stack:** Next.js 15 (App Router) · TypeScript 5 · Supabase · Tailwind CSS · pnpm
+
+> Actualización v1.3: se documentan alias de rutas de empleado (`/barber/*` y `/employee/*`) y consolidación de la documentación operativa.
 
 ---
 

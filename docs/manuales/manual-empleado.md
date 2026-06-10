@@ -1,8 +1,10 @@
 # Manual del Empleado / Barbero
 
-**Barber Manager App — Versión 1.2**  
+**Barber Manager App — Versión 1.3**  
 **Perfil:** Empleado / Barbero  
-**Ruta de acceso:** `/barber` (redirige automáticamente desde `/dashboard` si el rol es `employee`)
+**Ruta de acceso:** `/barber` o `/employee` (redirige automáticamente desde `/dashboard` si el rol es `employee`)
+
+> Nota de compatibilidad: el sistema mantiene ambas rutas activas para el módulo de empleado.
 
 ---
 
@@ -55,7 +57,7 @@ Clic en el ícono de usuario en la barra superior → **Cerrar sesión**.
 
 ## 2. Panel del empleado (Dashboard)
 
-**Ruta:** `/barber`
+**Ruta:** `/barber` (alias operativo: `/employee`)
 
 Al ingresar, verás tu panel personal que muestra únicamente **tus propias citas** — no las de otros empleados.
 

@@ -11,7 +11,7 @@ Los siguientes secrets fueron expuestos en el repositorio y **DEBEN** ser rotado
 ```bash
 # 1. Ir a Resend Dashboard
 https://resend.com/api-keys
-
+ 
 # 2. Eliminar la key expuesta
 - Buscar: re_jE4Rnrkv_KKPpYp2tpxYxVjymWTF2QT9w
 - Click en "Delete"

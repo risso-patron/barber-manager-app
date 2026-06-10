@@ -1,8 +1,10 @@
 # Manual del Administrador
 
-**Barber Manager App — Versión 1.2**  
+**Barber Manager App — Versión 1.3**  
 **Perfil:** Administrador (dueño o gestor de la barbería)  
 **Ruta de acceso:** `/admin`
+
+> Última revisión funcional: junio 2026. Esta versión mantiene el flujo operativo del administrador y consolida mejoras previas de clientes, POS y paginación.
 
 ---
 

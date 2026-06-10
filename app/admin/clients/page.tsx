@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Users, 
-  Plus, 
-  Search, 
+import {
+  Users,
+  Plus,
+  Search,
   Mail,
   Phone,
   Calendar,
@@ -61,7 +61,7 @@ export default function ClientsPage() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (!data) return
-        setClients(data.map((u: { id: string; name: string; email: string; phone: string | null; created_at: string; loyalty_points?: number }) => ({
+        setClients(data.map((u: { id: string; name: string; email: string; phone: string | null; created_at: string; loyalty_points?: number; no_show_count?: number }) => ({
           id: u.id,
           name: u.name,
           email: u.email,
@@ -69,6 +69,7 @@ export default function ClientsPage() {
           createdAt: u.created_at,
           isActive: true,
           loyalty_points: u.loyalty_points ?? 0,
+          no_show_count: u.no_show_count ?? 0,
         })))
       })
   }, [user])
@@ -94,7 +95,7 @@ export default function ClientsPage() {
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    
+
     const newThisMonth = clients.filter(c => {
       const createdDate = new Date(c.createdAt || "2024-01-01")
       return createdDate >= thisMonth
@@ -105,10 +106,10 @@ export default function ClientsPage() {
       return createdDate >= lastMonth && createdDate < thisMonth
     }).length
 
-    const growth = newLastMonth > 0 
+    const growth = newLastMonth > 0
       ? ((newThisMonth - newLastMonth) / newLastMonth * 100).toFixed(0)
       : "0"
-    
+
     return {
       total: clients.length,
       newThisMonth,
@@ -271,42 +272,42 @@ export default function ClientsPage() {
             ) : (
               <>
                 {pagedClients.map((client) => (
-                <div 
-                  key={client.id} 
-                  className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-white"
-                >
-                  {/* Client Info */}
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {client.name.charAt(0).toUpperCase()}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">{client.name}</h3>
-                        {client.isActive !== false ? (
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            Activo
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactivo</Badge>
-                        )}
-                        {/* Loyalty points badge */}
-                        {(client as Client & { loyalty_points?: number }).loyalty_points != null && (
-                          <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                            <Gift className="h-3 w-3" />
-                            <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
-                          </div>
-                        )}
-                        {/* No-show badge */}
-                        {(client as Client & { no_show_count?: number }).no_show_count != null &&
-                         (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
-                            <XCircle className="h-3 w-3" />
-                            <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
-                          </div>
-                        )}
+                  <div
+                    key={client.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-white"
+                  >
+                    {/* Client Info */}
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {client.name.charAt(0).toUpperCase()}
                       </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900">{client.name}</h3>
+                          {client.isActive !== false ? (
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              Activo
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Inactivo</Badge>
+                          )}
+                          {/* Loyalty points badge */}
+                          {(client as Client & { loyalty_points?: number }).loyalty_points != null && (
+                            <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                              <Gift className="h-3 w-3" />
+                              <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
+                            </div>
+                          )}
+                          {/* No-show badge */}
+                          {(client as Client & { no_show_count?: number }).no_show_count != null &&
+                            (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
+                              <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
+                                <XCircle className="h-3 w-3" />
+                                <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
+                              </div>
+                            )}
+                        </div>
                         <div className="flex items-center gap-1">
                           <Mail className="h-3 w-3" />
                           <span>{client.email}</span>
@@ -323,70 +324,69 @@ export default function ClientsPage() {
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions Dropdown */}
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveDropdown(activeDropdown === client.id ? null : client.id)}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    {/* Actions Dropdown */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveDropdown(activeDropdown === client.id ? null : client.id)}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
 
-                    {activeDropdown === client.id && (
-                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
-                        <div className="py-1">
-                          <Link
-                            href={`/admin/clients/${client.id}`}
-                            onClick={() => setActiveDropdown(null)}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Ver perfil
-                          </Link>
+                      {activeDropdown === client.id && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
+                          <div className="py-1">
+                            <Link
+                              href={`/admin/clients/${client.id}`}
+                              onClick={() => setActiveDropdown(null)}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Ver perfil
+                            </Link>
 
-                          <button
-                            onClick={() => {
-                              setEditingClient(client)
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Editar
-                          </button>
+                            <button
+                              onClick={() => {
+                                setEditingClient(client)
+                                setActiveDropdown(null)
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Editar
+                            </button>
 
-                          <button
-                            onClick={() => {
-                              setLoyaltyClient(client)
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-amber-700"
-                          >
-                            <Gift className="h-4 w-4" />
-                            Puntos
-                          </button>
+                            <button
+                              onClick={() => {
+                                setLoyaltyClient(client)
+                                setActiveDropdown(null)
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-amber-700"
+                            >
+                              <Gift className="h-4 w-4" />
+                              Puntos
+                            </button>
 
-                          <div className="border-t my-1"></div>
+                            <div className="border-t my-1"></div>
 
-                          <button
-                            onClick={() => {
-                              setDeletingClient(client)
-                              setActiveDropdown(null)
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Eliminar
-                          </button>
+                            <button
+                              onClick={() => {
+                                setDeletingClient(client)
+                                setActiveDropdown(null)
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
               {/* Pagination controls */}
               {totalPages > 1 && (
