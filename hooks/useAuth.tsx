@@ -40,7 +40,7 @@ export interface UseAuthReturn {
   signUp: (data: SignUpData) => Promise<boolean>
   signIn: (data: SignInData) => Promise<boolean>
   signOut: () => Promise<boolean>
-  updateProfile: (data: any) => Promise<boolean>
+  updateProfile: (data: Record<string, unknown>) => Promise<boolean>
   clearError: () => void
 }
 
@@ -155,7 +155,7 @@ function useAuthInternal(): UseAuthReturn {
   /**
    * Update user profile
    */
-  const handleUpdateProfile = useCallback(async (data: any) => {
+  const handleUpdateProfile = useCallback(async (data: Record<string, unknown>) => {
     setError(null)
 
     if (!user?.id) {

@@ -31,7 +31,7 @@ export function AppointmentModal({
     employeeId: string; employeeName: string
     serviceId: string; serviceName: string
     date: string; time: string; duration: number; price: number
-    status: "pending" | "confirmed" | "completed" | "cancelled"
+    status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
     notes: string
   }>({
     clientId: appointment?.clientId || "",
@@ -282,7 +282,7 @@ export function AppointmentModal({
                 id="status"
                 aria-label="Estado de la cita"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="pending">Pendiente</option>

@@ -408,7 +408,7 @@ export default function ReportsPage() {
 
   const ratingStats = useMemo(() => {
     const completed = filteredAppointments.filter((a) => a.status === "completed")
-    const rated = completed.filter((a) => a.rating != null)
+    const rated = completed.filter((a) => a.rating !== null && a.rating !== undefined)
     const totalRatings = rated.length
     const avgRating =
       totalRatings > 0
@@ -424,8 +424,9 @@ export default function ReportsPage() {
     const barberMap: Record<string, { sum: number; count: number }> = {}
     rated.forEach((a) => {
       if (!barberMap[a.employeeName]) barberMap[a.employeeName] = { sum: 0, count: 0 }
-      barberMap[a.employeeName].sum += a.rating ?? 0
-      barberMap[a.employeeName].count += 1
+      const barberEntry = barberMap[a.employeeName]!
+      barberEntry.sum += a.rating ?? 0
+      barberEntry.count += 1
     })
     const barberRatings = Object.entries(barberMap)
       .map(([name, { sum, count }]) => ({
@@ -442,7 +443,7 @@ export default function ReportsPage() {
     // Build a rate map from loaded employees
     const rateMap = new Map<string, number>()
     employees.forEach((e) => {
-      if (e.commission_rate != null) rateMap.set(e.id, e.commission_rate)
+      if (e.commission_rate !== null && e.commission_rate !== undefined) rateMap.set(e.id, e.commission_rate)
     })
 
     const completed = filteredAppointments.filter((a) => a.status === "completed")
@@ -458,11 +459,12 @@ export default function ReportsPage() {
           rate: rateMap.get(a.employeeId) ?? null,
         }
       }
-      empMap[a.employeeId].services += 1
-      empMap[a.employeeId].gross += a.price
+      const empEntry = empMap[a.employeeId]!
+      empEntry.services += 1
+      empEntry.gross += a.price
       const rate = rateMap.get(a.employeeId)
-      if (rate != null) {
-        empMap[a.employeeId].commission += parseFloat((a.price * rate).toFixed(2))
+      if (rate !== null && rate !== undefined) {
+        empEntry.commission += parseFloat((a.price * rate).toFixed(2))
       }
     })
 
@@ -1135,10 +1137,10 @@ export default function ReportsPage() {
                         <td className="py-3 text-right text-muted-foreground">{row.services}</td>
                         <td className="py-3 text-right">${row.gross.toFixed(2)}</td>
                         <td className="py-3 text-right text-muted-foreground">
-                          {row.rate != null ? `${(row.rate * 100).toFixed(0)}%` : "—"}
+                          {row.rate !== null && row.rate !== undefined ? `${(row.rate * 100).toFixed(0)}%` : "—"}
                         </td>
                         <td className="py-3 text-right font-semibold text-emerald-700">
-                          {row.rate != null ? `$${row.commission.toFixed(2)}` : "Sin tasa"}
+                          {row.rate !== null && row.rate !== undefined ? `$${row.commission.toFixed(2)}` : "Sin tasa"}
                         </td>
                       </tr>
                     ))}

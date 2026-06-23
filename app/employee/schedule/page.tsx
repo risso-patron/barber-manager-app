@@ -54,7 +54,7 @@ type ScheduleBlock = {
 
 function timeToMins(t: string) {
   const [h, m] = t.split(":").map(Number)
-  return h * 60 + (m ?? 0)
+  return h! * 60 + (m ?? 0)
 }
 
 function getWeekDays(date: Date): Date[] {
@@ -108,9 +108,9 @@ export default function EmployeeSchedulePage() {
         service:services(id, name, price, duration)`)
       .eq("barber_id", user.id)
       .order("appointment_date")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then(({ data }) => {
         if (data) setAppointments(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (data as any[]).map(a => ({
             id: a.id,
             clientId: a.client?.id || "",

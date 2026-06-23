@@ -28,7 +28,7 @@ interface Appointment {
   employeeName: string
   date: string
   time: string
-  status: "pending" | "confirmed" | "completed" | "cancelled"
+  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
   duration: number
   notes?: string
 }
@@ -392,7 +392,7 @@ export default function ClientAppointmentsPage() {
         }}
       />
 
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

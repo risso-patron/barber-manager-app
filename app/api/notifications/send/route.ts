@@ -115,7 +115,7 @@ function generateEmailBody(data: BookingNotification): string {
         </div>
         <div class="content">
           <h2>¡Hola ${data.clientName}!</h2>
-          <p>${getEmailMessage(data.type)}</p>
+          <p>${getEmailMessage(data.type, data)}</p>
           
           <div class="booking-details">
             <h3>Detalles de tu Cita:</h3>
@@ -154,7 +154,7 @@ function generateEmailBody(data: BookingNotification): string {
   `
 }
 
-function getEmailMessage(type: BookingNotification["type"]): string {
+function getEmailMessage(type: BookingNotification["type"], data: BookingNotification): string {
   switch (type) {
     case "new_booking":
       return "Tu reserva ha sido recibida exitosamente. Te confirmaremos pronto."

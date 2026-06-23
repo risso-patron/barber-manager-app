@@ -1,9 +1,9 @@
-import test from '@playwright/test';
+import test, { type Response as PlaywrightResponse } from '@playwright/test';
 
 const { expect } = test;
 
 test.describe('Reserva de cita - E2E', () => {
-  test('Cliente puede completar el flujo de reserva exitosamente', async ({ page }: any) => {
+  test('Cliente puede completar el flujo de reserva exitosamente', async ({ page }) => {
     // 1. Navegar a la página de reserva
     await page.goto('/reservar');
     
@@ -45,7 +45,7 @@ test.describe('Reserva de cita - E2E', () => {
     
     // 6. Confirmar reserva
     const bookingResponsePromise = page.waitForResponse(
-      (response: any) =>
+      (response: PlaywrightResponse) =>
         response.url().includes('/api/bookings/public') &&
         response.request().method() === 'POST',
       { timeout: 20000 }

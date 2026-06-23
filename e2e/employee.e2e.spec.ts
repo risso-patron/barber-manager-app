@@ -1,7 +1,6 @@
 import test from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
-declare const process: any;
 const { expect } = test;
 
 // Setup Supabase client for DB operations (bypass UI)
@@ -95,7 +94,7 @@ test.describe('Flujo de Empleado - E2E', () => {
     }
   });
 
-  test('Empleado puede iniciar sesión, ver dashboard y completar una cita', async ({ page }: any) => {
+  test('Empleado puede iniciar sesión, ver dashboard y completar una cita', async ({ page }) => {
     // 1. Iniciar sesión
     await page.goto('/auth/login');
     await expect(page.getByText('Inicia sesión en tu cuenta')).toBeVisible();

@@ -155,8 +155,8 @@ export default function POSPage() {
       .single()
       .then(({ data }) => {
         if (!data) return
-        const svc = data.service as { id: string; name: string; price: number } | null
-        const cli = data.client as { id: string; name: string; loyalty_points: number } | null
+        const svc = data.service as unknown as { id: string; name: string; price: number } | null
+        const cli = data.client as unknown as { id: string; name: string; loyalty_points: number } | null
         if (svc) addItem("service", svc.id, svc.name, svc.price)
         if (cli) setSelectedClient({ id: cli.id, name: cli.name, loyalty_points: cli.loyalty_points ?? 0 })
       })

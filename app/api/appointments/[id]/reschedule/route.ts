@@ -138,7 +138,7 @@ export async function PATCH(
       }
 
       const targetDate = new Date(`${appointment_date}T${appointment_time}:00`)
-      const dayName = DAY_NAMES[targetDate.getDay()]
+      const dayName = DAY_NAMES[targetDate.getDay()]!
       const daySchedule = businessSchedule[dayName]
 
       if (!daySchedule?.isOpen) {
@@ -152,9 +152,9 @@ export async function PATCH(
       const [closeH, closeM] = daySchedule.close.split(":").map(Number)
       const [reqH, reqM] = appointment_time.split(":").map(Number)
 
-      const openMinutes = openH * 60 + openM
-      const closeMinutes = closeH * 60 + closeM
-      const reqMinutes = reqH * 60 + reqM
+      const openMinutes = openH! * 60 + openM!
+      const closeMinutes = closeH! * 60 + closeM!
+      const reqMinutes = reqH! * 60 + reqM!
 
       if (reqMinutes < openMinutes || reqMinutes >= closeMinutes) {
         return NextResponse.json(
@@ -217,9 +217,9 @@ export async function PATCH(
         .eq("setting_key", "barbershop_phone")
         .maybeSingle()
 
-      const client = (appointment as { client: { name: string; email: string; phone: string } | null }).client
-      const barber = (appointment as { barber: { name: string; email: string } | null }).barber
-      const service = (appointment as { service: { name: string; price: number } | null }).service
+      const client = (appointment as unknown as { client: { name: string; email: string; phone: string } | null }).client
+      const barber = (appointment as unknown as { barber: { name: string; email: string } | null }).barber
+      const service = (appointment as unknown as { service: { name: string; price: number } | null }).service
 
       const notificationPayload = {
         type: "reschedule",

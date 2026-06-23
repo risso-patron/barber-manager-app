@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!["admin", "manager"].includes(caller?.role ?? "")) {
+      return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
+    }
+
+    const { user_id, points, description } = parsed.data
     const adminClient = createAdminSupabaseClient()
 
     // Fetch current balance to prevent negative total

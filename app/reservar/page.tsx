@@ -52,7 +52,7 @@ interface BookingData {
 
 function addTime(base: string, minutes: number): string {
   const [h, m] = base.split(":").map(Number)
-  const total = h * 60 + m + minutes
+  const total = h! * 60 + m! + minutes
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`
 }
 
@@ -377,7 +377,7 @@ export default function ReservarPage() {
                         {barber.specialty && (
                           <p className="text-sm text-gray-600 mb-1">{barber.specialty}</p>
                         )}
-                        {barber.avg_rating != null ? (
+                        {barber.avg_rating !== null && barber.avg_rating !== undefined ? (
                           <div className="flex items-center justify-center gap-1 text-sm">
                             <span className="text-yellow-500">★</span>
                             <span className="font-medium">{barber.avg_rating}</span>

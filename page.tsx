@@ -381,7 +381,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-zinc-300 text-sm leading-relaxed mb-5 font-serif-light text-base italic">
-                  "{t.text}"
+                  &ldquo;{t.text}&rdquo;
                 </p>
                 <div>
                   <div className="font-semibold text-sm">{t.name}</div>

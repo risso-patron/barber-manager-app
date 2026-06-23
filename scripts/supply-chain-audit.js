@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 /*
  * Supply chain hardening audit (Node.js/NPM/PNPM - 2026 baseline)

@@ -16,7 +16,7 @@ const DEMO_CLIENT = {
 };
 
 test.describe('Cancelación de cita - E2E', () => {
-  test('Cliente puede cancelar una cita desde su panel', async ({ page }: any) => {
+  test('Cliente puede cancelar una cita desde su panel', async ({ page }) => {
     // 1. Simular sesión demo estableciendo localStorage antes de navegar
     await page.addInitScript((user: typeof DEMO_CLIENT) => {
       localStorage.setItem('currentUser', JSON.stringify(user));

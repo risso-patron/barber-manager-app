@@ -1,3 +1,4 @@
+// @ts-nocheck — Deno Edge Function: módulos Deno no son resolvibles por el compilador TS de Node.
 // supabase/functions/process-notification-queue/index.ts
 //
 // Edge Function — Procesa la cola de notificaciones pendientes.

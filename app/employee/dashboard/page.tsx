@@ -40,7 +40,7 @@ export default function EmployeeDashboard() {
         .single(),
     ])
 
-    if (userResult.data?.commission_rate != null) {
+    if (userResult.data?.commission_rate !== null && userResult.data?.commission_rate !== undefined) {
       setCommissionRate(userResult.data.commission_rate)
     }
 
@@ -154,8 +154,8 @@ export default function EmployeeDashboard() {
     // Use stored commission_amount when available; fall back to live calculation
     const monthCommission = thisMonthCompleted.reduce((sum, apt) => {
       const stored = (apt as unknown as { commission_amount?: number }).commission_amount
-      if (stored != null) return sum + stored
-      if (commissionRate != null) return sum + apt.price * commissionRate
+      if (stored !== null && stored !== undefined) return sum + stored
+      if (commissionRate !== null && commissionRate !== undefined) return sum + apt.price * commissionRate
       return sum
     }, 0)
 
@@ -170,7 +170,7 @@ export default function EmployeeDashboard() {
       avgRating,
       ratedCount: rated.length,
       monthCommission,
-      commissionPct: commissionRate != null ? commissionRate * 100 : null,
+      commissionPct: commissionRate !== null && commissionRate !== undefined ? commissionRate * 100 : null,
     }
   }, [appointments, todayDate, commissionRate])
 
@@ -434,7 +434,7 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* ── Comisiones del mes ─────────────── */}
-        {stats.commissionPct != null && (
+        {stats.commissionPct !== null && stats.commissionPct !== undefined && (
           <>
             <div className="pb-3">
               <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Comisiones este mes</p>

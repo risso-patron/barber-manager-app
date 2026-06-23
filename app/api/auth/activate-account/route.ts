@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 /**
  * Activa la cuenta de un invitado que ya tiene un registro en auth.users (creado por
  * el booking API) pero sin contraseña.
@@ -18,6 +13,11 @@ const supabase = createClient(
  * 3. Pone la contraseña con admin.updateUserById
  */
 export async function POST(request: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   try {
     const { phone, email, password } = await request.json()
 

@@ -56,7 +56,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     role: defaultRole,
     specialty: defaultSpecialty,
     avatar: employee?.avatar || "",
-    commission_rate: employee?.commission_rate != null
+    commission_rate: employee?.commission_rate !== null && employee?.commission_rate !== undefined
       ? parseFloat((employee.commission_rate * 100).toFixed(2))
       : 0,
   })

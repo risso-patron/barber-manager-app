@@ -3,7 +3,7 @@ import test from '@playwright/test';
 const { expect } = test;
 
 test.describe('Login cliente - E2E', () => {
-  test('Cliente puede iniciar sesión con credenciales demo', async ({ page }: any) => {
+  test('Cliente puede iniciar sesión con credenciales demo', async ({ page }) => {
     // 1. Navegar a la página de login
     await page.goto('/auth/login');
 

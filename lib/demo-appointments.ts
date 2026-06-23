@@ -1,5 +1,5 @@
 // Demo data for appointments management
-export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled"
+export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
 
 export interface Appointment {
   id: string
