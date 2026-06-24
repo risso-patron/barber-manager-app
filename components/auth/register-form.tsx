@@ -7,10 +7,10 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TermsModal } from "@/components/auth/terms-modal"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, ChevronRight } from "lucide-react"
 
 interface RegisterFormData {
   name: string
@@ -37,16 +37,12 @@ export function RegisterForm() {
   const password = watch("password")
 
   const onSubmit = async (data: RegisterFormData) => {
-    // Verificar si ya aceptó términos
     const consent = localStorage.getItem('userConsent');
     if (!consent) {
-      // Mostrar modal de términos
       setPendingFormData(data);
       setShowTermsModal(true);
       return;
     }
-
-    // Proceder con el registro
     await processRegistration(data);
   };
 
@@ -70,12 +66,10 @@ export function RegisterForm() {
     setIsNetworkError(false)
 
     try {
-      // Check if we're in a preview environment
       const isPreview =
         window.location.hostname.includes("vusercontent.net") || window.location.hostname.includes("preview")
 
       if (isPreview) {
-        // Simulate successful registration in preview mode
         setError(
           "Modo de demostración: El registro se ha simulado exitosamente. En producción, esto crearía una cuenta real.",
         )
@@ -87,14 +81,12 @@ export function RegisterForm() {
 
       const supabase = createClient()
 
-      // Test connection first
       const { data: testData, error: testError } = await supabase.from("users").select("count").limit(1)
 
       if (testError && testError.message.includes("Failed to fetch")) {
         throw new Error("NETWORK_ERROR")
       }
 
-      // Sign up with Supabase Auth with metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -116,7 +108,6 @@ export function RegisterForm() {
       }
 
       if (authData.user) {
-        // Try to create user profile manually if trigger doesn't work
         try {
           const { error: profileError } = await supabase.from("users").insert({
             id: authData.user.id,
@@ -126,7 +117,6 @@ export function RegisterForm() {
             phone: data.phone || null,
           })
 
-          // Ignore error if user already exists (trigger worked)
           if (profileError && !profileError.message.includes("duplicate key")) {
             console.error("Profile creation error:", profileError)
           }
@@ -134,7 +124,6 @@ export function RegisterForm() {
           console.error("Profile creation failed:", profileErr)
         }
 
-        // Show success message and redirect
         router.push("/auth/login?message=Registro exitoso. Revisa tu email para confirmar tu cuenta.")
       }
     } catch (err: unknown) {
@@ -161,114 +150,171 @@ export function RegisterForm() {
         onDecline={handleTermsDecline}
       />
       
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-          <CardDescription>Regístrate en Ornō</CardDescription>
+      <Card className="border border-[#252525] bg-[#161616] shadow-xl w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-[#F0F0F0]">Crear Cuenta</h1>
+          <CardDescription className="text-[#8A8A8A]">
+            Únete a Ornō hoy mismo
+          </CardDescription>
         </CardHeader>
-      <CardContent>
-        {isNetworkError && (
-          <Alert className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Modo de Vista Previa:</strong> Esta es una demostración. En producción, la aplicación se conectará
-              correctamente a Supabase.
-            </AlertDescription>
-          </Alert>
-        )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre Completo</Label>
-            <Input
-              id="name"
-              placeholder="Juan Pérez"
-              {...register("name", {
-                required: "El nombre es requerido",
-                minLength: {
-                  value: 2,
-                  message: "El nombre debe tener al menos 2 caracteres",
-                },
-              })}
-            />
-            {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="tu@email.com"
-              {...register("email", {
-                required: "El email es requerido",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Email inválido",
-                },
-              })}
-            />
-            {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Teléfono (Opcional)</Label>
-            <Input id="phone" type="tel" placeholder="+1234567890" {...register("phone")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password", {
-                required: "La contraseña es requerida",
-                minLength: {
-                  value: 6,
-                  message: "La contraseña debe tener al menos 6 caracteres",
-                },
-              })}
-            />
-            {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              {...register("confirmPassword", {
-                required: "Confirma tu contraseña",
-                validate: (value) => value === password || "Las contraseñas no coinciden",
-              })}
-            />
-            {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>}
-          </div>
-
-          {error && (
-            <Alert variant={isNetworkError ? "default" : "destructive"}>
-              <AlertDescription>{error}</AlertDescription>
+        <CardContent className="space-y-5">
+          {isNetworkError && (
+            <Alert className="bg-yellow-950/30 border-yellow-900/50">
+              <AlertCircle className="h-4 w-4 text-yellow-400" />
+              <AlertDescription className="text-yellow-200 text-sm">
+                <strong>Modo de Vista Previa:</strong> Esta es una demostración. En producción funcionará correctamente.
+              </AlertDescription>
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isNetworkError ? "Simular Registro" : "Crear Cuenta"}
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-[#F0F0F0]">
+                Nombre Completo
+              </Label>
+              <Input
+                id="name"
+                placeholder="Juan Pérez"
+                className="bg-[#0E0E0E] border-[#252525] text-[#F0F0F0] placeholder:text-[#8A8A8A] focus:border-[#E53935] focus:ring-[#E53935]"
+                {...register("name", {
+                  required: "El nombre es requerido",
+                  minLength: {
+                    value: 2,
+                    message: "El nombre debe tener al menos 2 caracteres",
+                  },
+                })}
+              />
+              {errors.name && (
+                <p className="text-sm text-[#E53935]">{errors.name.message}</p>
+              )}
+            </div>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#F0F0F0]">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                className="bg-[#0E0E0E] border-[#252525] text-[#F0F0F0] placeholder:text-[#8A8A8A] focus:border-[#E53935] focus:ring-[#E53935]"
+                {...register("email", {
+                  required: "El email es requerido",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Email inválido",
+                  },
+                })}
+              />
+              {errors.email && (
+                <p className="text-sm text-[#E53935]">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-[#F0F0F0]">
+                Teléfono <span className="text-[#8A8A8A]">(Opcional)</span>
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+1234567890"
+                className="bg-[#0E0E0E] border-[#252525] text-[#F0F0F0] placeholder:text-[#8A8A8A] focus:border-[#E53935] focus:ring-[#E53935]"
+                {...register("phone")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-[#F0F0F0]">
+                Contraseña
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                className="bg-[#0E0E0E] border-[#252525] text-[#F0F0F0] placeholder:text-[#8A8A8A] focus:border-[#E53935] focus:ring-[#E53935]"
+                {...register("password", {
+                  required: "La contraseña es requerida",
+                  minLength: {
+                    value: 6,
+                    message: "La contraseña debe tener al menos 6 caracteres",
+                  },
+                })}
+              />
+              {errors.password && (
+                <p className="text-sm text-[#E53935]">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-[#F0F0F0]">
+                Confirmar Contraseña
+              </Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                className="bg-[#0E0E0E] border-[#252525] text-[#F0F0F0] placeholder:text-[#8A8A8A] focus:border-[#E53935] focus:ring-[#E53935]"
+                {...register("confirmPassword", {
+                  required: "Confirma tu contraseña",
+                  validate: (value) => value === password || "Las contraseñas no coinciden",
+                })}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-[#E53935]">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            {error && (
+              <Alert className={isNetworkError ? "bg-yellow-950/30 border-yellow-900/50" : "bg-red-950/30 border-red-900/50"}>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className={isNetworkError ? "text-yellow-200" : "text-red-200"}>
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full bg-[#E53935] text-white hover:bg-[#D32F2F] transition-colors font-medium group"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creando cuenta...
+                </>
+              ) : (
+                <>
+                  {isNetworkError ? "Simular Registro" : "Crear Cuenta"}
+                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#252525]" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-[#161616] text-[#8A8A8A]">O</span>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-[#8A8A8A]">
             ¿Ya tienes cuenta?{" "}
-            <Button variant="link" className="p-0" onClick={() => router.push("/auth/login")}>
+            <Button 
+              variant="ghost" 
+              className="p-0 text-[#E53935] hover:text-[#F0F0F0] h-auto font-medium"
+              onClick={() => router.push("/auth/login")}
+            >
               Inicia sesión aquí
             </Button>
           </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
     </>
   )
 }
