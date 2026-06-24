@@ -163,7 +163,6 @@ export default function ReportsPage() {
     const filtered = appointments.filter(apt => {
       const aptDate = new Date(apt.date)
       
-      // Filter by period
       let inPeriod = false
       switch (period) {
         case "today":
@@ -186,16 +185,13 @@ export default function ReportsPage() {
           break
       }
 
-      // Filter by employee
       const matchesEmployee = selectedEmployee === "all" || apt.employeeId === selectedEmployee
-
       return inPeriod && matchesEmployee
     })
 
     return filtered
   }, [period, selectedEmployee, appointments])
 
-  // Helper para calcular rango de fechas según período
   const getDateRange = (offset = 0) => {
     const now = new Date()
     let start = new Date()
@@ -229,7 +225,6 @@ export default function ReportsPage() {
     return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) }
   }
 
-  // Calcular stats para período anterior
   const previousPeriodAppointments = useMemo(() => {
     const { start, end } = getDateRange(1)
     return appointments.filter(apt => {
@@ -240,25 +235,16 @@ export default function ReportsPage() {
   }, [period, selectedEmployee, appointments]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const stats = useMemo(() => {
-    // Función para calcular stats de un grupo de appointments
     const calculateMetrics = (appts: ReportAppointment[]) => {
       const completed = appts.filter(apt => apt.status === "completed")
       const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
       const averageTicket = completed.length > 0 ? totalRevenue / completed.length : 0
-      return {
-        completed: completed.length,
-        totalRevenue,
-        averageTicket,
-      }
+      return { completed: completed.length, totalRevenue, averageTicket }
     }
 
-    // Stats período actual
     const currentMetrics = calculateMetrics(filteredAppointments)
-
-    // Stats período anterior
     const previousMetrics = calculateMetrics(previousPeriodAppointments)
 
-    // Calcular cambios %
     const revenueChange = previousMetrics.totalRevenue > 0
       ? ((currentMetrics.totalRevenue - previousMetrics.totalRevenue) / previousMetrics.totalRevenue) * 100
       : 0
@@ -266,23 +252,18 @@ export default function ReportsPage() {
       ? ((currentMetrics.completed - previousMetrics.completed) / previousMetrics.completed) * 100
       : 0
 
-    // Resto de stats
     const completed = filteredAppointments.filter(apt => apt.status === "completed")
     const cancelled = filteredAppointments.filter(apt => apt.status === "cancelled")
     const pending = filteredAppointments.filter(apt => apt.status === "pending")
     
     const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
     const averageTicket = completed.length > 0 ? totalRevenue / completed.length : 0
-    
     const totalDuration = completed.reduce((sum, apt) => sum + apt.duration, 0)
     const averageDuration = completed.length > 0 ? totalDuration / completed.length : 0
 
-    // Service popularity
     const serviceStats = completed.reduce((acc, apt) => {
       const serviceName = apt.serviceName
-      if (!acc[serviceName]) {
-        acc[serviceName] = { count: 0, revenue: 0 }
-      }
+      if (!acc[serviceName]) acc[serviceName] = { count: 0, revenue: 0 }
       acc[serviceName].count++
       acc[serviceName].revenue += apt.price
       return acc
@@ -292,7 +273,6 @@ export default function ReportsPage() {
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .slice(0, 5)
 
-    // Gráfico de tendencia temporal (últimos N períodos)
     const trendData = []
     const numPeriods = period === "year" ? 12 : period === "month" ? 4 : period === "week" ? 4 : 7
     for (let i = numPeriods - 1; i >= 0; i--) {
@@ -318,19 +298,12 @@ export default function ReportsPage() {
         label = date.toLocaleDateString("es-ES", { month: "short", day: "2-digit" })
       }
 
-      trendData.push({
-        label,
-        ingresos: periodRevenue,
-        citas: periodCompleted.length,
-      })
+      trendData.push({ label, ingresos: periodRevenue, citas: periodCompleted.length })
     }
 
-    // Employee performance
     const employeeStats = completed.reduce((acc, apt) => {
       const employeeName = apt.employeeName
-      if (!acc[employeeName]) {
-        acc[employeeName] = { count: 0, revenue: 0 }
-      }
+      if (!acc[employeeName]) acc[employeeName] = { count: 0, revenue: 0 }
       acc[employeeName].count++
       acc[employeeName].revenue += apt.price
       return acc
@@ -339,26 +312,21 @@ export default function ReportsPage() {
     const topEmployees = Object.entries(employeeStats)
       .sort((a, b) => b[1].revenue - a[1].revenue)
 
-    // Client stats
     const uniqueClients = new Set(completed.map(apt => apt.clientId)).size
     const repeatClients = completed.reduce((acc, apt) => {
       acc[apt.clientId] = (acc[apt.clientId] || 0) + 1
       return acc
     }, {} as Record<string, number>)
-    
     const clientsWithMultipleVisits = Object.values(repeatClients).filter(count => count > 1).length
 
-    // Daily distribution
     const dailyRevenue = completed.reduce((acc, apt) => {
       const date = apt.date
       acc[date] = (acc[date] || 0) + apt.price
       return acc
     }, {} as Record<string, number>)
 
-    const bestDay = Object.entries(dailyRevenue)
-      .sort((a, b) => b[1] - a[1])[0]
+    const bestDay = Object.entries(dailyRevenue).sort((a, b) => b[1] - a[1])[0]
 
-    // Datos para gráfico de ingresos diarios (últimos 14 días del período)
     const dailyMap = completed.reduce((acc, apt) => {
       acc[apt.date] = (acc[apt.date] || 0) + apt.price
       return acc
@@ -373,8 +341,7 @@ export default function ReportsPage() {
         ingresos: revenue,
       }))
 
-    // Datos para gráfico de torta de servicios
-    const serviceChartData = topServices.map(([name, data], _i) => ({
+    const serviceChartData = topServices.map(([name, data]) => ({
       name: name.length > 14 ? name.slice(0, 14) + "…" : name,
       value: data.revenue,
       count: data.count,
@@ -408,25 +375,24 @@ export default function ReportsPage() {
 
   const ratingStats = useMemo(() => {
     const completed = filteredAppointments.filter((a) => a.status === "completed")
-    const rated = completed.filter((a) => a.rating != null)
+    const rated = completed.filter((a) => a.rating !== null && a.rating !== undefined)
     const totalRatings = rated.length
-    const avgRating =
-      totalRatings > 0
-        ? rated.reduce((sum, a) => sum + (a.rating ?? 0), 0) / totalRatings
-        : null
+    const avgRating = totalRatings > 0
+      ? rated.reduce((sum, a) => sum + (a.rating ?? 0), 0) / totalRatings
+      : null
 
     const distribution = [5, 4, 3, 2, 1].map((star) => ({
       star,
       count: rated.filter((a) => a.rating === star).length,
     }))
 
-    // Per-barber avg
     const barberMap: Record<string, { sum: number; count: number }> = {}
     rated.forEach((a) => {
-      if (!barberMap[a.employeeName]) barberMap[a.employeeName] = { sum: 0, count: 0 }
-      barberMap[a.employeeName].sum += a.rating ?? 0
-      barberMap[a.employeeName].count += 1
-    })
+  if (!barberMap[a.employeeName]) barberMap[a.employeeName] = { sum: 0, count: 0 }
+  const entry = barberMap[a.employeeName]!
+  entry.sum += a.rating ?? 0
+  entry.count += 1
+})
     const barberRatings = Object.entries(barberMap)
       .map(([name, { sum, count }]) => ({
         name,
@@ -439,32 +405,34 @@ export default function ReportsPage() {
   }, [filteredAppointments])
 
   const commissionStats = useMemo(() => {
-    // Build a rate map from loaded employees
     const rateMap = new Map<string, number>()
     employees.forEach((e) => {
-      if (e.commission_rate != null) rateMap.set(e.id, e.commission_rate)
+      if (e.commission_rate !== null && e.commission_rate !== undefined) {
+        rateMap.set(e.id, e.commission_rate)
+      }
     })
 
     const completed = filteredAppointments.filter((a) => a.status === "completed")
 
     const empMap: Record<string, { name: string; services: number; gross: number; commission: number; rate: number | null }> = {}
     completed.forEach((a) => {
-      if (!empMap[a.employeeId]) {
-        empMap[a.employeeId] = {
-          name: a.employeeName,
-          services: 0,
-          gross: 0,
-          commission: 0,
-          rate: rateMap.get(a.employeeId) ?? null,
-        }
-      }
-      empMap[a.employeeId].services += 1
-      empMap[a.employeeId].gross += a.price
-      const rate = rateMap.get(a.employeeId)
-      if (rate != null) {
-        empMap[a.employeeId].commission += parseFloat((a.price * rate).toFixed(2))
-      }
-    })
+  if (!empMap[a.employeeId]) {
+    empMap[a.employeeId] = {
+      name: a.employeeName,
+      services: 0,
+      gross: 0,
+      commission: 0,
+      rate: rateMap.get(a.employeeId) ?? null,
+    }
+  }
+  const entry = empMap[a.employeeId]!
+  entry.services += 1
+  entry.gross += a.price
+  const rate = rateMap.get(a.employeeId)
+  if (rate !== null && rate !== undefined) {
+    entry.commission += parseFloat((a.price * rate).toFixed(2))
+  }
+})
 
     const rows = Object.values(empMap).sort((a, b) => b.gross - a.gross)
     const totalCommission = rows.reduce((sum, r) => sum + r.commission, 0)
@@ -578,36 +546,11 @@ export default function ReportsPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex gap-2">
-              <Button
-                variant={period === "today" ? "default" : "outline"}
-                onClick={() => setPeriod("today")}
-                size="sm"
-              >
-                Hoy
-              </Button>
-              <Button
-                variant={period === "week" ? "default" : "outline"}
-                onClick={() => setPeriod("week")}
-                size="sm"
-              >
-                Semana
-              </Button>
-              <Button
-                variant={period === "month" ? "default" : "outline"}
-                onClick={() => setPeriod("month")}
-                size="sm"
-              >
-                Mes
-              </Button>
-              <Button
-                variant={period === "year" ? "default" : "outline"}
-                onClick={() => setPeriod("year")}
-                size="sm"
-              >
-                Año
-              </Button>
+              <Button variant={period === "today" ? "default" : "outline"} onClick={() => setPeriod("today")} size="sm">Hoy</Button>
+              <Button variant={period === "week" ? "default" : "outline"} onClick={() => setPeriod("week")} size="sm">Semana</Button>
+              <Button variant={period === "month" ? "default" : "outline"} onClick={() => setPeriod("month")} size="sm">Mes</Button>
+              <Button variant={period === "year" ? "default" : "outline"} onClick={() => setPeriod("year")} size="sm">Año</Button>
             </div>
-            
             <select
               aria-label="Filtrar por empleado"
               value={selectedEmployee}
@@ -634,12 +577,9 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Ticket promedio: ${stats.averageTicket.toFixed(2)}
-              </p>
+              <p className="text-xs text-muted-foreground">Ticket promedio: ${stats.averageTicket.toFixed(2)}</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Citas Completadas</CardTitle>
@@ -647,12 +587,9 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.completed}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.completionRate.toFixed(1)}% tasa de finalización
-              </p>
+              <p className="text-xs text-muted-foreground">{stats.completionRate.toFixed(1)}% tasa de finalización</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Clientes Únicos</CardTitle>
@@ -660,12 +597,9 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.uniqueClients}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.retentionRate.toFixed(1)}% tasa de retención
-              </p>
+              <p className="text-xs text-muted-foreground">{stats.retentionRate.toFixed(1)}% tasa de retención</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Duración Promedio</CardTitle>
@@ -673,16 +607,13 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.averageDuration.toFixed(0)} min</div>
-              <p className="text-xs text-muted-foreground">
-                Por servicio
-              </p>
+              <p className="text-xs text-muted-foreground">Por servicio</p>
             </CardContent>
           </Card>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
-        {/* Gráfico ingresos diarios */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -708,7 +639,6 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Gráfico de distribución servicios */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -744,7 +674,6 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {/* Gráfico de tendencia temporal */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -771,7 +700,6 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Comparativas período anterior */}
       <div className="grid gap-6 md:grid-cols-2 mb-6">
         <Card>
           <CardHeader>
@@ -829,7 +757,6 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 mb-6">
-        {/* Top Services */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -843,17 +770,13 @@ export default function ReportsPage() {
               {stats.topServices.map(([service, data], index) => (
                 <div key={service} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
-                      {index + 1}
-                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">{index + 1}</div>
                     <div>
                       <p className="font-medium">{service}</p>
                       <p className="text-xs text-muted-foreground">{data.count} servicios</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">${data.revenue.toFixed(2)}</p>
-                  </div>
+                  <p className="font-bold text-green-600">${data.revenue.toFixed(2)}</p>
                 </div>
               ))}
               {stats.topServices.length === 0 && (
@@ -863,7 +786,6 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Employee Performance */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -877,9 +799,7 @@ export default function ReportsPage() {
               {stats.topEmployees.map(([employee, data], index) => (
                 <div key={employee} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold text-sm">
-                      {index + 1}
-                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold text-sm">{index + 1}</div>
                     <div>
                       <p className="font-medium">{employee}</p>
                       <p className="text-xs text-muted-foreground">{data.count} servicios</p>
@@ -887,9 +807,7 @@ export default function ReportsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-green-600">${data.revenue.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${(data.revenue / data.count).toFixed(2)} promedio
-                    </p>
+                    <p className="text-xs text-muted-foreground">${(data.revenue / data.count).toFixed(2)} promedio</p>
                   </div>
                 </div>
               ))}
@@ -901,7 +819,6 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {/* Additional Stats */}
       <div className="grid gap-6 md:grid-cols-3 mb-6">
         <Card>
           <CardHeader>
@@ -912,31 +829,15 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Completadas</span>
-                <span className="font-medium text-green-600">{stats.completed}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Canceladas</span>
-                <span className="font-medium text-red-600">{stats.cancelled}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Pendientes</span>
-                <span className="font-medium text-yellow-600">{stats.pending}</span>
-              </div>
+              <div className="flex justify-between"><span className="text-sm">Completadas</span><span className="font-medium text-green-600">{stats.completed}</span></div>
+              <div className="flex justify-between"><span className="text-sm">Canceladas</span><span className="font-medium text-red-600">{stats.cancelled}</span></div>
+              <div className="flex justify-between"><span className="text-sm">Pendientes</span><span className="font-medium text-yellow-600">{stats.pending}</span></div>
               <div className="pt-2 border-t">
-                <div className="flex justify-between font-semibold">
-                  <span>Total</span>
-                  <span>{stats.totalAppointments}</span>
-                </div>
+                <div className="flex justify-between font-semibold"><span>Total</span><span>{stats.totalAppointments}</span></div>
               </div>
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  Tasa de finalización: <span className="font-bold">{stats.completionRate.toFixed(1)}%</span>
-                </p>
-                <p className="text-sm text-red-900 mt-1">
-                  Tasa de cancelación: <span className="font-bold">{stats.cancellationRate.toFixed(1)}%</span>
-                </p>
+                <p className="text-sm text-blue-900">Tasa de finalización: <span className="font-bold">{stats.completionRate.toFixed(1)}%</span></p>
+                <p className="text-sm text-red-900 mt-1">Tasa de cancelación: <span className="font-bold">{stats.cancellationRate.toFixed(1)}%</span></p>
               </div>
             </div>
           </CardContent>
@@ -961,9 +862,7 @@ export default function ReportsPage() {
               </div>
               <div className="pt-2 border-t">
                 <p className="text-sm text-muted-foreground">Tasa de retención</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {stats.retentionRate.toFixed(1)}%
-                </p>
+                <p className="text-2xl font-bold text-purple-600">{stats.retentionRate.toFixed(1)}%</p>
               </div>
             </div>
           </CardContent>
@@ -983,31 +882,23 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Fecha</p>
                     <p className="text-lg font-semibold">
-                      {new Date(stats.bestDay[0]).toLocaleDateString('es-ES', {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long'
-                      })}
+                      {new Date(stats.bestDay[0]).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Ingresos generados</p>
-                    <p className="text-3xl font-bold text-green-600">
-                      ${stats.bestDay[1].toFixed(2)}
-                    </p>
+                    <p className="text-3xl font-bold text-green-600">${stats.bestDay[1].toFixed(2)}</p>
                   </div>
                 </>
               ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  No hay datos disponibles
-                </p>
+                <p className="text-center text-muted-foreground py-8">No hay datos disponibles</p>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Ratings Section */}
+      {/* Ratings */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1018,56 +909,30 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent>
           {ratingStats.totalRatings === 0 ? (
-            <p className="text-center text-muted-foreground py-6">
-              No hay calificaciones en este período.
-            </p>
+            <p className="text-center text-muted-foreground py-6">No hay calificaciones en este período.</p>
           ) : (
             <div className="grid gap-6 md:grid-cols-3">
-              {/* Overall avg */}
               <div className="flex flex-col items-center justify-center gap-1">
-                <p className="text-6xl font-bold text-yellow-500">
-                  {ratingStats.avgRating?.toFixed(1)}
-                </p>
+                <p className="text-6xl font-bold text-yellow-500">{ratingStats.avgRating?.toFixed(1)}</p>
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={`h-5 w-5 ${
-                        s <= Math.round(ratingStats.avgRating ?? 0)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-muted-foreground"
-                      }`}
-                    />
+                    <Star key={s} className={`h-5 w-5 ${s <= Math.round(ratingStats.avgRating ?? 0) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {ratingStats.totalRatings} calificación{ratingStats.totalRatings !== 1 ? "es" : ""}
-                </p>
+                <p className="text-sm text-muted-foreground">{ratingStats.totalRatings} calificación{ratingStats.totalRatings !== 1 ? "es" : ""}</p>
               </div>
-
-              {/* Distribution */}
               <div className="space-y-1">
                 {ratingStats.distribution.map(({ star, count }) => (
                   <div key={star} className="flex items-center gap-2 text-sm">
                     <span className="w-4 text-right text-muted-foreground">{star}</span>
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 shrink-0" />
                     <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-yellow-400 h-full rounded-full"
-                        style={{
-                          width:
-                            ratingStats.totalRatings > 0
-                              ? `${(count / ratingStats.totalRatings) * 100}%`
-                              : "0%",
-                        }}
-                      />
+                      <div className="bg-yellow-400 h-full rounded-full" style={{ width: ratingStats.totalRatings > 0 ? `${(count / ratingStats.totalRatings) * 100}%` : "0%" }} />
                     </div>
                     <span className="w-4 text-muted-foreground">{count}</span>
                   </div>
                 ))}
               </div>
-
-              {/* Per-barber */}
               <div className="space-y-2">
                 <p className="text-sm font-medium">Por barbero</p>
                 {ratingStats.barberRatings.map(({ name, avg, count }) => (
@@ -1086,16 +951,14 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* ── Liquidaciones ──────────────────────────────────────────────── */}
+      {/* Liquidaciones */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-emerald-600" />
             Liquidaciones de Comisiones
           </CardTitle>
-          <CardDescription>
-            Comisiones devengadas en el período · Solo empleados con tasa configurada
-          </CardDescription>
+          <CardDescription>Comisiones devengadas en el período · Solo empleados con tasa configurada</CardDescription>
         </CardHeader>
         <CardContent>
           {commissionStats.rows.length === 0 ? (
@@ -1104,7 +967,6 @@ export default function ReportsPage() {
             </p>
           ) : (
             <>
-              {/* Totals row */}
               <div className="grid grid-cols-2 gap-4 mb-5">
                 <div className="rounded-lg bg-emerald-50 p-4 text-center">
                   <p className="text-2xl font-bold text-emerald-700">${commissionStats.totalCommission.toFixed(2)}</p>
@@ -1115,8 +977,6 @@ export default function ReportsPage() {
                   <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide">Ingresos brutos</p>
                 </div>
               </div>
-
-              {/* Per-employee table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -1135,10 +995,10 @@ export default function ReportsPage() {
                         <td className="py-3 text-right text-muted-foreground">{row.services}</td>
                         <td className="py-3 text-right">${row.gross.toFixed(2)}</td>
                         <td className="py-3 text-right text-muted-foreground">
-                          {row.rate != null ? `${(row.rate * 100).toFixed(0)}%` : "—"}
+                          {row.rate !== null && row.rate !== undefined ? `${(row.rate * 100).toFixed(0)}%` : "—"}
                         </td>
                         <td className="py-3 text-right font-semibold text-emerald-700">
-                          {row.rate != null ? `$${row.commission.toFixed(2)}` : "Sin tasa"}
+                          {row.rate !== null && row.rate !== undefined ? `$${row.commission.toFixed(2)}` : "Sin tasa"}
                         </td>
                       </tr>
                     ))}

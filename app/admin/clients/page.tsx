@@ -293,20 +293,26 @@ export default function ClientsPage() {
                             <Badge variant="secondary">Inactivo</Badge>
                           )}
                           {/* Loyalty points badge */}
-                          {(client as Client & { loyalty_points?: number }).loyalty_points != null && (
+                          {(client as Client & { loyalty_points?: number }).loyalty_points !== null &&
+                          (client as Client & { loyalty_points?: number }).loyalty_points !== undefined && (
                             <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                               <Gift className="h-3 w-3" />
-                              <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
+                              <span>
+                                {(client as Client & { loyalty_points?: number }).loyalty_points} pts
+                              </span>
                             </div>
                           )}
                           {/* No-show badge */}
-                          {(client as Client & { no_show_count?: number }).no_show_count != null &&
-                            (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
-                                <XCircle className="h-3 w-3" />
-                                <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
-                              </div>
-                            )}
+                          {(client as Client & { no_show_count?: number }).no_show_count !== null &&
+                          (client as Client & { no_show_count?: number }).no_show_count !== undefined &&
+                          (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
+                              <XCircle className="h-3 w-3" />
+                              <span>
+                                {(client as Client & { no_show_count?: number }).no_show_count} no-show
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           <Mail className="h-3 w-3" />

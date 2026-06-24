@@ -26,6 +26,9 @@ const navItems: NavItem[] = [
   { href: "/admin/inventory",    label: "Inventario", icon: Package },
   { href: "/admin/clients",      label: "Clientes",   icon: UserCheck },
   { href: "/admin/reports",      label: "Reportes",   icon: BarChart2 },
+  { href: "/admin/audit",        label: "Auditoría", icon: Settings },
+  { href: "/admin/billing",      label: "Facturación", icon: Settings },
+  { href: "/admin/integrations", label: "Integraciones", icon: Settings },
 ]
 
 export function AdminSidebar() {

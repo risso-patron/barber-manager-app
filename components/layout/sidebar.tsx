@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Scissors, User, Share2, ShoppingCart } from "lucide-react"
@@ -14,8 +15,22 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, userName }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+
+  // Auto-collapse en mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth < 768
+      setIsMobile(isMobileDevice)
+      setIsCollapsed(isMobileDevice)
+    }
+    
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser")
@@ -71,19 +86,30 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
   return (
     <div
       className={cn(
-        "bg-slate-900 text-white h-screen flex flex-col transition-all duration-300",
+        "bg-[#0E0E0E] text-[#F0F0F0] h-screen flex flex-col transition-all duration-300 border-r border-[#252525]",
         isCollapsed ? "w-16" : "w-64",
       )}
     >
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-[#252525]">
         <div className="flex items-center justify-between">
-          {!isCollapsed && <img src="/orno_logo.svg" alt="Ornō" style={{ height: '28px', width: 'auto' }} />}
+          {!isCollapsed && (
+            <Image 
+              src="/orno_logo.svg" 
+              alt="Ornō" 
+              width={112} 
+              height={28}
+              priority
+            />
+          )}
+          {isCollapsed && (
+            <div className="text-[#E53935] font-bold text-lg mx-auto">Ō</div>
+          )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-white hover:bg-slate-800"
+            className="text-[#F0F0F0] hover:bg-[#161616]"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -91,15 +117,15 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       </div>
 
       {/* User Info */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-[#252525]">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-            <User className="h-4 w-4" />
+          <div className="w-8 h-8 bg-[#252525] rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-[#8A8A8A]" />
           </div>
           {!isCollapsed && (
             <div>
-              <p className="text-sm font-medium">{userName || "Usuario"}</p>
-              <p className="text-xs text-slate-400 capitalize">{userRole}</p>
+              <p className="text-sm font-medium text-[#F0F0F0]">{userName || "Usuario"}</p>
+              <p className="text-xs text-[#8A8A8A] capitalize">{userRole}</p>
             </div>
           )}
         </div>
@@ -118,11 +144,13 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                   href={item.href}
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
-                    isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                    isActive 
+                      ? "bg-[#E53935] text-[#F0F0F0]" 
+                      : "text-[#8A8A8A] hover:bg-[#161616] hover:text-[#F0F0F0]",
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {!isCollapsed && <span>{item.label}</span>}
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!isCollapsed && <span className="text-sm">{item.label}</span>}
                 </Link>
               </li>
             )
@@ -131,17 +159,17 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-[#252525]">
         <Button
           variant="ghost"
           onClick={handleLogout}
           className={cn(
-            "w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white",
+            "w-full justify-start text-[#8A8A8A] hover:bg-[#161616] hover:text-[#F0F0F0]",
             isCollapsed && "justify-center",
           )}
         >
-          <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">Cerrar Sesión</span>}
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-3 text-sm">Cerrar Sesión</span>}
         </Button>
       </div>
     </div>

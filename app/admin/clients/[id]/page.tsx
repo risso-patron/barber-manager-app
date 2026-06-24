@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import {
   ArrowLeft, Mail, Phone, Calendar, Scissors,
   DollarSign, TrendingUp, Save, Loader2, MessageSquare,
-  Clock, Send, Gift, CheckCircle2, Sparkles,
+  Clock, Send, Gift, CheckCircle2, Sparkles, XCircle,
 } from "lucide-react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -110,7 +110,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
     if (!supabase) {
       // Demo mode: build a placeholder profile from id
-      setClient({ id: id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null })
+      setClient({ id: id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null, no_show_count: 0 })
       setIsLoading(false)
       return
     }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -56,10 +57,10 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     role: defaultRole,
     specialty: defaultSpecialty,
     avatar: employee?.avatar || "",
-    commission_rate: employee?.commission_rate != null
-      ? parseFloat((employee.commission_rate * 100).toFixed(2))
-      : 0,
-  })
+    commission_rate: employee?.commission_rate !== null && employee?.commission_rate !== undefined
+    ? parseFloat((employee.commission_rate * 100).toFixed(2))
+    : 0,
+    })
 
   const handleSpecialtyChange = (value: string) => {
     const spec = SPECIALTIES.find(s => s.value === value)!
@@ -205,7 +206,13 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                         : "border-gray-200 hover:border-gray-400"
                     }`}
                   >
-                    <img src={url} alt={`Avatar ${i + 1}`} className="w-full h-full object-cover bg-gray-100" />
+                    <Image
+                    src={url}
+                    alt={`Avatar ${i + 1}`}
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-cover bg-gray-100"
+                  />
                     {formData.avatar === url && (
                       <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
                         <Check className="h-4 w-4 text-white" />

@@ -377,11 +377,13 @@ export default function EmployeesPage() {
                   <Phone className="h-4 w-4" />
                   <span>{employee.phone}</span>
                 </div>
-                {employee.commission_rate != null && employee.commission_rate > 0 && (
+                {employee.commission_rate !== null &&
+                employee.commission_rate !== undefined &&
+                employee.commission_rate > 0 && (
                   <div className="flex items-center gap-2 text-sm" style={{ color: "#22C55E" }}>
                     <DollarSign className="h-4 w-4" />
-                    <span>Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
-                  </div>
+                         <span>Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
+                        </div>
                 )}
               </CardContent>
             </Card>
