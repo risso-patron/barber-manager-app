@@ -102,7 +102,7 @@ export default function ReservarPage() {
             .select("barber_id, avg_rating, total_ratings");
 
           const ratingsMap = new Map(
-            (ratingsData ?? []).map((r: any) => [
+            (ratingsData ?? []).map((r: { barber_id: string; avg_rating: number; total_ratings: number }) => [
               r.barber_id,
               { avg_rating: r.avg_rating, total_ratings: r.total_ratings },
             ])
@@ -163,7 +163,7 @@ export default function ReservarPage() {
     setSubmitError(null);
 
     const appointmentDateTime = new Date(selectedDate);
-    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const [hours = 0, minutes = 0] = selectedTime.split(':').map(Number);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
 
     const bookingData = {
@@ -194,9 +194,16 @@ export default function ReservarPage() {
       // Si la reserva es exitosa, avanzamos al paso final
       goToNextStep();
 
-    } catch (error: any) {
-      console.error("Error al confirmar la reserva:", error);
-      setSubmitError(error.message || "No se pudo completar la reserva. Inténtalo de nuevo.");
+      } catch (error: unknown) {
+          console.error("Error al confirmar la reserva:", error)
+
+          const message =
+            error instanceof Error
+            ? error.message
+            : "No se pudo completar la reserva."
+
+          setSubmitError(message)
+
     } finally {
       setIsSubmitting(false);
     }
@@ -215,12 +222,6 @@ export default function ReservarPage() {
       setCurrentStep(currentStep - 1);
     }
   };
-  
-  const setStep = (stepIndex: number) => {
-    if (stepIndex >= 0 && stepIndex < bookingSteps.length) {
-        setCurrentStep(stepIndex);
-    }
-  }
 
   // --- Datos calculados ---
 
@@ -303,7 +304,7 @@ export default function ReservarPage() {
                 className="rounded-md border"
               />
               {selectedDate && (
-                <div className="grid grid-cols-3 gap-2 self-start">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 self-start">
                   {timeSlots.map((time) => (
                     <TimeSlot
                       key={time}
@@ -349,19 +350,19 @@ export default function ReservarPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-12">
-        <header className="mb-12">
-          <h1 className="text-4xl font-bold text-center mb-2">Reserva tu Cita</h1>
-          <p className="text-muted-foreground text-center">Sigue los pasos para asegurar tu lugar.</p>
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <header className="mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">Reserva tu Cita</h1>
+          <p className="text-muted-foreground text-center text-sm md:text-base">Sigue los pasos para asegurar tu lugar.</p>
         </header>
 
-        <Stepper steps={bookingSteps} currentStep={currentStep} className="max-w-3xl mx-auto mb-12" />
+        <Stepper steps={bookingSteps} currentStep={currentStep} className="max-w-3xl mx-auto mb-8 md:mb-12" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
-          <main className="lg:col-span-2 mb-8 lg:mb-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <main className="col-span-1 md:col-span-2">
             {renderCurrentStep()}
           </main>
-          <aside>
+          <aside className="col-span-1">
             <BookingSummary
               selectedServices={selectedServices}
               selectedBarber={selectedBarber}
@@ -375,9 +376,9 @@ export default function ReservarPage() {
           </aside>
         </div>
 
-        <footer className="mt-12 flex justify-between items-center">
+        <footer className="mt-8 md:mt-12 flex justify-between items-center gap-4">
             <div>
-                {currentStep > 0 && currentStep < bookingSteps.length -1 && (
+                {currentStep > 0 && currentStep < bookingSteps.length - 1 && (
                     <Button variant="ghost" onClick={goToPreviousStep}>
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Atrás

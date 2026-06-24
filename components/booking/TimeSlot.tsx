@@ -14,20 +14,20 @@ const timeSlotVariants = cva(
         false:
           "bg-card border-border text-foreground hover:border-primary/50 hover:bg-primary/5",
       },
-      disabled: {
+      isDisabled: {
         true: "bg-secondary/50 border-border text-muted-foreground",
       }
     },
     compoundVariants: [
       {
         selected: true,
-        disabled: true,
+        isDisabled: true,
         className: "bg-secondary/50 border-border text-muted-foreground shadow-none",
       },
     ],
     defaultVariants: {
       selected: false,
-      disabled: false,
+      isDisabled: false,
     },
   }
 );
@@ -39,12 +39,12 @@ export interface TimeSlotProps
 }
 
 const TimeSlot = React.forwardRef<HTMLButtonElement, TimeSlotProps>(
-  ({ className, selected, disabled, time, ...props }, ref) => {
+  ({ className, selected, isDisabled, time, ...props }, ref) => {
     return (
       <button
-        className={cn(timeSlotVariants({ selected, disabled }), className)}
+        className={cn(timeSlotVariants({ selected, isDisabled }), className)}
         ref={ref}
-        disabled={disabled}
+        disabled={!!isDisabled}
         {...props}
       >
         <span className="font-medium">{time}</span>
