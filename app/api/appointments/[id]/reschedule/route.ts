@@ -139,6 +139,9 @@ export async function PATCH(
 
       const targetDate = new Date(`${appointment_date}T${appointment_time}:00`)
       const dayName = DAY_NAMES[targetDate.getDay()]
+      if (!dayName) {
+        return NextResponse.json({ error: "Día inválido" }, { status: 400 })
+      }
       const daySchedule = businessSchedule[dayName]
 
       if (!daySchedule?.isOpen) {
@@ -148,9 +151,9 @@ export async function PATCH(
         )
       }
 
-      const [openH, openM] = daySchedule.open.split(":").map(Number)
-      const [closeH, closeM] = daySchedule.close.split(":").map(Number)
-      const [reqH, reqM] = appointment_time.split(":").map(Number)
+      const [openH = 0, openM = 0] = daySchedule.open.split(":").map(Number)
+      const [closeH = 24, closeM = 0] = daySchedule.close.split(":").map(Number)
+      const [reqH = 0, reqM = 0] = appointment_time.split(":").map(Number)
 
       const openMinutes = openH * 60 + openM
       const closeMinutes = closeH * 60 + closeM
@@ -217,9 +220,13 @@ export async function PATCH(
         .eq("setting_key", "barbershop_phone")
         .maybeSingle()
 
-      const client = (appointment as { client: { name: string; email: string; phone: string } | null }).client
-      const barber = (appointment as { barber: { name: string; email: string } | null }).barber
-      const service = (appointment as { service: { name: string; price: number } | null }).service
+      const rawClient = (appointment as unknown as { client: { name: string; email: string; phone: string }[] | null }).client
+      const rawBarber = (appointment as unknown as { barber: { name: string; email: string }[] | null }).barber
+      const rawService = (appointment as unknown as { service: { name: string; price: number }[] | null }).service
+
+      const client = Array.isArray(rawClient) ? rawClient[0] ?? null : rawClient
+      const barber = Array.isArray(rawBarber) ? rawBarber[0] ?? null : rawBarber
+      const service = Array.isArray(rawService) ? rawService[0] ?? null : rawService
 
       const notificationPayload = {
         type: "reschedule",

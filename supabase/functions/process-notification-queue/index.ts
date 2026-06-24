@@ -1,23 +1,5 @@
-// supabase/functions/process-notification-queue/index.ts
-//
-// Edge Function — Procesa la cola de notificaciones pendientes.
-//
-// DESPLIEGUE:
-//   supabase functions deploy process-notification-queue
-//
-// TRIGGER recomendado (Supabase Dashboard → Database Webhooks):
-//   Tabla: notification_queue  |  Evento: INSERT
-//   URL: https://<project>.supabase.co/functions/v1/process-notification-queue
-//
-// Variables de entorno requeridas (Supabase Dashboard → Settings → Edge Functions):
-//   SUPABASE_URL              — se inyecta automáticamente
-//   SUPABASE_SERVICE_ROLE_KEY — se inyecta automáticamente
-//   RESEND_API_KEY            — (Item 19) para envío de emails vía Resend
-//   TWILIO_ACCOUNT_SID        — (Item 19) para envío de SMS vía Twilio
-//   TWILIO_AUTH_TOKEN         — (Item 19)
-//   TWILIO_PHONE_NUMBER       — (Item 19) número origen Twilio
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const supabase = createClient(

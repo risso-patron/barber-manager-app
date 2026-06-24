@@ -6,10 +6,10 @@ import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/sup
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withRateLimit(request, strictLimiter, async () => {
-    const { id } = params
+const { id } = await params
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "ID de cita inválido" }, { status: 400 })

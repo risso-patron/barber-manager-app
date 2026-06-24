@@ -6,10 +6,10 @@ import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/sup
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withRateLimit(request, strictLimiter, async () => {
-    const { id } = params
+    const { id } = await params
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "ID de empleado inválido" }, { status: 400 })
@@ -30,12 +30,10 @@ export async function PATCH(
       )
     }
 
-    // MODO DEMO
     if (isDemoMode()) {
       return NextResponse.json({ success: true })
     }
 
-    // Auth: only admins
     const supabase = await createServerSupabaseClient()
     const {
       data: { user },

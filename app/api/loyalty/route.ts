@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         { status: 422 }
       )
     }
+    const { user_id, points, description } = parsed.data
 
     if (isDemoMode()) {
       return NextResponse.json({ success: true })
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!["admin", "manager"].includes(caller?.role ?? "")) {
+      return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
+    }
+
     const adminClient = createAdminSupabaseClient()
 
     // Fetch current balance to prevent negative total
@@ -130,3 +134,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, new_balance: current + points })
   })
 }
+
+

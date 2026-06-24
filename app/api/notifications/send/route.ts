@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 
-/**
- * API Route para enviar notificaciones de reservas
- * En producción, integrar con:
- * - Resend (https://resend.com) - Gratis hasta 3,000 emails/mes
- * - SendGrid (https://sendgrid.com) - Gratis hasta 100 emails/día
- * - Mailgun, AWS SES, etc.
- */
-
 interface BookingNotification {
   type: "new_booking" | "confirmation" | "reminder" | "cancellation" | "reschedule"
   clientName: string
@@ -30,18 +22,11 @@ export async function POST(request: NextRequest) {
   try {
     const data: BookingNotification = await request.json()
 
-    // TODO: Integrar con servicio de email real (Resend recomendado)
-    // const emailSent = await sendEmail(data)
-
-    // Por ahora, solo logueamos
     console.log("📧 Notificación de Email:", {
       to: data.clientEmail,
       subject: getEmailSubject(data.type),
       body: generateEmailBody(data)
     })
-
-    // TODO: Integrar con WhatsApp Business API
-    // const whatsappSent = await sendWhatsApp(data)
 
     console.log("📱 Notificación de WhatsApp:", {
       to: data.clientPhone,
@@ -53,7 +38,7 @@ export async function POST(request: NextRequest) {
       message: "Notificaciones enviadas",
       channels: {
         email: data.clientEmail ? "sent" : "skipped",
-        whatsapp: "sent" // En producción verificar envío real
+        whatsapp: "sent"
       }
     })
 
@@ -68,18 +53,12 @@ export async function POST(request: NextRequest) {
 
 function getEmailSubject(type: BookingNotification["type"]): string {
   switch (type) {
-    case "new_booking":
-      return "✅ Nueva Reserva Recibida"
-    case "confirmation":
-      return "✅ Tu Cita Ha Sido Confirmada"
-    case "reminder":
-      return "⏰ Recordatorio de Tu Cita"
-    case "cancellation":
-      return "❌ Cita Cancelada"
-    case "reschedule":
-      return "📅 Cita Reprogramada"
-    default:
-      return "Notificación de Barbería"
+    case "new_booking":   return "✅ Nueva Reserva Recibida"
+    case "confirmation":  return "✅ Tu Cita Ha Sido Confirmada"
+    case "reminder":      return "⏰ Recordatorio de Tu Cita"
+    case "cancellation":  return "❌ Cita Cancelada"
+    case "reschedule":    return "📅 Cita Reprogramada"
+    default:              return "Notificación de Barbería"
   }
 }
 
@@ -105,7 +84,6 @@ function generateEmailBody(data: BookingNotification): string {
         .detail-label { color: #6b7280; }
         .detail-value { font-weight: bold; }
         .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
-        .button { background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
       </style>
     </head>
     <body>
@@ -115,7 +93,7 @@ function generateEmailBody(data: BookingNotification): string {
         </div>
         <div class="content">
           <h2>¡Hola ${data.clientName}!</h2>
-          <p>${getEmailMessage(data.type)}</p>
+          <p>${getEmailMessage(data.type, data)}</p>
           
           <div class="booking-details">
             <h3>Detalles de tu Cita:</h3>
@@ -154,7 +132,8 @@ function generateEmailBody(data: BookingNotification): string {
   `
 }
 
-function getEmailMessage(type: BookingNotification["type"]): string {
+// ← CAMBIO 1: ahora recibe `data` como segundo parámetro
+function getEmailMessage(type: BookingNotification["type"], data: BookingNotification): string {
   switch (type) {
     case "new_booking":
       return "Tu reserva ha sido recibida exitosamente. Te confirmaremos pronto."
@@ -165,6 +144,7 @@ function getEmailMessage(type: BookingNotification["type"]): string {
     case "cancellation":
       return "Tu cita ha sido cancelada. Si esto fue un error, por favor contáctanos."
     case "reschedule":
+      // ← CAMBIO 2: ahora `data` está disponible aquí
       return `Tu cita ha sido reprogramada al ${new Date(data.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} a las ${data.time}.${data.reason ? ` Motivo: ${data.reason}` : ""}`
     default:
       return "Información sobre tu cita."
@@ -195,81 +175,18 @@ ${getWhatsAppFooter(data.type, data.barbershopPhone)}
 
 function getWhatsAppGreeting(type: BookingNotification["type"]): string {
   switch (type) {
-    case "new_booking":
-      return "✅ *Tu reserva ha sido recibida*"
-    case "confirmation":
-      return "✅ *Tu cita está confirmada*"
-    case "reminder":
-      return "⏰ *Recordatorio de tu cita de mañana*"
-    case "cancellation":
-      return "❌ *Tu cita ha sido cancelada*"
-    case "reschedule":
-      return "📅 *Tu cita ha sido reprogramada*"
-    default:
-      return "*Información de tu cita*"
+    case "new_booking":  return "✅ *Tu reserva ha sido recibida*"
+    case "confirmation": return "✅ *Tu cita está confirmada*"
+    case "reminder":     return "⏰ *Recordatorio de tu cita de mañana*"
+    case "cancellation": return "❌ *Tu cita ha sido cancelada*"
+    case "reschedule":   return "📅 *Tu cita ha sido reprogramada*"
+    default:             return "*Información de tu cita*"
   }
 }
 
 function getWhatsAppFooter(type: BookingNotification["type"], phone: string): string {
   if (type === "reminder") {
-    return `Por favor confirma tu asistencia respondiendo este mensaje.
-
-📞 ${phone}`
+    return `Por favor confirma tu asistencia respondiendo este mensaje.\n\n📞 ${phone}`
   }
-  return `¿Necesitas cambiar algo? Contáctanos:
-📞 ${phone}`
+  return `¿Necesitas cambiar algo? Contáctanos:\n📞 ${phone}`
 }
-
-/**
- * Función para integrar Resend (Recomendado)
- * 
- * npm install resend
- * 
- * import { Resend } from 'resend'
- * const resend = new Resend(process.env.RESEND_API_KEY)
- * 
- * async function sendEmail(data: BookingNotification) {
- *   if (!data.clientEmail) return false
- *   
- *   try {
- *     await resend.emails.send({
- *       from: 'Barbería <noreply@tudominio.com>',
- *       to: data.clientEmail,
- *       subject: getEmailSubject(data.type),
- *       html: generateEmailBody(data)
- *     })
- *     return true
- *   } catch (error) {
- *     console.error('Error sending email:', error)
- *     return false
- *   }
- * }
- */
-
-/**
- * Función para integrar WhatsApp Business API
- * 
- * Opciones:
- * 1. Twilio (https://www.twilio.com/whatsapp)
- * 2. Meta WhatsApp Business API (gratis pero más complejo)
- * 3. Ultramsg, Maytapi, etc.
- * 
- * npm install twilio
- * 
- * import twilio from 'twilio'
- * const client = twilio(ACCOUNT_SID, AUTH_TOKEN)
- * 
- * async function sendWhatsApp(data: BookingNotification) {
- *   try {
- *     await client.messages.create({
- *       from: 'whatsapp:+14155238886', // Twilio Sandbox
- *       to: `whatsapp:${data.clientPhone}`,
- *       body: generateWhatsAppMessage(data)
- *     })
- *     return true
- *   } catch (error) {
- *     console.error('Error sending WhatsApp:', error)
- *     return false
- *   }
- * }
- */

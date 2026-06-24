@@ -6,10 +6,10 @@ import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/sup
 // PATCH /api/attendance/[id] — clock-out: closes an open attendance session
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   return withRateLimit(request, strictLimiter, async () => {
-    const { id } = params
+    const { id } = await params
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "ID de sesión inválido" }, { status: 400 })
