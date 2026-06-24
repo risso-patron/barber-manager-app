@@ -24,7 +24,6 @@ export default function EmployeeDashboard() {
   const [notifications, setNotifications] = useState<Array<{ id: string; message: string; createdAt: string }>>([])
 
   const loadAppointments = useCallback(async (employeeId: string, employeeName?: string) => {
-    // Fetch appointments + commission_rate in parallel
     const [aptsResult, userResult] = await Promise.all([
       supabase!
         .from("appointments")
@@ -40,7 +39,7 @@ export default function EmployeeDashboard() {
         .single(),
     ])
 
-    if (userResult.data?.commission_rate != null) {
+    if (userResult.data?.commission_rate !== null && userResult.data?.commission_rate !== undefined) {
       setCommissionRate(userResult.data.commission_rate)
     }
 
@@ -110,17 +109,16 @@ export default function EmployeeDashboard() {
       )
       .subscribe()
 
-      // Restore work session from database
-      void fetch("/api/attendance")
-        .then((r) => r.json())
-        .then((session: { id?: string; check_in?: string } | null) => {
-          if (session?.id && session?.check_in) {
-            setAttendanceId(session.id)
-            setIsWorking(true)
-            setWorkStartTime(session.check_in)
-          }
-        })
-        .catch(() => { /* non-critical */ })
+    void fetch("/api/attendance")
+      .then((r) => r.json())
+      .then((session: { id?: string; check_in?: string } | null) => {
+        if (session?.id && session?.check_in) {
+          setAttendanceId(session.id)
+          setIsWorking(true)
+          setWorkStartTime(session.check_in)
+        }
+      })
+      .catch(() => { /* non-critical */ })
 
     return () => {
       void supabase.removeChannel(channel)
@@ -128,7 +126,7 @@ export default function EmployeeDashboard() {
   }, [user, loadAppointments])
 
   const todayDate = new Date().toISOString().split('T')[0]
-  
+
   const stats = useMemo(() => {
     const today = appointments.filter(apt => apt.date === todayDate)
     const thisWeek = appointments.filter(apt => {
@@ -138,7 +136,9 @@ export default function EmployeeDashboard() {
       return aptDate >= weekStart
     })
     const completed = appointments.filter(apt => apt.status === "completed")
-    const rated = completed.filter((apt) => apt.rating !== null && apt.rating !== undefined && apt.rating > 0)
+    const rated = completed.filter(
+      (apt) => apt.rating !== null && apt.rating !== undefined && apt.rating > 0
+    )
     const avgRating = rated.length > 0
       ? rated.reduce((sum: number, apt) => sum + (apt.rating || 0), 0) / rated.length
       : null
@@ -147,15 +147,13 @@ export default function EmployeeDashboard() {
     const totalRevenue = completed.reduce((sum, apt) => sum + apt.price, 0)
     const todayRevenue = today.filter(apt => apt.status === "completed").reduce((sum, apt) => sum + apt.price, 0)
 
-    // Commission this calendar month
     const now = new Date()
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
     const thisMonthCompleted = completed.filter(apt => apt.date.startsWith(monthStr))
-    // Use stored commission_amount when available; fall back to live calculation
     const monthCommission = thisMonthCompleted.reduce((sum, apt) => {
       const stored = (apt as unknown as { commission_amount?: number }).commission_amount
-      if (stored != null) return sum + stored
-      if (commissionRate != null) return sum + apt.price * commissionRate
+      if (stored !== null && stored !== undefined) return sum + stored
+      if (commissionRate !== null && commissionRate !== undefined) return sum + apt.price * commissionRate
       return sum
     }, 0)
 
@@ -170,7 +168,7 @@ export default function EmployeeDashboard() {
       avgRating,
       ratedCount: rated.length,
       monthCommission,
-      commissionPct: commissionRate != null ? commissionRate * 100 : null,
+      commissionPct: commissionRate !== null && commissionRate !== undefined ? commissionRate * 100 : null,
     }
   }, [appointments, todayDate, commissionRate])
 
@@ -201,7 +199,6 @@ export default function EmployeeDashboard() {
         setWorkStartTime(data.check_in)
       }
     } catch {
-      // Fallback: update UI optimistically
       setIsWorking(true)
       setWorkStartTime(new Date().toISOString())
     }
@@ -215,7 +212,7 @@ export default function EmployeeDashboard() {
       try {
         await fetch(`/api/attendance/${attendanceId}`, { method: "PATCH" })
       } catch {
-        // Non-critical: session is visually closed regardless
+        // Non-critical
       }
       setAttendanceId(null)
     }
@@ -223,14 +220,14 @@ export default function EmployeeDashboard() {
 
   const handleCompleteAppointment = async (id: string) => {
     await supabase?.from("appointments").update({ status: "completed" }).eq("id", id)
-    setAppointments(appointments.map(apt => 
+    setAppointments(appointments.map(apt =>
       apt.id === id ? { ...apt, status: "completed" as const } : apt
     ))
   }
 
   const handleCancelAppointment = async (id: string) => {
     await supabase?.from("appointments").update({ status: "cancelled" }).eq("id", id)
-    setAppointments(appointments.map(apt => 
+    setAppointments(appointments.map(apt =>
       apt.id === id ? { ...apt, status: "cancelled" as const } : apt
     ))
   }
@@ -256,9 +253,9 @@ export default function EmployeeDashboard() {
   }
 
   const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(isoString).toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
@@ -301,64 +298,63 @@ export default function EmployeeDashboard() {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
       `}</style>
 
+      {/* ── Jornada ──────────────────────── */}
+      <div className="pt-8 pb-3">
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Jornada</p>
+      </div>
+      <div style={{ borderTop: "1px solid #252525", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {isWorking ? (
+          <div>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "28px", fontWeight: 300, color: "#F0F0F0" }}>
+              {getWorkDuration()}
+            </p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
+              Inicio · {workStartTime && formatTime(workStartTime)}
+            </p>
+          </div>
+        ) : (
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 300, color: "rgba(240,240,240,0.25)" }}>Sin jornada activa</p>
+        )}
+        <button
+          className="orno-btn"
+          onClick={isWorking ? handleClockOut : handleClockIn}
+          style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: isWorking ? "#cc2222" : "#8A8A8A", background: "none", border: "1px solid currentColor", padding: "8px 16px", cursor: "pointer", transition: "color 0.2s" }}
+        >
+          {isWorking ? "Finalizar" : "Iniciar"}
+        </button>
+      </div>
 
-        {/* ── Jornada ──────────────────────── */}
-        <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Jornada</p>
-        </div>
-        <div style={{ borderTop: "1px solid #252525", padding: "20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          {isWorking ? (
-            <div>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "28px", fontWeight: 300, color: "#F0F0F0" }}>
-                {getWorkDuration()}
-              </p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
-                Inicio · {workStartTime && formatTime(workStartTime!)}
-              </p>
-            </div>
-          ) : (
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 300, color: "rgba(240,240,240,0.25)" }}>Sin jornada activa</p>
-          )}
-          <button
-            className="orno-btn"
-            onClick={isWorking ? handleClockOut : handleClockIn}
-            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: isWorking ? "#cc2222" : "#8A8A8A", background: "none", border: "1px solid currentColor", padding: "8px 16px", cursor: "pointer", transition: "color 0.2s" }}
-          >
-            {isWorking ? "Finalizar" : "Iniciar"}
-          </button>
-        </div>
+      {/* ── Stats ─────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid #252525" }}>
+        {[
+          { value: String(stats.todayAppointments), label: "Citas hoy",    sub: `${stats.confirmedToday} conf. · ${stats.pendingToday} pend.` },
+          { value: String(stats.weekAppointments),  label: "Esta semana",  sub: "Programadas" },
+          { value: String(stats.totalCompleted),    label: "Completadas",  sub: "Total histórico" },
+          { value: `$${stats.todayRevenue}`,        label: "Ingresos hoy", sub: `Total $${stats.totalRevenue}` },
+        ].map((s, i) => (
+          <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 3 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px" }}>{s.sub}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* ── Stats ─────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4" style={{ borderTop: "1px solid #252525" }}>
-          {[
-            { value: String(stats.todayAppointments), label: "Citas hoy",     sub: `${stats.confirmedToday} conf. · ${stats.pendingToday} pend.` },
-            { value: String(stats.weekAppointments),  label: "Esta semana",   sub: "Programadas" },
-            { value: String(stats.totalCompleted),    label: "Completadas",   sub: "Total histórico" },
-            { value: `$${stats.todayRevenue}`,        label: "Ingresos hoy",  sub: `Total $${stats.totalRevenue}` },
-          ].map((s, i) => (
-            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 3 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 3 ? "20px" : 0 }}>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.value}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A", marginTop: "4px" }}>{s.label}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "2px" }}>{s.sub}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Agenda de hoy ─────────────────── */}
-        <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
-            Agenda · {new Date(todayDate!).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
-          </p>
-        </div>
-        <div style={{ borderTop: "1px solid #252525" }}>
-          {todayAppointments.length === 0 ? (
-            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>Sin citas para hoy</p>
-          ) : (
-            todayAppointments.map((apt, i) => (
-              <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
-                <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      {/* ── Agenda de hoy ─────────────────── */}
+      <div className="pt-8 pb-3">
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
+          Agenda · {new Date(todayDate!).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+        </p>
+      </div>
+      <div style={{ borderTop: "1px solid #252525" }}>
+        {todayAppointments.length === 0 ? (
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>Sin citas para hoy</p>
+        ) : (
+          todayAppointments.map((apt, i) => (
+            <div key={apt.id} className="orno-row" style={{ padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: "18px" }}>
+              <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#555555", minWidth: "18px", paddingTop: "3px" }}>{String(i + 1).padStart(2, "0")}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>{apt.time} · {apt.clientName}</p>
                   <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", color: apt.status === "confirmed" ? "#8A8A8A" : apt.status === "completed" ? "#555555" : "#cc2222", textTransform: "uppercase" }}>
                     {apt.status === "confirmed" ? "Conf." : apt.status === "completed" ? "Ok" : apt.status === "pending" ? "Pend." : "—"}
@@ -390,11 +386,11 @@ export default function EmployeeDashboard() {
                 )}
               </div>
             </div>
-            ))
-          )}
-        </div>
+          ))
+        )}
+      </div>
 
-        {/* ── Próximas citas ────────────────── */}
+      {/* ── Próximas citas ────────────────── */}
       {upcomingAppointments.length > 0 && (
         <>
           <div style={{ paddingTop: 24, paddingBottom: 12 }}>
@@ -416,57 +412,56 @@ export default function EmployeeDashboard() {
         </>
       )}
 
-        {/* ── Rendimiento ───────────────────── */}
-        <div className="pt-8 pb-3">
-          <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Rendimiento</p>
-        </div>
-        <div className="grid grid-cols-3" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
-          {[
-            { value: String(stats.totalCompleted), label: "Clientes atendidos" },
-            { value: `$${stats.totalRevenue}`,     label: "Ingresos totales" },
-            { value: stats.avgRating !== null ? stats.avgRating!.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
-          ].map((s, i) => (
-            <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
-              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{s.value}</p>
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
+      {/* ── Rendimiento ───────────────────── */}
+      <div className="pt-8 pb-3">
+        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Rendimiento</p>
+      </div>
+      <div className="grid grid-cols-3" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
+        {[
+          { value: String(stats.totalCompleted), label: "Clientes atendidos" },
+          { value: `$${stats.totalRevenue}`,     label: "Ingresos totales" },
+          { value: stats.avgRating !== null ? stats.avgRating.toFixed(1) : "—", label: stats.avgRating !== null ? `Calificación · ${stats.ratedCount} votos` : "Sin calificaciones" },
+        ].map((s, i) => (
+          <div key={i} className="orno-row" style={{ padding: "22px 0", borderRight: i < 2 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "20px" : 0, paddingRight: i < 2 ? "20px" : 0 }}>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{s.value}</p>
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* ── Comisiones del mes ─────────────── */}
-        {stats.commissionPct != null && (
-          <>
-            <div className="pb-3">
-              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Comisiones este mes</p>
+      {/* ── Comisiones del mes ─────────────── */}
+      {stats.commissionPct !== null && (
+        <>
+          <div className="pb-3">
+            <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>Comisiones este mes</p>
+          </div>
+          <div className="grid grid-cols-2" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
+            <div className="orno-row" style={{ padding: "22px 20px 22px 0", borderRight: "1px solid #252525" }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>${stats.monthCommission.toFixed(2)}</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Comisión acumulada</p>
             </div>
-            <div className="grid grid-cols-2" style={{ borderTop: "1px solid #252525", marginBottom: "60px" }}>
-              <div className="orno-row" style={{ padding: "22px 20px 22px 0", borderRight: "1px solid #252525" }}>
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>${stats.monthCommission.toFixed(2)}</p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Comisión acumulada</p>
-              </div>
-              <div className="orno-row" style={{ padding: "22px 0 22px 20px" }}>
-                <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{stats.commissionPct?.toFixed(0) ?? "0"}%</p>
-                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Tu tasa de comisión</p>
-              </div>
+            <div className="orno-row" style={{ padding: "22px 0 22px 20px" }}>
+              <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 300, lineHeight: 1 }}>{stats.commissionPct.toFixed(0)}%</p>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", marginTop: "4px" }}>Tu tasa de comisión</p>
             </div>
-          </>
-        )}
+          </div>
+        </>
+      )}
 
       {notifications.length > 0 && (
-          <>
-            <div style={{ borderTop: "1px solid #252525", paddingTop: "20px", marginBottom: "48px" }}>
-              {notifications.slice(0, 5).map((item) => (
-                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                  <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A" }}>{item.message}</p>
-                  <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "10px", color: "#555555" }}>
-                    {new Date(item.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
+        <>
+          <div style={{ borderTop: "1px solid #252525", paddingTop: "20px", marginBottom: "48px" }}>
+            {notifications.slice(0, 5).map((item) => (
+              <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A" }}>{item.message}</p>
+                <p style={{ fontFamily: "var(--font-dm-mono)", fontSize: "10px", color: "#555555" }}>
+                  {new Date(item.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

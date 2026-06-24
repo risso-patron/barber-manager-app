@@ -31,6 +31,7 @@ import {
   Trash2,
   Ban,
 } from "lucide-react"
+import { AppointmentStatus } from "@/lib/types"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -53,7 +54,7 @@ type ScheduleBlock = {
 }
 
 function timeToMins(t: string) {
-  const [h, m] = t.split(":").map(Number)
+  const [h = 0, m = 0] = t.split(":").map(Number)
   return h * 60 + (m ?? 0)
 }
 
@@ -100,49 +101,57 @@ export default function EmployeeSchedulePage() {
   const [blockError, setBlockError] = useState("")
 
   useEffect(() => {
-    if (!user || !supabase) return
-    supabase
-      .from("appointments")
-      .select(`id, appointment_date, appointment_time, status, notes, created_at,
-        client:users!appointments_client_id_fkey(id, name, phone),
-        service:services(id, name, price, duration)`)
-      .eq("barber_id", user.id)
-      .order("appointment_date")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then(({ data }) => {
-        if (data) setAppointments(
-          (data as any[]).map(a => ({
-            id: a.id,
-            clientId: a.client?.id || "",
-            clientName: a.client?.name || "",
-            clientPhone: a.client?.phone || "",
-            employeeId: user.id,
-            employeeName: (user as { name?: string }).name ?? "",
-            serviceId: a.service?.id || "",
-            serviceName: a.service?.name || "",
-            date: a.appointment_date,
-            time: a.appointment_time,
-            duration: a.service?.duration || 30,
-            price: a.service?.price || 0,
-            status: a.status,
-            notes: a.notes || "",
-            createdAt: a.created_at,
-          })))
-      })
-  }, [user])
+      if (!user || !supabase) return
+      supabase
+        .from("appointments")
+        .select(`id, appointment_date, appointment_time, status, notes, created_at,
+          client:users!appointments_client_id_fkey(id, name, phone),
+          service:services(id, name, price, duration)`)
+        .eq("barber_id", user.id)
+        .order("appointment_date")
+        .then(({ data }) => {
+          if (data) setAppointments(
+            (data as unknown as {
+              id: string
+              appointment_date: string
+              appointment_time: string
+              status: AppointmentStatus
+              notes?: string | null
+              created_at: string
+              client?: { id: string; name: string; phone?: string } | null
+              service?: { id: string; name: string; price?: number; duration?: number } | null
+            }[]).map((a) => ({
+              id: a.id,
+              clientId: a.client?.id || "",
+              clientName: a.client?.name || "",
+              clientPhone: a.client?.phone || "",
+              employeeId: user.id,
+              employeeName: (user as { name?: string }).name ?? "",
+              serviceId: a.service?.id || "",
+              serviceName: a.service?.name || "",
+              date: a.appointment_date,
+              time: a.appointment_time,
+              duration: a.service?.duration || 30,
+              price: a.service?.price || 0,
+              status: a.status,
+              notes: a.notes || "",
+              createdAt: a.created_at,
+            })))
+        })
+    }, [user])
 
-  const loadBlocks = useCallback(async () => {
-    if (!user) return
-    try {
-      const res = await fetch(`/api/schedule-blocks?barber_id=${user.id}`)
-      if (res.ok) {
-        const json = await res.json() as { blocks: ScheduleBlock[] }
-        setBlocks(json.blocks)
-      }
-    } catch { /* ignore */ }
-  }, [user])
+    const loadBlocks = useCallback(async () => {
+      if (!user) return
+      try {
+        const res = await fetch(`/api/schedule-blocks?barber_id=${user.id}`)
+        if (res.ok) {
+          const json = await res.json() as { blocks: ScheduleBlock[] }
+          setBlocks(json.blocks)
+        }
+      } catch { /* ignore */ }
+    }, [user])
 
-  useEffect(() => { void loadBlocks() }, [loadBlocks])
+    useEffect(() => { void loadBlocks() }, [loadBlocks])
 
   const formattedDate = toDateStr(selectedDate)
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate])

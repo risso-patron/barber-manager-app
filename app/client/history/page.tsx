@@ -114,12 +114,11 @@ export default function ClientHistoryPage() {
     const completed = appointments.filter(apt => apt.status === "completed")
     const cancelled = appointments.filter(apt => apt.status === "cancelled")
     const totalSpent = completed.reduce((sum, apt) => sum + apt.price, 0)
-    const rated = completed.filter(apt => apt.rating != null)
+    const rated = completed.filter(apt => apt.rating !== null && apt.rating !== undefined)
     const avgRating = rated.length > 0
       ? (rated.reduce((sum, apt) => sum + (apt.rating ?? 0), 0) / rated.length).toFixed(1)
       : null
     
-    // Favorite service
     const serviceCounts = completed.reduce((acc, apt) => {
       acc[apt.serviceName] = (acc[apt.serviceName] || 0) + 1
       return acc
@@ -128,7 +127,6 @@ export default function ClientHistoryPage() {
     const favoriteService = Object.entries(serviceCounts)
       .sort((a, b) => b[1] - a[1])[0]
 
-    // Favorite barber
     const barberCounts = completed.reduce((acc, apt) => {
       acc[apt.employeeName] = (acc[apt.employeeName] || 0) + 1
       return acc
@@ -310,7 +308,7 @@ export default function ClientHistoryPage() {
                       }
                     />
                   )}
-                  {apt.status === "completed" && apt.rating != null && apt.rating > 0 && (
+                  {apt.status === "completed" && apt.rating !== null && apt.rating !== undefined && apt.rating > 0 && (
                     <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "11px", color: "#F59E0B" }}>
                       {"★".repeat(apt.rating)}{"☆".repeat(5 - apt.rating)}
                     </span>
