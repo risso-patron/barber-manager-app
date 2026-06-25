@@ -62,60 +62,29 @@ export default function AdminDashboard() {
     monthlyRevenue: 0,
     pendingAppointments: 0,
   })
-  const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
+const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
 
   useEffect(() => {
     const loadStats = async () => {
-      if (!supabase) {
-        setStats(DEMO_STATS)
-        return
-      }
-
-      const today = new Date().toISOString().split("T")[0]
-      const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
-
       try {
-        const [
-          { count: totalAppointments },
-          { count: todayAppointments },
-          { count: pendingAppointments },
-          { count: totalEmployees },
-          { count: totalClients },
-          { count: newClientsMonth },
-          { data: revenueData },
-        ] = await Promise.all([
-          supabase.from("appointments").select("*", { count: "exact", head: true }),
-          supabase.from("appointments").select("*", { count: "exact", head: true }).eq("appointment_date", today),
-          supabase.from("appointments").select("*", { count: "exact", head: true }).eq("status", "pending"),
-          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "employee"),
-          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client"),
-          supabase.from("users").select("*", { count: "exact", head: true }).eq("role", "client").gte("created_at", firstOfMonth),
-          supabase.from("appointments").select("service:services(price)").eq("status", "completed").gte("appointment_date", firstOfMonth),
-        ])
-
-        const revenueRows = (revenueData ?? []) as unknown as RevenueAppointment[]
-        const monthlyRevenue = revenueRows.reduce((sum, appointment) => sum + (appointment.service?.price ?? 0), 0)
-
-        setStats({
-          totalAppointments: totalAppointments || 0,
-          todayAppointments: todayAppointments || 0,
-          totalEmployees: totalEmployees || 0,
-          activeEmployees: totalEmployees || 0,
-          totalClients: totalClients || 0,
-          newClientsMonth: newClientsMonth || 0,
-          monthlyRevenue,
-          pendingAppointments: pendingAppointments || 0,
-        })
-      } catch (error) {
-        console.warn("No se pudieron cargar estadísticas admin, usando datos demo:", error)
+        const res = await fetch("/api/dashboard/stats")
+        if (res.ok) {
+          const data = await res.json()
+          setStats(data)
+        } else {
+          setStats(DEMO_STATS)
+        }
+      } catch {
         setStats(DEMO_STATS)
       }
 
-      // Low-rating alerts (non-critical — don't block main stats)
+      // Low-rating alerts (non-critical)
       fetch("/api/alerts")
         .then((r) => r.json())
-        .then((d: { alerts?: LowRatingAlert[] }) => { if (Array.isArray(d.alerts)) setAlerts(d.alerts) })
-        .catch(() => { /* non-critical */ })
+        .then((d: { alerts?: LowRatingAlert[] }) => {
+          if (Array.isArray(d.alerts)) setAlerts(d.alerts)
+        })
+        .catch(() => {})
     }
 
     loadStats()
