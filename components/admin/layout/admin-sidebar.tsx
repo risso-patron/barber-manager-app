@@ -10,22 +10,19 @@ import {
   UserCheck,
   BarChart2,
   Settings,
+  CreditCard,
+  Plug,
 } from "lucide-react"
 
-type NavItem = {
-  href: string
-  label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
-  exact?: boolean
-}
-
 const navItems: NavItem[] = [
-  { href: "/admin",              label: "Dashboard",  icon: LayoutDashboard, exact: true },
-  { href: "/admin/appointments", label: "Citas",      icon: Calendar },
-  { href: "/admin/employees",    label: "Empleados",  icon: Users },
-  { href: "/admin/inventory",    label: "Inventario", icon: Package },
-  { href: "/admin/clients",      label: "Clientes",   icon: UserCheck },
-  { href: "/admin/reports",      label: "Reportes",   icon: BarChart2 },
+  { href: "/admin",               label: "Dashboard",      icon: LayoutDashboard, exact: true },
+  { href: "/admin/appointments",  label: "Citas",          icon: Calendar },
+  { href: "/admin/employees",     label: "Empleados",      icon: Users },
+  { href: "/admin/inventory",     label: "Inventario",     icon: Package },
+  { href: "/admin/clients",       label: "Clientes",       icon: UserCheck },
+  { href: "/admin/reports",       label: "Reportes",       icon: BarChart2 },
+  { href: "/admin/billing",       label: "Facturación",    icon: CreditCard },
+  { href: "/admin/integrations",  label: "Integraciones",  icon: Plug },
 ]
 
 export function AdminSidebar() {
