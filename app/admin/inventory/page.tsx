@@ -173,16 +173,10 @@ export default function InventoryPage() {
     setSelectedItem(null)
   }
 
-  const handleDeleteItem = async () => {
+    const handleDeleteItem = async () => {
     if (!itemToDelete) return
-    if (!supabase) {
-      setItems(items.filter(item => item.id !== itemToDelete.id))
-      setIsDeleteModalOpen(false)
-      setItemToDelete(null)
-      return
-    }
-    const { error } = await supabase.from("inventory").delete().eq("id", itemToDelete.id)
-    if (!error) setItems(items.filter(item => item.id !== itemToDelete.id))
+    const res = await fetch(`/api/inventory?id=${itemToDelete.id}`, { method: "DELETE" })
+    if (res.ok) setItems(items.filter(item => item.id !== itemToDelete.id))
     setIsDeleteModalOpen(false)
     setItemToDelete(null)
   }
