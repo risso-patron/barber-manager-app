@@ -100,7 +100,87 @@ export function ClientSidebar() {
             </Link>
           )
         })}
-      </nav>
+{/* Logout */}
+      <button
+        onClick={async () => {
+          const { createBrowserClient } = await import("@supabase/ssr")
+          const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+          await supabase.auth.signOut()
+          window.location.href = "/auth/login"
+        }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 3,
+          padding: "6px 8px",
+          borderRadius: 8,
+          minHeight: 44,
+          flex: 1,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "#8A8A8A",
+          fontFamily: "var(--font-dm-sans), sans-serif",
+          fontSize: 10,
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Salir</span>
+      </button>
+    </nav>
+      {/* Divider + Logout */}
+      <div style={{ height: 1, background: "#252525", margin: "0 0 12px" }} />
+      <div style={{ padding: "0 12px 24px" }}>
+        <button
+          onClick={async () => {
+            const { createBrowserClient } = await import("@supabase/ssr")
+            const supabase = createBrowserClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            )
+            await supabase.auth.signOut()
+            window.location.href = "/auth/login"
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            width: "100%",
+            padding: "10px 16px",
+            background: "none",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            color: "#8A8A8A",
+            fontSize: 13,
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            transition: "background 0.15s, color 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "#252525"
+            ;(e.currentTarget as HTMLButtonElement).style.color = "#E53935"
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "none"
+            ;(e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A"
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Cerrar sesión
+        </button>
+      </div>
     </aside>
   )
 }

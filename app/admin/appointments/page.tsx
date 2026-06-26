@@ -153,6 +153,8 @@ export default function AppointmentsPage() {
       })
       .catch(console.error)
 
+  }, [])
+
   // Filter appointments
   const filteredAppointments = useMemo(() => {
     return appointments.filter(apt => {

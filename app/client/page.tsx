@@ -185,7 +185,7 @@ export default function ClientDashboard() {
     if (supabase) {
       await supabase.auth.signOut()
     }
-    router.push("/auth/login")
+    router.push("/")
   }
 
   const handleMarkRead = async (id: string) => {

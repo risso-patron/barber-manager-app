@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Calendar,
@@ -12,7 +12,9 @@ import {
   Settings,
   CreditCard,
   Plug,
+  LogOut,
 } from "lucide-react"
+import { createBrowserClient } from "@supabase/ssr"
 
 const navItems: NavItem[] = [
   { href: "/admin",               label: "Dashboard",      icon: LayoutDashboard, exact: true },
@@ -27,6 +29,17 @@ const navItems: NavItem[] = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href
@@ -128,7 +141,7 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Divider + Settings */}
+      {/* Divider + Settings + Logout */}
       <div style={{ padding: "0 12px 24px" }}>
         <div style={{ height: 1, background: "#252525", margin: "0 8px 12px" }} />
         <Link
@@ -155,6 +168,38 @@ export function AdminSidebar() {
           <Settings size={16} />
           <span>Configuración</span>
         </Link>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            width: "100%",
+            padding: "12px 20px",
+            marginTop: 2,
+            background: "transparent",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            color: "#8A8A8A",
+            fontSize: 13,
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            transition: "background 150ms, color 150ms",
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = "#252525"
+            ;(e.currentTarget as HTMLButtonElement).style.color = "#E53935"
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = "transparent"
+            ;(e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A"
+          }}
+        >
+          <LogOut size={16} />
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </aside>
   )

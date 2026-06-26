@@ -87,20 +87,21 @@ export function LoginForm() {
       return
     }
 
+    // Intentar demo mode primero (tiene prioridad sobre Supabase para usuarios demo)
+    const demoLogin = tryDemoLogin(data)
+    if (demoLogin.ok) {
+      router.push("/dashboard")
+      router.refresh()
+      setIsLoading(false)
+      return
+    }
+
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     })
 
     if (authError) {
-      const demoLogin = tryDemoLogin(data)
-      if (demoLogin.ok) {
-        router.push("/dashboard")
-        router.refresh()
-        setIsLoading(false)
-        return
-      }
-
       setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
       setIsLoading(false)
       return
