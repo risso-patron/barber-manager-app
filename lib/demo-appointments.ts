@@ -54,6 +54,8 @@ export interface InventoryItem {
   quantity: number
   minStock: number
   price: number
+  salePrice?: number | null
+  sku?: string | null
   supplier?: string
   lastRestocked?: string
   status?: 'disponible' | 'bajo' | 'agotado'
