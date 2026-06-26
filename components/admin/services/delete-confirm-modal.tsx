@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
@@ -11,19 +12,34 @@ interface DeleteConfirmModalProps {
   serviceName: string
 }
 
-export function DeleteConfirmModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  serviceName 
+export function DeleteConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  serviceName,
 }: DeleteConfirmModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
-      <Card className="w-full max-w-md">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <Card
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-service-title"
+        className="w-full max-w-md"
+      >
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600">
+          <CardTitle id="delete-service-title" className="flex items-center gap-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
             Confirmar Eliminación
           </CardTitle>
@@ -37,14 +53,10 @@ export function DeleteConfirmModal({
           </p>
 
           <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancelar
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={onConfirm}
-              className="flex-1"
-            >
+            <Button type="button" variant="destructive" onClick={onConfirm} className="flex-1">
               Eliminar
             </Button>
           </div>

@@ -34,6 +34,10 @@ const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseA
 
 const BARBER_SPECIALTIES = ["barbero"]
 
+function isBarber(emp: EmployeeWithSpecialty): boolean {
+  return BARBER_SPECIALTIES.includes(emp.specialty || "") || emp.role === "barber"
+}
+
 type EmployeeWithSpecialty = Employee & { specialty?: string | null; commission_rate?: number | null }
 
 export default function EmployeesPage() {
@@ -88,11 +92,10 @@ export default function EmployeesPage() {
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.phone.includes(searchTerm)
 
-      const specialty = emp.specialty || ""
       const matchesRole =
         filterRole === "all" ||
-        (filterRole === "barberos" && BARBER_SPECIALTIES.includes(specialty)) ||
-        (filterRole === "staff" && !BARBER_SPECIALTIES.includes(specialty))
+        (filterRole === "barberos" && isBarber(emp)) ||
+        (filterRole === "staff" && !isBarber(emp))
 
       return matchesSearch && matchesRole
     })
@@ -100,7 +103,7 @@ export default function EmployeesPage() {
 
   // Statistics
   const stats = useMemo(() => {
-    const barbers = employees.filter(emp => BARBER_SPECIALTIES.includes(emp.specialty || "")).length
+    const barbers = employees.filter(isBarber).length
     return {
       total: employees.length,
       barbers,

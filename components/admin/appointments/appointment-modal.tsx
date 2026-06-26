@@ -26,6 +26,13 @@ export function AppointmentModal({
   employees,
   clients,
 }: AppointmentModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [isOpen, onClose])
+
   const [formData, setFormData] = useState<{
     clientId: string; clientName: string; clientPhone: string
     employeeId: string; employeeName: string
@@ -52,6 +59,9 @@ export function AppointmentModal({
   const [isNewClient, setIsNewClient] = useState(false)
   const [newClientName, setNewClientName] = useState("")
   const [newClientPhone, setNewClientPhone] = useState("")
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+  const todayISO = new Date().toISOString().split("T")[0] as string
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)
@@ -89,20 +99,31 @@ export function AppointmentModal({
     }
   }
 
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {}
+    const clientId = isNewClient ? "__new__" : formData.clientId
+    if (!isNewClient && !clientId) errors.clientId = "Selecciona un cliente."
+    if (isNewClient && !newClientName.trim()) errors.newClientName = "Ingresa el nombre del cliente."
+    if (!formData.serviceId) errors.serviceId = "Selecciona un servicio."
+    if (!formData.employeeId) errors.employeeId = "Selecciona un barbero."
+    if (!formData.date) errors.date = "Selecciona una fecha válida."
+    else if (formData.date < todayISO!) errors.date = "La fecha no puede ser anterior a hoy."
+    if (!formData.time) errors.time = "Selecciona una hora válida."
+    if (formData.price <= 0) errors.price = "El precio debe ser mayor a 0."
+    if (formData.duration <= 0) errors.duration = "La duración debe ser mayor a 0."
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validate()) return
 
     const clientId = isNewClient ? "__new__" : formData.clientId
     const clientName = isNewClient ? newClientName : formData.clientName
     const clientPhone = isNewClient ? newClientPhone : formData.clientPhone
 
-    const payload = {
-      ...formData,
-      date: formData.date,
-      clientId,
-      clientName,
-      clientPhone,
-    }
+    const payload = { ...formData, clientId, clientName, clientPhone }
 
     if (appointment) {
       onSave({ ...payload, id: appointment.id, createdAt: appointment.createdAt })
@@ -114,13 +135,21 @@ export function AppointmentModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="apt-modal-title"
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">
+          <h2 id="apt-modal-title" className="text-xl font-bold">
             {appointment ? "Editar Cita" : "Nueva Cita"}
           </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar modal">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -153,34 +182,35 @@ export function AppointmentModal({
                 <p className="text-xs text-blue-700 font-medium">Se creará un cliente nuevo al guardar</p>
                 <Input
                   placeholder="Nombre completo *"
-                  required
                   value={newClientName}
                   onChange={(e) => setNewClientName(e.target.value)}
                 />
+                {formErrors.newClientName && <p className="text-xs text-red-500">{formErrors.newClientName}</p>}
                 <Input
                   placeholder="Teléfono *"
                   type="tel"
-                  required
                   value={newClientPhone}
                   onChange={(e) => setNewClientPhone(e.target.value)}
                 />
               </div>
             ) : (
-              <select
-                id="clientId"
-                aria-label="Cliente"
-                required
-                value={formData.clientId}
-                onChange={(e) => handleClientChange(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Seleccionar cliente</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} - {client.phone}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  id="clientId"
+                  aria-label="Cliente"
+                  value={formData.clientId}
+                  onChange={(e) => handleClientChange(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} - {client.phone}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.clientId && <p className="text-xs text-red-500">{formErrors.clientId}</p>}
+              </>
             )}
           </div>
 
@@ -190,7 +220,6 @@ export function AppointmentModal({
             <select
               id="serviceId"
               aria-label="Servicio"
-              required
               value={formData.serviceId}
               onChange={(e) => handleServiceChange(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -202,6 +231,7 @@ export function AppointmentModal({
                 </option>
               ))}
             </select>
+            {formErrors.serviceId && <p className="text-xs text-red-500">{formErrors.serviceId}</p>}
           </div>
 
           {/* Employee Selection */}
@@ -210,7 +240,6 @@ export function AppointmentModal({
             <select
               id="employeeId"
               aria-label="Barbero"
-              required
               value={formData.employeeId}
               onChange={(e) => handleEmployeeChange(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -222,6 +251,7 @@ export function AppointmentModal({
                 </option>
               ))}
             </select>
+            {formErrors.employeeId && <p className="text-xs text-red-500">{formErrors.employeeId}</p>}
           </div>
 
           {/* Date and Time */}
@@ -231,10 +261,11 @@ export function AppointmentModal({
               <Input
                 id="date"
                 type="date"
-                required
+                min={todayISO}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
+              {formErrors.date && <p className="text-xs text-red-500">{formErrors.date}</p>}
             </div>
 
             <div className="space-y-2">
@@ -242,10 +273,10 @@ export function AppointmentModal({
               <Input
                 id="time"
                 type="time"
-                required
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
               />
+              {formErrors.time && <p className="text-xs text-red-500">{formErrors.time}</p>}
             </div>
           </div>
 

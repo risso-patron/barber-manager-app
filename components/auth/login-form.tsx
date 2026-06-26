@@ -134,11 +134,11 @@ export function LoginForm() {
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
         </CardHeader>
         <CardContent>
-          {!hasSupabaseConfig && (
+          {!hasSupabaseConfig && process.env.NODE_ENV === "development" && (
             <Alert className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Entorno sin Supabase configurado. Ajusta las variables para habilitar login real.
+                Modo demo activo. Configura las variables de Supabase en <code>.env.local</code> para habilitar autenticación real.
               </AlertDescription>
             </Alert>
           )}
@@ -187,6 +187,7 @@ export function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? (
@@ -230,11 +231,13 @@ export function LoginForm() {
                 Regístrate aquí
               </Button>
             </p>
-            <div className="text-xs text-gray-500 mt-4 space-y-1">
-              <p>💡 <strong>Credenciales demo:</strong></p>
-              <p>Admin: admin@demo.com / Demo1234</p>
-              <p>Cliente: client@demo.com / Demo1234</p>
-            </div>
+            {process.env.NODE_ENV === "development" && !hasSupabaseConfig && (
+              <div className="text-xs text-gray-400 mt-4 space-y-1 border border-dashed border-gray-200 rounded p-2">
+                <p className="font-medium text-gray-500">Demo (solo visible en desarrollo)</p>
+                <p>admin@demo.com / Demo1234</p>
+                <p>client@demo.com / Demo1234</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

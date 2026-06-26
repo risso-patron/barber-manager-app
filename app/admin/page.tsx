@@ -39,13 +39,13 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 const DEMO_STATS: DashboardStats = {
-  totalAppointments: 14,
+  totalAppointments: 7,
   todayAppointments: 3,
   totalEmployees: 3,
   activeEmployees: 3,
-  totalClients: 24,
-  newClientsMonth: 6,
-  monthlyRevenue: 840,
+  totalClients: 5,
+  newClientsMonth: 2,
+  monthlyRevenue: 105,
   pendingAppointments: 2,
 }
 

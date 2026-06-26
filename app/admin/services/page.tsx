@@ -18,7 +18,7 @@ import {
   TrendingUp,
   ArrowLeft
 } from "lucide-react"
-import { type Service } from "@/lib/demo-appointments"
+import { type Service, DEMO_SERVICES } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
 import { ServiceModal } from "@/components/admin/services/service-modal"
 import { DeleteConfirmModal } from "@/components/admin/services/delete-confirm-modal"
@@ -37,11 +37,15 @@ export default function ServicesPage() {
   const [deletingService, setDeletingService] = useState<Service | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
-  // Load services from Supabase
+  // Load services — fallback to demo data when Supabase is not configured
   useEffect(() => {
-    if (!supabase) return
+    if (!supabase) {
+      setServices(DEMO_SERVICES)
+      return
+    }
     supabase.from("services").select("*").order("name").then(({ data }) => {
-      if (data) setServices(data)
+      if (data && data.length > 0) setServices(data)
+      else setServices(DEMO_SERVICES)
     })
   }, [])
 

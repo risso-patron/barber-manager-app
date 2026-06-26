@@ -354,14 +354,14 @@ export default function InventoryPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium">Artículo</th>
-                  <th className="text-left py-3 px-4 font-medium">Categoría</th>
-                  <th className="text-left py-3 px-4 font-medium">Cantidad</th>
-                  <th className="text-left py-3 px-4 font-medium">Stock Mín.</th>
-                  <th className="text-left py-3 px-4 font-medium">Precio</th>
-                  <th className="text-left py-3 px-4 font-medium">Proveedor</th>
-                  <th className="text-left py-3 px-4 font-medium">Estado</th>
-                  <th className="text-left py-3 px-4 font-medium">Acciones</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Artículo</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Categoría</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Cantidad</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Stock Mín.</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Precio</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Proveedor</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Estado</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>

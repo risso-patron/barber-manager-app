@@ -16,6 +16,13 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [isOpen, onClose])
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -101,11 +108,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
-      <Card className="w-full max-w-md">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <Card role="dialog" aria-modal="true" aria-labelledby="client-modal-title" className="w-full max-w-md">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle>{client ? "Editar Cliente" : "Nuevo Cliente"}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <CardTitle id="client-modal-title">{client ? "Editar Cliente" : "Nuevo Cliente"}</CardTitle>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar modal">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>

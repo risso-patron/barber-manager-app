@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
+import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -86,6 +87,24 @@ export default function ReportsPage() {
 
   const fetchReportData = useCallback(async (backgroundSync = false) => {
     if (!supabase) {
+      // Populate with demo data so reports aren't blank in demo mode
+      setAppointments(
+        DEMO_APPOINTMENTS.map((a) => ({
+          id: a.id,
+          date: a.date,
+          status: a.status,
+          clientId: a.clientId,
+          employeeId: a.employeeId,
+          employeeName: a.employeeName,
+          serviceName: a.serviceName,
+          price: a.price,
+          duration: a.duration,
+          rating: a.rating ?? null,
+        }))
+      )
+      setEmployees(
+        DEMO_EMPLOYEES.map((e) => ({ id: e.id, name: e.name, commission_rate: null }))
+      )
       setLastSyncedAt(new Date())
       return
     }

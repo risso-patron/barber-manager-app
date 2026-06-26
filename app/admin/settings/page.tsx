@@ -229,15 +229,23 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="mb-6">
-        <div className="flex gap-2 border-b">
+        <div
+          role="tablist"
+          aria-label="Secciones de configuración"
+          className="flex gap-2 border-b"
+          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        >
           {tabs.map(tab => {
             const Icon = tab.icon
+            const isActive = activeTab === tab.id
             return (
               <button
+                type="button"
                 key={tab.id}
+                role="tab"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                  isActive
                     ? "border-blue-600 text-blue-600 font-medium"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
