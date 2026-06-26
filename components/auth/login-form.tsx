@@ -14,9 +14,26 @@ import { loginSchema, type LoginInput } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { DEMO_USERS } from "@/lib/demo-config"
 
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
+
+function isPlaceholder(value: string | undefined): boolean {
+  if (!value) return true
+  const lower = value.toLowerCase()
+  return (
+    lower.includes("tu_") ||
+    lower.includes("pega_aqui") ||
+    lower.includes("aqui_") ||
+    lower.includes("your-") ||
+    lower.includes("your_")
+  )
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const hasSupabaseConfig =
+  !isDemoMode &&
+  !isPlaceholder(supabaseUrl) &&
+  !isPlaceholder(supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 function tryDemoLogin(data: LoginInput): { ok: boolean; userName?: string } {
@@ -73,7 +90,7 @@ export function LoginForm() {
     setIsLoading(true)
     setError(null)
 
-    if (!supabase) {
+    if (isDemoMode || !supabase) {
       const demoLogin = tryDemoLogin(data)
       if (demoLogin.ok) {
         router.push("/dashboard")
@@ -82,32 +99,29 @@ export function LoginForm() {
         return
       }
 
-      setError("Credenciales inválidas para modo demo. Revisa email y contraseña.")
+      setError("Credenciales inválidas para modo demo.")
       setIsLoading(false)
       return
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
 
-    if (authError) {
-      const demoLogin = tryDemoLogin(data)
-      if (demoLogin.ok) {
-        router.push("/dashboard")
-        router.refresh()
+      if (authError) {
+        setError("Credenciales inválidas. Verifica tu email y contraseña.")
         setIsLoading(false)
         return
       }
 
-      setError("Credenciales inválidas. Por favor, verifica tu email y contraseña.")
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      setError("No se pudo conectar con Supabase. Revisa la configuración del entorno.")
       setIsLoading(false)
-      return
     }
-
-    router.push("/dashboard")
-    router.refresh()
   }
 
   return (
