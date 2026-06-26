@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,13 +49,24 @@ const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUr
 
 export default function ClientAppointmentsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const user = useRequireAuth(["client"])
   const { toasts, removeToast, success, error } = useToast()
-  
+
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null)
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming")
+
+  // Mostrar mensaje de éxito desde booking
+  useEffect(() => {
+    const msg = searchParams.get("success")
+    if (msg) {
+      success(decodeURIComponent(msg))
+      router.replace("/client/appointments")
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -224,10 +235,11 @@ export default function ClientAppointmentsPage() {
   if (!user) return null
 
   const statusLabel: Record<string, string> = {
-    confirmed: "Conf.",
-    pending:   "Pend.",
-    completed: "Ok",
-    cancelled: "—",
+    confirmed: "Confirmada",
+    pending:   "Pendiente",
+    completed: "Completada",
+    cancelled: "Cancelada",
+    no_show:   "No asistió",
   }
   const statusColor: Record<string, string> = {
     confirmed: "#22C55E",
@@ -276,27 +288,34 @@ export default function ClientAppointmentsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "24px", borderBottom: "1px solid #252525", marginBottom: "24px" }}>
-        {(["upcoming", "past"] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
-              background: "none", border: "none", padding: "12px 0", cursor: "pointer",
-              color: activeTab === tab ? "#F0F0F0" : "#555555",
-              borderBottom: activeTab === tab ? "1px solid #E53935" : "1px solid transparent",
-              marginBottom: "-1px", transition: "color 0.15s",
-            }}
-          >
-            {tab === "upcoming" ? `Próximas (${upcoming.length})` : `Pasadas (${past.length})`}
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: "24px", borderBottom: "1px solid #252525", marginBottom: "24px", alignItems: "center" }}>
+        <div role="tablist" aria-label="Estado de citas" style={{ display: "flex", gap: "24px" }}>
+          {(["upcoming", "past"] as const).map(tab => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-controls={tab === "upcoming" ? "panel-upcoming" : "panel-past"}
+              id={tab === "upcoming" ? "tab-upcoming" : "tab-past"}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase",
+                background: "none", border: "none", padding: "12px 0", cursor: "pointer",
+                color: activeTab === tab ? "#F0F0F0" : "#555555",
+                borderBottom: activeTab === tab ? "1px solid #E53935" : "1px solid transparent",
+                marginBottom: "-1px", transition: "color 0.15s",
+              }}
+            >
+              {tab === "upcoming" ? `Próximas (${upcoming.length})` : `Pasadas (${past.length})`}
+            </button>
+          ))}
+        </div>
         <div style={{ marginLeft: "auto" }}>
           <button
+            type="button"
             className="orno-btn"
             onClick={() => router.push("/client/book")}
-            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#E53935", background: "none", border: "1px solid rgba(229,57,53,0.3)", padding: "8px 14px", cursor: "pointer", borderRadius: "4px" }}
+            style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#E53935", background: "none", border: "1px solid rgba(229,57,53,0.3)", padding: "10px 14px", cursor: "pointer", borderRadius: "4px", minHeight: 44 }}
           >
             + Nueva cita
           </button>
@@ -304,7 +323,12 @@ export default function ClientAppointmentsPage() {
       </div>
 
       {/* List */}
-      <div style={{ borderTop: "1px solid #252525" }}>
+      <div
+        role="tabpanel"
+        id={activeTab === "upcoming" ? "panel-upcoming" : "panel-past"}
+        aria-labelledby={activeTab === "upcoming" ? "tab-upcoming" : "tab-past"}
+        style={{ borderTop: "1px solid #252525" }}
+      >
         {displayList.length === 0 ? (
           <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#555555", padding: "24px 0" }}>
             {activeTab === "upcoming" ? "Sin citas próximas" : "Sin citas pasadas"}
@@ -344,7 +368,8 @@ export default function ClientAppointmentsPage() {
                         color: "#F0F0F0",
                         background: "none",
                         border: "1px solid #303030",
-                        padding: "7px 12px",
+                        padding: "10px 16px",
+                    minHeight: "44px",
                         borderRadius: "4px",
                         cursor: "pointer",
                       }}
@@ -362,7 +387,8 @@ export default function ClientAppointmentsPage() {
                         color: "#E53935",
                         background: "none",
                         border: "1px solid rgba(229,57,53,0.3)",
-                        padding: "7px 12px",
+                        padding: "10px 16px",
+                    minHeight: "44px",
                         borderRadius: "4px",
                         cursor: "pointer",
                       }}

@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, CalendarPlus, CalendarDays, Clock } from "lucide-react"
+import { Home, CalendarPlus, CalendarDays, Clock, User } from "lucide-react"
 
 const bottomItems = [
   { href: "/client",              label: "Inicio",    icon: Home,         exact: true },
   { href: "/client/book",         label: "Reservar",  icon: CalendarPlus },
   { href: "/client/appointments", label: "Citas",     icon: CalendarDays },
   { href: "/client/history",      label: "Historial", icon: Clock },
+  { href: "/client/profile",      label: "Perfil",    icon: User },
 ]
 
 export function ClientBottomNav() {
@@ -21,6 +22,7 @@ export function ClientBottomNav() {
 
   return (
     <nav
+      aria-label="Navegación principal mobile"
       className="lg:hidden"
       style={{
         position: "fixed",
@@ -44,6 +46,7 @@ export function ClientBottomNav() {
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             style={{
               display: "flex",
               flexDirection: "column",

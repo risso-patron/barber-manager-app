@@ -21,6 +21,7 @@ import {
   Mail,
   CheckCircle2,
 } from "lucide-react"
+import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 
 interface Appointment {
   id: string
@@ -102,8 +103,16 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!user) return
     if (!supabase) {
-      setAppointments([])
-      setPastAppointments([])
+      const todayStr = new Date().toISOString().substring(0, 10)
+      const upcoming = DEMO_APPOINTMENTS
+        .filter(a => a.date >= todayStr && a.status !== "cancelled" && a.status !== "completed")
+        .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+        .map(a => ({ id: a.id, service: a.serviceName, barber: a.employeeName, date: a.date, time: a.time, status: a.status as Appointment["status"] }))
+      const past = DEMO_APPOINTMENTS
+        .filter(a => a.date < todayStr || a.status === "completed" || a.status === "cancelled")
+        .map(a => ({ id: a.id, service: a.serviceName, barber: a.employeeName, date: a.date, time: a.time, status: a.status as Appointment["status"] }))
+      setAppointments(upcoming)
+      setPastAppointments(past)
       setProducts([])
       setMessages([])
       setGifts([])
@@ -225,7 +234,13 @@ export default function ClientDashboard() {
 
       <main style={{ padding: "24px 32px 80px" }}>
 
-        <div className="pt-10 pb-4">
+        <div className="pt-10 pb-2">
+          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(20px,3vw,28px)", fontWeight: 300, color: "#F0F0F0", letterSpacing: "-0.01em" }}>
+            Hola, {user.profile?.name || "bienvenido"}
+          </p>
+        </div>
+
+        <div className="pt-4 pb-4">
           <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A8A8A" }}>
             Próxima cita
           </p>
@@ -264,7 +279,7 @@ export default function ClientDashboard() {
           {[
             { value: String(appointments.length),     label: "Próximas" },
             { value: String(pastAppointments.length),  label: "Visitas" },
-            { value: String(unreadCount),              label: "Sin leer" },
+            { value: String(unreadCount > 0 ? unreadCount : pastAppointments.length + appointments.length), label: unreadCount > 0 ? "Sin leer" : "Total citas" },
           ].map((s, i) => (
             <div key={i} className="orno-row" style={{ padding: "24px 0", borderRight: i < 2 ? "1px solid #252525" : "none", paddingLeft: i > 0 ? "28px" : 0, paddingRight: i < 2 ? "28px" : 0 }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(32px,4vw,48px)", fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em", color: "#F0F0F0" }}>{s.value}</p>

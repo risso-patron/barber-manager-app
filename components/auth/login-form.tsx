@@ -7,7 +7,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
@@ -36,7 +36,7 @@ const hasSupabaseConfig =
   !isPlaceholder(supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
-function tryDemoLogin(data: LoginInput): { ok: boolean; userName?: string } {
+function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?: string } {
   const demoUser = Object.values(DEMO_USERS).find(
     (user) => user.email.toLowerCase() === data.email.toLowerCase() && user.password === data.password,
   )
@@ -62,7 +62,7 @@ function tryDemoLogin(data: LoginInput): { ok: boolean; userName?: string } {
     )
   }
 
-  return { ok: true, userName: demoUser.name }
+  return { ok: true, role: demoUser.role, userName: demoUser.name }
 }
 
 export function LoginForm() {
@@ -93,7 +93,11 @@ export function LoginForm() {
     if (isDemoMode || !supabase) {
       const demoLogin = tryDemoLogin(data)
       if (demoLogin.ok) {
-        router.push("/dashboard")
+        const roleMap: Record<string, string> = {
+          admin: "/admin", manager: "/admin",
+          employee: "/employee/dashboard", barber: "/barber", client: "/client",
+        }
+        router.push(roleMap[demoLogin.role ?? ""] || "/auth/login")
         router.refresh()
         setIsLoading(false)
         return

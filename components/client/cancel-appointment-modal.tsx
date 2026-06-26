@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, X } from "lucide-react"
@@ -26,6 +26,14 @@ export function CancelAppointmentModal({
   const [reason, setReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
+
   if (!isOpen) return null
 
   const handleConfirm = async () => {
@@ -45,35 +53,41 @@ export function CancelAppointmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
+    >
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+
       {/* Modal */}
-      <Card className="relative z-10 w-full max-w-lg mx-4 shadow-xl">
+      <Card
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cancel-modal-title"
+        className="relative z-10 w-full max-w-lg mx-4 shadow-xl"
+      >
         <CardHeader className="relative">
           <button
+            type="button"
             onClick={handleClose}
+            aria-label="Cerrar modal"
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:pointer-events-none"
           >
             <X className="h-4 w-4" />
-            <span className="sr-only">Cerrar</span>
           </button>
-          
+
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 rounded-full">
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <CardTitle className="text-xl">Cancelar Cita</CardTitle>
+              <CardTitle id="cancel-modal-title" className="text-xl">Cancelar Cita</CardTitle>
               <CardDescription>Esta acción no se puede deshacer</CardDescription>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Appointment Summary */}
           <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-2">
@@ -82,11 +96,8 @@ export function CancelAppointmentModal({
             </h4>
             <div className="space-y-1 text-sm">
               <p><span className="font-medium">Servicio:</span> {appointmentDetails.serviceName}</p>
-              <p><span className="font-medium">Fecha:</span> {new Date(appointmentDetails.date).toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
+              <p><span className="font-medium">Fecha:</span> {new Date(appointmentDetails.date + "T12:00:00").toLocaleDateString("es-ES", {
+                weekday: "long", day: "numeric", month: "long", year: "numeric",
               })}</p>
               <p><span className="font-medium">Hora:</span> {appointmentDetails.time}</p>
               <p><span className="font-medium">Barbero:</span> {appointmentDetails.employeeName}</p>
@@ -102,32 +113,31 @@ export function CancelAppointmentModal({
             </div>
           </div>
 
-          {/* Reason (Optional) */}
+          {/* Reason */}
           <div>
-            <label htmlFor="reason" className="block text-sm font-medium mb-2">
+            <label htmlFor="cancel-reason" className="block text-sm font-medium mb-2">
               Motivo de Cancelación (Opcional)
             </label>
             <textarea
-              id="reason"
+              id="cancel-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ej: Tengo un compromiso urgente..."
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-none"
               maxLength={200}
             />
-            <p className="text-xs text-slate-500 mt-1">
-              {reason.length}/200 caracteres
-            </p>
+            <p className="text-xs text-slate-500 mt-1">{reason.length}/200 caracteres</p>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
               className="flex-1"
+              style={{ minHeight: 44 }}
             >
               Mantener Cita
             </Button>
@@ -137,6 +147,7 @@ export function CancelAppointmentModal({
               onClick={handleConfirm}
               disabled={isSubmitting}
               className="flex-1"
+              style={{ minHeight: 44 }}
             >
               {isSubmitting ? "Cancelando..." : "Confirmar Cancelación"}
             </Button>

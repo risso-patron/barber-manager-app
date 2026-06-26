@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { RescheduleModal } from "@/components/client/RescheduleModal"
 import { RatingModal } from "@/components/client/RatingModal"
-import { 
-  Calendar, 
-  Clock, 
+import {
+  Calendar,
+  Clock,
   User,
   Search,
   CheckCircle,
@@ -20,6 +20,7 @@ import {
   Star,
   History as HistoryIcon
 } from "lucide-react"
+import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 
 interface Appointment {
   id: string
@@ -67,7 +68,23 @@ export default function ClientHistoryPage() {
   useEffect(() => {
     if (!user) return
     if (!supabase) {
-      setAllAppointments([])
+      const todayStr = new Date().toISOString().split("T")[0]!
+      setAllAppointments(
+        DEMO_APPOINTMENTS
+          .filter(a => a.date < todayStr || a.status === "completed" || a.status === "cancelled")
+          .map(a => ({
+            id: a.id,
+            serviceName: a.serviceName,
+            employeeName: a.employeeName,
+            date: a.date,
+            time: a.time,
+            status: a.status as Appointment["status"],
+            price: a.price,
+            notes: a.notes,
+            rating: a.rating ?? null,
+            review_text: null,
+          }))
+      )
       return
     }
 

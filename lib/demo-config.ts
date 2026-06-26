@@ -33,6 +33,15 @@ export const DEMO_USERS = {
     role: 'client' as const,
     phone: '+1234567892',
     avatar_url: null
+  },
+  vincent: {
+    id: 'demo-client-002',
+    email: 'vincent@ornodemo.com',
+    password: 'Demo1234',
+    name: 'Vincent',
+    role: 'client' as const,
+    phone: '+1234567894',
+    avatar_url: null
   }
 };
 
