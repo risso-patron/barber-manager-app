@@ -75,7 +75,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
     // Reaccionar a cambios de sesión (logout desde otra pestaña, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
-        router.replace("/auth/login")
+        router.replace("/")
       }
     })
 

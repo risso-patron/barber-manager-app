@@ -1,19 +1,31 @@
 "use client"
-
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, CalendarCheck, Calendar, BarChart3, User } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LayoutDashboard, CalendarCheck, Calendar, BarChart3, User, LogOut } from "lucide-react"
+import { createBrowserClient } from "@supabase/ssr"
 
 const bottomItems = [
-  { href: "/employee/dashboard", label: "Inicio",       icon: LayoutDashboard, exact: true },
-  { href: "/employee/schedule",  label: "Agenda",       icon: CalendarCheck },
+  { href: "/employee/dashboard", label: "Inicio",   icon: LayoutDashboard, exact: true },
+  { href: "/employee/schedule",  label: "Agenda",   icon: CalendarCheck },
   { href: "/employee/schedule?tab=week", label: "Semana", icon: Calendar },
-  { href: "/employee/stats",     label: "Stats",        icon: BarChart3 },
-  { href: "/employee/profile",   label: "Perfil",       icon: User },
+  { href: "/employee/stats",     label: "Stats",    icon: BarChart3 },
+  { href: "/employee/profile",   label: "Perfil",   icon: User },
 ]
 
 export function EmployeeBottomNav() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const handleLogout = async () => {
+    localStorage.removeItem("currentUser")
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   const isActive = (href: string, exact?: boolean) => {
     const base = href.split("?")[0]!
@@ -67,6 +79,28 @@ export function EmployeeBottomNav() {
           </Link>
         )
       })}
+      <button
+        onClick={handleLogout}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 3,
+          padding: "6px 8px",
+          borderRadius: 8,
+          minHeight: 44,
+          flex: 1,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "#8A8A8A",
+          fontFamily: "var(--font-dm-sans), sans-serif",
+          fontSize: 10,
+        }}
+      >
+        <LogOut size={20} />
+        <span>Salir</span>
+      </button>
     </nav>
   )
 }

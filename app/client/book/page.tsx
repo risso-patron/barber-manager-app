@@ -148,7 +148,7 @@ export default function BookAppointmentPage() {
         barbershop: "barber-manager",
         clientId: user.id,
         clientName: user.profile?.name || user.email,
-        clientPhone: user.profile?.phone || "",
+        clientPhone: user.profile?.phone || "0000000000",
         clientEmail: user.email,
         serviceId: service.id,
         serviceName: service.name,

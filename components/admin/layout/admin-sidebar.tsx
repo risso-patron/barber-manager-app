@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Calendar,
@@ -14,7 +14,11 @@ import {
   Scissors,
   ShoppingCart,
   X,
+  CreditCard,
+  Plug,
+  LogOut,
 } from "lucide-react"
+import { createBrowserClient } from "@supabase/ssr"
 
 type NavItem = {
   href: string
@@ -24,14 +28,16 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { href: "/admin",              label: "Dashboard",      icon: LayoutDashboard, exact: true },
-  { href: "/admin/appointments", label: "Citas",          icon: Calendar },
-  { href: "/admin/employees",    label: "Empleados",      icon: Users },
-  { href: "/admin/services",     label: "Servicios",      icon: Scissors },
-  { href: "/admin/inventory",    label: "Inventario",     icon: Package },
-  { href: "/admin/pos",          label: "Punto de Venta", icon: ShoppingCart },
-  { href: "/admin/clients",      label: "Clientes",       icon: UserCheck },
-  { href: "/admin/reports",      label: "Reportes",       icon: BarChart2 },
+  { href: "/admin",               label: "Dashboard",      icon: LayoutDashboard, exact: true },
+  { href: "/admin/appointments",  label: "Citas",          icon: Calendar },
+  { href: "/admin/employees",     label: "Empleados",      icon: Users },
+  { href: "/admin/services",      label: "Servicios",      icon: Scissors },
+  { href: "/admin/inventory",     label: "Inventario",     icon: Package },
+  { href: "/admin/pos",           label: "Punto de Venta", icon: ShoppingCart },
+  { href: "/admin/clients",       label: "Clientes",       icon: UserCheck },
+  { href: "/admin/reports",       label: "Reportes",       icon: BarChart2 },
+  { href: "/admin/billing",       label: "Facturación",    icon: CreditCard },
+  { href: "/admin/integrations",  label: "Integraciones",  icon: Plug },
 ]
 
 interface AdminSidebarProps {
@@ -41,7 +47,20 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  const handleLogout = async () => {
+    localStorage.removeItem("currentUser")
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+      await supabase.auth.signOut()
+    }
+    router.push("/auth/login")
+  }
 
   // Close on Escape
   useEffect(() => {
@@ -56,7 +75,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden"
-      // Move focus to close button when drawer opens
       setTimeout(() => closeButtonRef.current?.focus(), 50)
     } else {
       document.body.style.overflow = ""
@@ -187,7 +205,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         })}
       </nav>
 
-      {/* Divider + Settings */}
+      {/* Divider + Settings + Logout */}
       <div style={{ padding: "0 12px 24px" }}>
         <div style={{ height: 1, background: "#252525", margin: "0 8px 12px" }} />
         <Link
@@ -214,6 +232,28 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <Settings size={16} />
           <span>Configuración</span>
         </Link>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Cerrar sesión"
+          className="flex items-center gap-2.5 rounded-lg transition-all duration-150 text-[#8A8A8A] hover:bg-[#252525] hover:text-[#E53935]"
+          style={{
+            width: "100%",
+            padding: "12px 20px",
+            marginTop: 2,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            fontSize: 13,
+            textAlign: "left",
+            minHeight: 44,
+          }}
+        >
+          <LogOut size={16} />
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </aside>
   )

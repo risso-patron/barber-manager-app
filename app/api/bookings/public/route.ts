@@ -137,21 +137,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar conflictos de horarios (no puede existir otro appointment para el mismo empleado, fecha y hora)
-    const { data: conflictingAppointment } = await supabase
-      .from("appointments")
-      .select("id")
-      .eq("barber_id", data.employeeId)
-      .eq("appointment_date", data.date)
-      .eq("appointment_time", data.time)
-      .maybeSingle()
+  // Validar solapamiento real considerando duración del servicio
+const { data: hasOverlap, error: overlapError } = await supabase
+  .rpc("check_appointment_overlap", {
+    p_barber_id:  data.employeeId,
+    p_date:       data.date,
+    p_start_time: data.time,
+    p_duration:   data.duration,
+  })
 
-    if (conflictingAppointment) {
-      return NextResponse.json(
-        { success: false, error: "Este horario ya está reservado. Por favor elige otro." },
-        { status: 409 }
-      )
-    }
+if (overlapError) {
+  console.error("[bookings/public] Error validando solapamiento:", overlapError)
+  return NextResponse.json(
+    { success: false, error: "Error validando disponibilidad" },
+    { status: 500 }
+  )
+}
+
+if (hasOverlap) {
+  return NextResponse.json(
+    { success: false, error: "Este horario ya está ocupado. Por favor elige otro." },
+    { status: 409 }
+  )
+}
 
     // Obtener teléfono de barbershop desde business_settings
     const { data: settings } = await supabase

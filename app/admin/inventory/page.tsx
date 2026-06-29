@@ -37,6 +37,8 @@ interface InventoryRow {
   quantity: number
   min_stock: number
   cost_per_unit?: number
+  sale_price?: number | null
+  sku?: string | null
   supplier?: string
   updated_at?: string
 }
@@ -51,6 +53,8 @@ function mapDbToItem(row: InventoryRow): InventoryItem {
     quantity: qty,
     minStock: min,
     price: row.cost_per_unit || 0,
+    salePrice: row.sale_price ?? null,
+    sku: row.sku ?? null,
     supplier: row.supplier,
     lastRestocked: row.updated_at?.split('T')[0],
     status: qty === 0 ? 'agotado' : qty < min ? 'bajo' : 'disponible',
@@ -129,6 +133,8 @@ export default function InventoryPage() {
       min_stock: min,
       cost_per_unit: itemData.price,
       supplier: itemData.supplier,
+      sale_price: itemData.salePrice ?? null,
+      sku: itemData.sku || null,
     }).select().single()
     if (error) {
       setError(`Error al crear producto: ${error.message}`)
@@ -163,6 +169,8 @@ export default function InventoryPage() {
       min_stock: min,
       cost_per_unit: itemData.price ?? selectedItem.price,
       supplier: itemData.supplier ?? selectedItem.supplier,
+      sale_price: itemData.salePrice ?? null,
+      sku: itemData.sku || null,
     }).eq("id", selectedItem.id).select().single()
     if (error) {
       setError(`Error al actualizar producto: ${error.message}`)
@@ -173,16 +181,10 @@ export default function InventoryPage() {
     setSelectedItem(null)
   }
 
-  const handleDeleteItem = async () => {
+    const handleDeleteItem = async () => {
     if (!itemToDelete) return
-    if (!supabase) {
-      setItems(items.filter(item => item.id !== itemToDelete.id))
-      setIsDeleteModalOpen(false)
-      setItemToDelete(null)
-      return
-    }
-    const { error } = await supabase.from("inventory").delete().eq("id", itemToDelete.id)
-    if (!error) setItems(items.filter(item => item.id !== itemToDelete.id))
+    const res = await fetch(`/api/inventory?id=${itemToDelete.id}`, { method: "DELETE" })
+    if (res.ok) setItems(items.filter(item => item.id !== itemToDelete.id))
     setIsDeleteModalOpen(false)
     setItemToDelete(null)
   }
@@ -236,7 +238,7 @@ export default function InventoryPage() {
       {error && (
         <div style={{ marginBottom: 16, padding: "12px 16px", background: "#1F1212", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between" }}>
           <span>{error}</span>
-          <button onClick={() => setError(null)} style={{ fontWeight: 700, marginLeft: 16, background: "none", border: "none", color: "#EF4444", cursor: "pointer" }}>✕</button>
+          <button type="button" onClick={() => setError(null)} style={{ fontWeight: 700, marginLeft: 16, background: "none", border: "none", color: "#EF4444", cursor: "pointer" }}>✕</button>
         </div>
       )}
       <div className="flex justify-between items-center mb-6">
@@ -358,7 +360,9 @@ export default function InventoryPage() {
                   <th scope="col" className="text-left py-3 px-4 font-medium">Categoría</th>
                   <th scope="col" className="text-left py-3 px-4 font-medium">Cantidad</th>
                   <th scope="col" className="text-left py-3 px-4 font-medium">Stock Mín.</th>
-                  <th scope="col" className="text-left py-3 px-4 font-medium">Precio</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Costo</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Venta</th>
+                  <th scope="col" className="text-left py-3 px-4 font-medium">Margen</th>
                   <th scope="col" className="text-left py-3 px-4 font-medium">Proveedor</th>
                   <th scope="col" className="text-left py-3 px-4 font-medium">Estado</th>
                   <th scope="col" className="text-left py-3 px-4 font-medium">Acciones</th>
@@ -389,7 +393,22 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-3 px-4">{item.minStock}</td>
                     <td className="py-3 px-4">${item.price.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.supplier || "N/A"}</td>
+                    <td className="py-3 px-4">
+                      {item.salePrice ? (
+                        <span style={{ color: "#22C55E", fontWeight: 500 }}>${item.salePrice.toFixed(2)}</span>
+                      ) : (
+                        <span style={{ color: "#555" }}>—</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {item.salePrice && item.salePrice > item.price ? (
+                        <span style={{ color: "#00C896", fontSize: 12, fontWeight: 600 }}>
+                          {(((item.salePrice - item.price) / item.salePrice) * 100).toFixed(0)}%
+                        </span>
+                      ) : (
+                        <span style={{ color: "#555" }}>—</span>
+                      )}
+                    </td>                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.supplier || "N/A"}</td>
                     <td className="py-3 px-4">
                       <Badge variant="outline" className={`flex items-center gap-1 w-fit ${getStatusColor(item.status)}`}>
                         {getStatusIcon(item.status)}

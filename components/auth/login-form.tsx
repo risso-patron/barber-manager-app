@@ -36,6 +36,11 @@ const hasSupabaseConfig =
   !isPlaceholder(supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
+const ROLE_MAP: Record<string, string> = {
+  admin: "/admin", manager: "/admin",
+  employee: "/employee/dashboard", barber: "/barber", client: "/client",
+}
+
 function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?: string } {
   const demoUser = Object.values(DEMO_USERS).find(
     (user) => user.email.toLowerCase() === data.email.toLowerCase() && user.password === data.password,
@@ -90,20 +95,25 @@ export function LoginForm() {
     setIsLoading(true)
     setError(null)
 
+    // Modo demo sin Supabase
     if (isDemoMode || !supabase) {
       const demoLogin = tryDemoLogin(data)
       if (demoLogin.ok) {
-        const roleMap: Record<string, string> = {
-          admin: "/admin", manager: "/admin",
-          employee: "/employee/dashboard", barber: "/barber", client: "/client",
-        }
-        router.push(roleMap[demoLogin.role ?? ""] || "/auth/login")
+        router.push(ROLE_MAP[demoLogin.role ?? ""] || "/auth/login")
         router.refresh()
         setIsLoading(false)
         return
       }
-
       setError("Credenciales inválidas para modo demo.")
+      setIsLoading(false)
+      return
+    }
+
+    // Con Supabase: los usuarios demo tienen prioridad (útil para testing)
+    const demoLogin = tryDemoLogin(data)
+    if (demoLogin.ok) {
+      router.push(ROLE_MAP[demoLogin.role ?? ""] || "/auth/login")
+      router.refresh()
       setIsLoading(false)
       return
     }
@@ -133,7 +143,7 @@ export function LoginForm() {
       <Card>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
-            <img src="/orno_logo.svg" alt="Ornō" style={{ height: '48px', width: 'auto' }} />
+            <img src="/orno_logo.svg" alt="Ornō" style={{ height: "48px", width: "auto" }} />
           </div>
           <CardDescription>Inicia sesión en tu cuenta</CardDescription>
         </CardHeader>
@@ -194,11 +204,7 @@ export function LoginForm() {
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}

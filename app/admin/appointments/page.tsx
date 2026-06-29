@@ -137,37 +137,22 @@ export default function AppointmentsPage() {
         }
       })
     // Cargar servicios, empleados y clientes para los modales
-    supabase.from("services").select("id, name, price, duration").eq("is_active", true).order("name")
-      .then(({ data }) => {
-        if (!data) return
-        setServices(data.map((s) => ({
-          id: s.id,
-          name: s.name,
-          price: s.price,
-          duration: s.duration,
+// Cargar datos del modal vía API (service_role para evitar RLS)
+    fetch("/api/appointments/form-data")
+      .then(r => r.json())
+      .then(({ clients, employees, services }) => {
+        if (services) setServices(services.map((s: { id: string; name: string; price: number; duration: number }) => ({
+          id: s.id, name: s.name, price: s.price, duration: s.duration,
+        })))
+        if (employees) setEmployees(employees.map((e: { id: string; name: string; phone: string | null }) => ({
+          id: e.id, name: e.name, email: "", phone: e.phone || "", role: "employee" as const,
+        })))
+        if (clients) setClients(clients.map((c: { id: string; name: string; phone: string | null }) => ({
+          id: c.id, name: c.name, email: "", phone: c.phone || "",
         })))
       })
-    supabase.from("users").select("id, name, phone").eq("role", "employee").order("name")
-      .then(({ data }) => {
-        if (!data) return
-        setEmployees(data.map((e) => ({
-          id: e.id,
-          name: e.name,
-          email: "",
-          phone: e.phone || "",
-          role: "employee" as const,
-        })))
-      })
-    supabase.from("users").select("id, name, phone").eq("role", "client").order("name")
-      .then(({ data }) => {
-        if (!data) return
-        setClients(data.map((c) => ({
-          id: c.id,
-          name: c.name,
-          email: "",
-          phone: c.phone || "",
-        })))
-      })
+      .catch(console.error)
+
   }, [])
 
   // Filter appointments

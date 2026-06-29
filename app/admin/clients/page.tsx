@@ -155,13 +155,10 @@ export default function ClientsPage() {
   }
 
   const handleDeleteClient = async (id: string) => {
-    if (!supabase) {
+    const res = await fetch(`/api/clients?id=${id}`, { method: "DELETE" })
+    if (res.ok) {
       setClients(clients.filter(c => c.id !== id))
-      setDeletingClient(null)
-      return
     }
-    await supabase.from("users").delete().eq("id", id)
-    setClients(clients.filter(c => c.id !== id))
     setDeletingClient(null)
   }
 
