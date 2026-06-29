@@ -91,6 +91,12 @@
   }
 }
 
+/* ── Focus ring global — accessibility ──────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #E53935;
+  outline-offset: 2px;
+}
+
 /* ── Orno Admin dark shell ───────────────────────────────────────── */
 /* Scoped to [data-theme="orno-admin"] — does not affect public pages */
 [data-theme="orno-admin"] {

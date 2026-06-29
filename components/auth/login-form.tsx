@@ -57,6 +57,7 @@ function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?
         id: demoUser.id,
         email: demoUser.email,
         role: demoUser.role,
+        expiresAt: Date.now() + 8 * 60 * 60 * 1000,
         profile: {
           name: demoUser.name,
           role: demoUser.role,

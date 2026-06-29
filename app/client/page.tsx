@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -263,13 +264,13 @@ export default function ClientDashboard() {
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,34px)", fontWeight: 300, color: "#555555", letterSpacing: "-0.01em" }}>
                 Sin citas pendientes
               </p>
-              <button
-                onClick={() => router.push("/client/book")}
+              <Link
+                href="/client/book"
                 className="orno-action"
-                style={{ marginTop: "12px", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E53935", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                style={{ marginTop: "12px", display: "inline-block", fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#E53935", textDecoration: "none" }}
               >
                 Reservar ahora →
-              </button>
+              </Link>
             </div>
           )}
         </div>
@@ -301,18 +302,18 @@ export default function ClientDashboard() {
             { label: "Mis citas",     sub: "Próximas y pendientes",    path: "/client/appointments" },
             { label: "Historial",     sub: "Servicios completados",    path: "/client/history" },
           ].map((a, i) => (
-            <button
+            <Link
               key={i}
+              href={a.path}
               className="orno-action orno-row"
-              onClick={() => router.push(a.path)}
-              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", textAlign: "left" }}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0", textDecoration: "none", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
             >
               <div>
                 <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "22px", fontWeight: 400, color: "#F0F0F0" }}>{a.label}</p>
                 <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#555555", marginTop: "2px" }}>{a.sub}</p>
               </div>
               <span className="orno-arrow" style={{ fontSize: "18px", color: "#555555" }}>→</span>
-            </button>
+            </Link>
           ))}
         </div>
 

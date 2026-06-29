@@ -30,6 +30,11 @@ export function useRequireAuth(allowedRoles?: string[]) {
       }
       try {
         const currentUser = JSON.parse(currentUserStr)
+        if (currentUser.expiresAt && Date.now() > currentUser.expiresAt) {
+          localStorage.removeItem("currentUser")
+          router.replace("/auth/login")
+          return
+        }
         if (allowedRoles?.length && !allowedRoles.includes(currentUser.role)) {
           router.replace(DASHBOARD_MAP[currentUser.role] || "/auth/login")
           return
