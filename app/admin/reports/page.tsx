@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,7 +33,6 @@ import {
   Activity,
   Clock,
   Target,
-  ArrowLeft,
   Star
 } from "lucide-react"
 
@@ -562,16 +560,10 @@ export default function ReportsPage() {
     }
   }
 
-  const router = useRouter()
-
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2 mb-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
           <h1 className="text-3xl font-bold">Reportes y Análisis</h1>
           <p className="text-muted-foreground">Visualiza métricas y estadísticas del negocio</p>
           <p className="text-xs text-muted-foreground mt-1">

@@ -5,18 +5,16 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import { 
-  Scissors, 
-  Plus, 
-  Search, 
+import {
+  Scissors,
+  Plus,
+  Search,
   Clock,
   DollarSign,
   MoreVertical,
   Edit,
   Trash2,
   TrendingUp,
-  ArrowLeft
 } from "lucide-react"
 import { type Service, DEMO_SERVICES } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
@@ -28,7 +26,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function ServicesPage() {
-  const router = useRouter()
   const user = useRequireAuth(["admin"])
   const [services, setServices] = useState<Service[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -104,10 +101,6 @@ export default function ServicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gestión de Servicios</h1>
             <p className="text-gray-600 mt-1">Administra los servicios ofrecidos en la barbería</p>
