@@ -48,14 +48,14 @@ const DEMO_SALES = [
 
 export async function GET(request: NextRequest) {
   return withRateLimit(request, strictLimiter, async () => {
+    if (isDemoMode()) return NextResponse.json({ sales: DEMO_SALES })
+
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
     if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-
-    if (isDemoMode()) return NextResponse.json({ sales: DEMO_SALES })
 
     const { searchParams } = new URL(request.url)
     const from = searchParams.get("from")
@@ -87,13 +87,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withRateLimit(request, strictLimiter, async () => {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
-    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-
     const body: unknown = await request.json()
     const parsed = posSaleSchema.safeParse(body)
     if (!parsed.success) {
@@ -103,6 +96,13 @@ export async function POST(request: NextRequest) {
     if (isDemoMode()) {
       return NextResponse.json({ success: true, sale_id: "demo-new" })
     }
+
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
+    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const { items, discount, redeem_points, tip, ...saleData } = parsed.data
 
