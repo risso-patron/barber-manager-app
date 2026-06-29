@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { maskPhone } from "@/lib/utils"
+import { DEMO_APPOINTMENTS, getClientById } from "@/lib/demo-appointments"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -109,8 +110,25 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     if (!adminUser) return
 
     if (!supabase) {
-      // Demo mode: build a placeholder profile from id
-      setClient({ id: id, name: "Cliente Demo", email: "demo@demo.com", phone: null, created_at: new Date().toISOString(), admin_notes: null, no_show_count: 0 })
+      const demoClient = getClientById(id) ?? { id, name: "Cliente Demo", email: "demo@demo.com", phone: undefined, createdAt: new Date().toISOString() }
+      setClient({
+        id: demoClient.id,
+        name: demoClient.name,
+        email: demoClient.email,
+        phone: demoClient.phone ?? null,
+        created_at: demoClient.createdAt ?? new Date().toISOString(),
+        admin_notes: null,
+        no_show_count: 0,
+      })
+      const clientAppts = DEMO_APPOINTMENTS.filter(a => a.clientId === id).map(a => ({
+        id: a.id,
+        appointment_date: a.date,
+        appointment_time: a.time,
+        status: a.status,
+        service: { name: a.serviceName, price: a.price, duration: a.duration },
+        barber: { name: a.employeeName },
+      }))
+      setAppointments(clientAppts)
       setIsLoading(false)
       return
     }

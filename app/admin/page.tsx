@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Plus, TrendingUp } from "lucide-react"
+import { DEMO_APPOINTMENTS, DEMO_CLIENTS, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 
 
 interface DashboardStats {
@@ -33,21 +34,32 @@ interface RevenueAppointment {
   service: { price: number | null } | null
 }
 
+interface ActivityItem {
+  title: string
+  detail: string
+}
+
+interface RecentApptRow {
+  appointment_date: string
+  appointment_time: string
+  status: string
+  client: { name: string } | null
+  service: { name: string } | null
+}
+
+function activityLabel(status: string): string {
+  if (status === "completed") return "Cita completada"
+  if (status === "confirmed") return "Cita confirmada"
+  if (status === "cancelled") return "Cita cancelada"
+  if (status === "no_show") return "No se presentó"
+  return "Cita agendada"
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
-const DEMO_STATS: DashboardStats = {
-  totalAppointments: 7,
-  todayAppointments: 3,
-  totalEmployees: 3,
-  activeEmployees: 3,
-  totalClients: 5,
-  newClientsMonth: 2,
-  monthlyRevenue: 105,
-  pendingAppointments: 2,
-}
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -63,20 +75,63 @@ export default function AdminDashboard() {
     pendingAppointments: 0,
   })
 const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([])
 
   useEffect(() => {
     const loadStats = async () => {
+      if (!supabase) {
+        // Demo mode: derive stats from real demo data (same source as reports page)
+        const todayStr = new Date().toISOString().split("T")[0]!
+        const thisMonth = new Date().toISOString().slice(0, 7)
+        setStats({
+          totalAppointments: DEMO_APPOINTMENTS.length,
+          todayAppointments: DEMO_APPOINTMENTS.filter(a => a.date === todayStr).length,
+          pendingAppointments: DEMO_APPOINTMENTS.filter(a => a.status === "pending").length,
+          totalEmployees: DEMO_EMPLOYEES.length,
+          activeEmployees: DEMO_EMPLOYEES.length,
+          totalClients: DEMO_CLIENTS.length,
+          newClientsMonth: DEMO_CLIENTS.filter(c => c.createdAt?.startsWith(thisMonth) ?? false).length,
+          monthlyRevenue: DEMO_APPOINTMENTS
+            .filter(a => a.status === "completed" && a.date.startsWith(thisMonth))
+            .reduce((sum, a) => sum + a.price, 0),
+        })
+        const sorted = [...DEMO_APPOINTMENTS]
+          .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))
+          .slice(0, 3)
+        setRecentActivity(sorted.map(a => ({
+          title: activityLabel(a.status),
+          detail: `${a.clientName} · ${a.serviceName} · ${a.date} ${a.time}`,
+        })))
+        return
+      }
+
+      // Supabase mode: fetch from API
       try {
         const res = await fetch("/api/dashboard/stats")
         if (res.ok) {
           const data = await res.json()
           setStats(data)
-        } else {
-          setStats(DEMO_STATS)
         }
-      } catch {
-        setStats(DEMO_STATS)
-      }
+      } catch { /* keep zeros */ }
+
+      supabase
+        .from("appointments")
+        .select(`
+          appointment_date, appointment_time, status,
+          client:users!appointments_client_id_fkey(name),
+          service:services(name)
+        `)
+        .order("appointment_date", { ascending: false })
+        .limit(3)
+        .then(({ data }) => {
+          if (data) {
+            setRecentActivity((data as unknown as RecentApptRow[]).map(a => ({
+              title: activityLabel(a.status),
+              detail: `${a.client?.name ?? "Cliente"} · ${a.service?.name ?? "Servicio"} · ${a.appointment_date}`,
+            })))
+          }
+        })
+        .catch(() => {})
 
       // Low-rating alerts (non-critical)
       fetch("/api/alerts")
@@ -87,7 +142,7 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
         .catch(() => {})
     }
 
-    loadStats()
+    void loadStats()
   }, [])
 
   if (!user) {
@@ -376,11 +431,11 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
             Actividad reciente
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {[
-              { title: "Nueva cita reservada",      detail: "Juan Pérez · Corte de cabello · Hoy 3:00 PM" },
-              { title: "Empleado registró entrada", detail: "María García · 9:00 AM" },
-              { title: "Cita completada",           detail: "Carlos Rodríguez · Barba y bigote · 11:30 AM" },
-            ].map((item, i) => (
+            {recentActivity.length === 0 ? (
+              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "#555555" }}>
+                Sin actividad reciente
+              </p>
+            ) : recentActivity.map((item, i) => (
               <div key={i} style={{ display: "flex", gap: 12 }}>
                 <div style={{ width: 1, background: "#252525", alignSelf: "stretch", flexShrink: 0 }} />
                 <div>

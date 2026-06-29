@@ -134,10 +134,10 @@ export default function SettingsPage() {
         data.forEach((row) => {
           try {
             const parsed = JSON.parse(row.setting_value)
-            if (row.setting_key === "business") setBusinessSettings(parsed)
-            if (row.setting_key === "schedule") setScheduleSettings(parsed)
-            if (row.setting_key === "notifications") setNotificationSettings(parsed)
-            if (row.setting_key === "payments") setPaymentSettings(parsed)
+            if (row.setting_key === "business")       setBusinessSettings(prev => ({ ...prev, ...parsed }))
+            if (row.setting_key === "schedule")       setScheduleSettings(prev => ({ ...prev, ...parsed }))
+            if (row.setting_key === "notifications")  setNotificationSettings(prev => ({ ...prev, ...parsed }))
+            if (row.setting_key === "payments")       setPaymentSettings(prev => ({ ...prev, ...parsed }))
           } catch {
             // valor no es JSON válido — ignorar
           }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Search, Settings, Clock, CheckCircle } from "lucide-react"
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -36,13 +36,18 @@ const INITIAL_INTEGRATIONS: Integration[] = [
   { name: "HubSpot",            category: "Marketing",      description: "Sincroniza contactos y leads.",             status: "available",    emoji: "🎯" },
 ]
 
-const LOGS = [
-  { time: "10:30 AM", integration: "WhatsApp",        event: "Mensaje enviado",  status: "success" },
-  { time: "10:45 AM", integration: "Google Calendar", event: "Evento creado",    status: "success" },
-  { time: "11:02 AM", integration: "Stripe",          event: "Pago recibido",    status: "success" },
-  { time: "11:15 AM", integration: "WhatsApp",        event: "Mensaje enviado",  status: "success" },
-  { time: "11:28 AM", integration: "Stripe",          event: "Pago procesando",  status: "pending" },
+const ALL_LOGS = [
+  { minutesAgo: 28, integration: "WhatsApp Business", event: "Mensaje enviado",  status: "success" },
+  { minutesAgo: 45, integration: "Stripe",            event: "Pago recibido",    status: "success" },
+  { minutesAgo: 62, integration: "WhatsApp Business", event: "Mensaje enviado",  status: "success" },
+  { minutesAgo: 89, integration: "Stripe",            event: "Pago procesando",  status: "pending" },
 ]
+
+function relativeTime(minutesAgo: number): string {
+  if (minutesAgo < 60) return `Hace ${minutesAgo} min`
+  const h = Math.floor(minutesAgo / 60)
+  return `Hace ${h}h ${minutesAgo % 60}min`
+}
 
 function StatusBadge({ status }: { status: Status }) {
   const s = {
@@ -91,6 +96,16 @@ export default function IntegrationsPage() {
 
   const activeCount = integrations.filter((i) => i.status === "connected").length
 
+  const connectedNames = useMemo(
+    () => new Set(integrations.filter(i => i.status === "connected").map(i => i.name)),
+    [integrations]
+  )
+
+  const visibleLogs = useMemo(
+    () => ALL_LOGS.filter(l => connectedNames.has(l.integration)),
+    [connectedNames]
+  )
+
   const toggle = (name: string) =>
     setIntegrations((prev) =>
       prev.map((i) => i.name === name ? { ...i, status: i.status === "connected" ? "available" : "connected" } : i)
@@ -115,10 +130,10 @@ export default function IntegrationsPage() {
       {/* Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {[
-          { label: "Integraciones activas", value: String(activeCount)  },
-          { label: "Sincronizaciones hoy",  value: "47"                 },
+          { label: "Integraciones activas", value: String(activeCount) },
+          { label: "Eventos recientes",     value: String(visibleLogs.length) },
           { label: "Errores detectados",    value: "0 ✓", color: T.teal },
-          { label: "Tiempo promedio",       value: "1.2s"               },
+          { label: "Tiempo promedio",       value: activeCount > 0 ? "—" : "—" },
         ].map((card) => (
           <div key={card.label} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px 24px" }}>
             <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{card.label}</div>
@@ -181,28 +196,34 @@ export default function IntegrationsPage() {
           <Clock size={16} color={T.muted} />
           <span>Logs Recientes</span>
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <tbody>
-            {LOGS.map((log, i) => (
-              <tr key={i} style={{ borderTop: i === 0 ? "none" : `1px solid ${T.border}` }}>
-                <td style={{ padding: "12px 0", fontSize: 12, color: T.muted, width: 90 }}>{log.time}</td>
-                <td style={{ padding: "12px 0", fontSize: 13, fontWeight: 600, color: T.text, width: 160 }}>{log.integration}</td>
-                <td style={{ padding: "12px 0", fontSize: 13, color: T.muted }}>{log.event}</td>
-                <td style={{ padding: "12px 0", textAlign: "right" }}>
-                  {log.status === "success" ? (
-                    <CheckCircle size={16} color={T.teal} />
-                  ) : (
-                    <span style={{
-                      width: 16, height: 16, borderRadius: "50%",
-                      border: `2px solid #FFB400`, borderTopColor: "transparent",
-                      display: "inline-block", animation: "spin 1s linear infinite",
-                    }} />
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {visibleLogs.length === 0 ? (
+          <p style={{ fontSize: 13, color: T.muted, padding: "12px 0" }}>
+            Sin eventos recientes. Conecta una integración para ver actividad.
+          </p>
+        ) : (
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <tbody>
+              {visibleLogs.map((log, i) => (
+                <tr key={i} style={{ borderTop: i === 0 ? "none" : `1px solid ${T.border}` }}>
+                  <td style={{ padding: "12px 0", fontSize: 12, color: T.muted, width: 110 }}>{relativeTime(log.minutesAgo)}</td>
+                  <td style={{ padding: "12px 0", fontSize: 13, fontWeight: 600, color: T.text, width: 160 }}>{log.integration}</td>
+                  <td style={{ padding: "12px 0", fontSize: 13, color: T.muted }}>{log.event}</td>
+                  <td style={{ padding: "12px 0", textAlign: "right" }}>
+                    {log.status === "success" ? (
+                      <CheckCircle size={16} color={T.teal} />
+                    ) : (
+                      <span style={{
+                        width: 16, height: 16, borderRadius: "50%",
+                        border: `2px solid #FFB400`, borderTopColor: "transparent",
+                        display: "inline-block", animation: "spin 1s linear infinite",
+                      }} />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 

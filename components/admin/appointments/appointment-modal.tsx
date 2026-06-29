@@ -33,6 +33,30 @@ export function AppointmentModal({
     return () => document.removeEventListener("keydown", handler)
   }, [isOpen, onClose])
 
+  // Sync form whenever the modal opens or the appointment being edited changes
+  useEffect(() => {
+    if (!isOpen) return
+    setFormData({
+      clientId: appointment?.clientId ?? "",
+      clientName: appointment?.clientName ?? "",
+      clientPhone: appointment?.clientPhone ?? "",
+      employeeId: appointment?.employeeId ?? "",
+      employeeName: appointment?.employeeName ?? "",
+      serviceId: appointment?.serviceId ?? "",
+      serviceName: appointment?.serviceName ?? "",
+      date: appointment?.date ?? new Date().toISOString().split("T")[0],
+      time: appointment?.time ?? "09:00",
+      duration: appointment?.duration ?? 30,
+      price: appointment?.price ?? 0,
+      status: appointment?.status ?? "pending",
+      notes: appointment?.notes ?? "",
+    })
+    setIsNewClient(false)
+    setNewClientName("")
+    setNewClientPhone("")
+    setFormErrors({})
+  }, [isOpen, appointment])
+
   const [formData, setFormData] = useState<{
     clientId: string; clientName: string; clientPhone: string
     employeeId: string; employeeName: string
@@ -107,7 +131,7 @@ export function AppointmentModal({
     if (!formData.serviceId) errors.serviceId = "Selecciona un servicio."
     if (!formData.employeeId) errors.employeeId = "Selecciona un barbero."
     if (!formData.date) errors.date = "Selecciona una fecha válida."
-    else if (formData.date < todayISO!) errors.date = "La fecha no puede ser anterior a hoy."
+    else if (!appointment && formData.date < todayISO!) errors.date = "La fecha no puede ser anterior a hoy."
     if (!formData.time) errors.time = "Selecciona una hora válida."
     if (formData.price <= 0) errors.price = "El precio debe ser mayor a 0."
     if (formData.duration <= 0) errors.duration = "La duración debe ser mayor a 0."
@@ -261,7 +285,7 @@ export function AppointmentModal({
               <Input
                 id="date"
                 type="date"
-                min={todayISO}
+                min={appointment ? undefined : todayISO}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
