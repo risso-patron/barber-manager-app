@@ -79,6 +79,12 @@ export default function AppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all")
   const [filterDate, setFilterDate] = useState("")
+
+  // Pre-fill search from ?q= (e.g. coming from "Ver Agenda" in employees)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q")
+    if (q) setSearchTerm(q)
+  }, [])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)

@@ -19,7 +19,7 @@ import {
   Scissors,
   Loader2,
 } from "lucide-react"
-import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 
 interface Service {
   id: string
@@ -78,8 +78,7 @@ export default function BookAppointmentPage() {
 
       // Si es reagendar, prellenar con los datos de la cita
       if (rescheduleId) {
-        // Buscar en localStorage citas guardadas en sesión + DEMO_APPOINTMENTS
-        const { DEMO_APPOINTMENTS } = require("@/lib/demo-appointments")
+        // Buscar en DEMO_APPOINTMENTS por id de reagendado
         const apt = DEMO_APPOINTMENTS.find((a: { id: string }) => a.id === rescheduleId)
         if (apt) {
           setSelectedService(apt.serviceId)
