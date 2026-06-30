@@ -139,25 +139,48 @@ function validateEnv(env) {
     }
   }
 
-  // Verificar secrets expuestos (los viejos que deben rotarse)
-  console.log('\n' + colors.blue + '🔒 Verificando secrets expuestos:' + colors.reset);
-  
-  const exposedSecrets = {
-    'RESEND_API_KEY': 're_jE4Rnrkv_KKPpYp2tpxYxVjymWTF2QT9w',
-    'TWILIO_AUTH_TOKEN': '7050dd63b32c8d8ba3f97e6bf01b8e0b',
-    'CRON_SECRET': 'barber_cron_secret_2024',
-  };
+  // Verificar placeholders inseguros y valores débiles en variables críticas
+  console.log('\n' + colors.blue + '🔒 Verificando calidad de secrets:' + colors.reset);
 
-  let hasExposedSecrets = false;
-  for (const [key, exposedValue] of Object.entries(exposedSecrets)) {
-    if (env[key] === exposedValue) {
-      log(colors.red, '🚨', `${key} contiene un secret EXPUESTO - ¡ROTAR INMEDIATAMENTE!`);
-      hasExposedSecrets = true;
+  const UNSAFE_PATTERNS = [
+    /^(NUEVO_|TU_|YOUR_|CHANGE_ME|REPLACE_ME|EXAMPLE|PLACEHOLDER)/i,
+    /^(demo|test_secret|test_|sample_)/i,
+    /^(nueva_|tu_|nuevo_)/i,
+    /placeholder/i,
+  ];
+
+  const CRITICAL_SECRETS = [
+    'RESEND_API_KEY',
+    'TWILIO_AUTH_TOKEN',
+    'CRON_SECRET',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+  ];
+
+  let hasUnsafeValues = false;
+
+  for (const key of CRITICAL_SECRETS) {
+    const val = env[key];
+    if (!val) continue;
+    if (UNSAFE_PATTERNS.some(p => p.test(val))) {
+      log(colors.red, '🚨', `${key} contiene un placeholder — reemplazar con valor real antes de usar en producción`);
+      hasUnsafeValues = true;
     }
   }
 
-  if (!hasExposedSecrets) {
-    log(colors.green, '✅', 'No se detectaron secrets expuestos');
+  // Validar longitud mínima de CRON_SECRET
+  if (env['CRON_SECRET'] && env['CRON_SECRET'].length < 32 && !UNSAFE_PATTERNS.some(p => p.test(env['CRON_SECRET']))) {
+    log(colors.red, '🚨', `CRON_SECRET demasiado corto (${env['CRON_SECRET'].length} chars, mínimo 32). Generar con: openssl rand -hex 32`);
+    hasUnsafeValues = true;
+  }
+
+  // Validar formato esperado de Resend (las API keys de Resend empiezan con re_)
+  if (env['RESEND_API_KEY'] && !env['RESEND_API_KEY'].startsWith('re_') && !UNSAFE_PATTERNS.some(p => p.test(env['RESEND_API_KEY']))) {
+    log(colors.yellow, '⚠️ ', 'RESEND_API_KEY no tiene el formato esperado (debe empezar con re_)');
+  }
+
+  if (!hasUnsafeValues) {
+    log(colors.green, '✅', 'No se detectaron placeholders inseguros en variables críticas');
   }
 
   // Verificar .gitignore
@@ -195,11 +218,11 @@ function validateEnv(env) {
   // Resultado final
   console.log('\n' + '='.repeat(60) + '\n');
 
-  if (hasExposedSecrets) {
-    log(colors.red, '🚨', 'SECRETS EXPUESTOS DETECTADOS');
+  if (hasUnsafeValues) {
+    log(colors.red, '🚨', 'PLACEHOLDERS INSEGUROS DETECTADOS');
     console.log('\n' + colors.yellow + 'Acción requerida:' + colors.reset);
     console.log('  1. Revisar docs/SECRET-ROTATION.md');
-    console.log('  2. Rotar todos los secrets expuestos');
+    console.log('  2. Reemplazar los placeholders con valores reales obtenidos de cada proveedor');
     console.log('  3. Ejecutar este script nuevamente\n');
     return 2;
   }
