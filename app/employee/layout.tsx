@@ -9,7 +9,7 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = useRequireAuth(["employee", "admin", "manager"])
+  const user = useRequireAuth(["employee", "admin"])
 
   if (!user) {
     return (
