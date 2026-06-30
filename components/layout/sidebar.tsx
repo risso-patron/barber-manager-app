@@ -36,7 +36,9 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       case "employee":
         return [
           ...baseItems,
+          { href: "/employee/appointments", label: "Mis Citas", icon: Calendar },
           { href: "/employee/schedule", label: "Mi Agenda", icon: Calendar },
+          { href: "/employee/history", label: "Historial", icon: Clock },
           { href: "/employee/time-tracking", label: "Control Horario", icon: Clock },
           { href: "/employee/stats", label: "Estadísticas", icon: BarChart3 },
           { href: "/employee/profile", label: "Mi Perfil", icon: User },

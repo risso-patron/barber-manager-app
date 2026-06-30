@@ -273,6 +273,34 @@ export const DEMO_APPOINTMENTS: Appointment[] = [
   },
 ]
 
+// Status labels and valid transitions (shared by Admin and Employee views)
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  pending: "Pendiente",
+  confirmed: "Confirmada",
+  completed: "Completada",
+  cancelled: "Cancelada",
+  no_show: "No se presentó",
+}
+
+export function getNextStatusActions(status: AppointmentStatus): { status: AppointmentStatus; label: string }[] {
+  switch (status) {
+    case "pending":
+      return [
+        { status: "confirmed", label: "Confirmar" },
+        { status: "no_show", label: "No se presentó" },
+        { status: "cancelled", label: "Cancelar" },
+      ]
+    case "confirmed":
+      return [
+        { status: "completed", label: "Completar" },
+        { status: "no_show", label: "No se presentó" },
+        { status: "cancelled", label: "Cancelar" },
+      ]
+    default:
+      return []
+  }
+}
+
 // Helper functions
 export function getAppointmentsByDate(date: string): Appointment[] {
   return DEMO_APPOINTMENTS.filter(apt => apt.date === date)

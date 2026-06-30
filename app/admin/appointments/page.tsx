@@ -99,10 +99,18 @@ export default function AppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all")
   const [filterDate, setFilterDate] = useState("")
+  const [filterEmployeeId, setFilterEmployeeId] = useState("")
+  const [filterEmployeeName, setFilterEmployeeName] = useState("")
 
-  // Pre-fill search from ?q= (e.g. coming from "Ver Agenda" in employees)
+  // Pre-fill filters from query params (e.g. coming from "Ver Agenda" in employees)
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get("q")
+    const params = new URLSearchParams(window.location.search)
+    const employeeId = params.get("employeeId")
+    if (employeeId) {
+      setFilterEmployeeId(employeeId)
+      return
+    }
+    const q = params.get("q")
     if (q) setSearchTerm(q)
   }, [])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -189,17 +197,25 @@ export default function AppointmentsPage() {
   // Filter appointments
   const filteredAppointments = useMemo(() => {
     return appointments.filter(apt => {
-      const matchesSearch = 
+      const matchesEmployee = !filterEmployeeId || apt.employeeId === filterEmployeeId
+
+      const matchesSearch = !searchTerm ||
         apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.serviceName.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const matchesStatus = filterStatus === "all" || apt.status === filterStatus
       const matchesDate = !filterDate || apt.date === filterDate
 
-      return matchesSearch && matchesStatus && matchesDate
+      return matchesEmployee && matchesSearch && matchesStatus && matchesDate
     })
-  }, [appointments, searchTerm, filterStatus, filterDate])
+  }, [appointments, searchTerm, filterStatus, filterDate, filterEmployeeId])
+
+  useEffect(() => {
+    if (!filterEmployeeId) { setFilterEmployeeName(""); return }
+    const match = appointments.find(apt => apt.employeeId === filterEmployeeId)
+    setFilterEmployeeName(match?.employeeName ?? "")
+  }, [filterEmployeeId, appointments])
 
   // Reset page when filters change
   useEffect(() => { setPage(0) }, [searchTerm, filterStatus, filterDate])
@@ -362,6 +378,21 @@ export default function AppointmentsPage() {
         <div>
           <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Citas</h1>
           <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra todas las citas de la barbería</p>
+          {filterEmployeeId && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs px-2 py-1 rounded" style={{ background: "rgba(229,57,53,0.1)", color: "#E53935", border: "1px solid rgba(229,57,53,0.3)" }}>
+                Agenda de {filterEmployeeName || "empleado"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setFilterEmployeeId("")}
+                className="text-xs underline"
+                style={{ color: "#8A8A8A" }}
+              >
+                Quitar filtro
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#2E2E2E" }}>

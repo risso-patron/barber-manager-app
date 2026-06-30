@@ -386,7 +386,7 @@ export default function EmployeesPage() {
                             Editar
                           </button>
                           <button
-                            onClick={() => { setActiveDropdown(null); router.push(`/admin/appointments?q=${encodeURIComponent(employee.name)}`) }}
+                            onClick={() => { setActiveDropdown(null); router.push(`/admin/appointments?employeeId=${encodeURIComponent(employee.id)}`) }}
                             className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
                           >
                             <Calendar className="h-4 w-4" />
