@@ -1,208 +1,239 @@
-# 💈 Ornó 
+# 💈 Ornō
 
-Sistema de gestión profesional para barberías modernas. Administra citas, empleados, clientes, inventario, punto de venta y más — en una plataforma completa y elegante.
+Sistema de gestión para barberías: citas, empleados, clientes, inventario y punto de venta.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.2-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwind-css)
-![Version](https://img.shields.io/badge/version-1.1-brightgreen)
+![Version](https://img.shields.io/badge/version-0.1.0-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## Características
+## Estado actual
 
-### 🔐 Autenticación por Roles
-- **Cliente**: Reserva de citas, historial, calificaciones, puntos de fidelidad
-- **Empleado**: Agenda diaria, control de jornada laboral persistente, estadísticas y comisiones
-- **Administrador**: Dashboard completo, gestión de empleados y clientes, inventario, POS, reportes y alertas
+**Proyecto en desarrollo activo (`v0.1.0` en `package.json`), no en producción.**
 
-### 📅 Gestión de Citas
-- Sistema de reservas en tiempo real
-- Reagendamiento de citas (M1)
-- Cancelación por cliente o administrador
+| Aspecto | Estado |
+|---|---|
+| Modo demo (sin backend) | ✅ Funcional — datos hardcodeados, sin persistencia real |
+| Modo producción (Supabase) | 🟡 Implementado en código, **no verificado en una instancia real** durante esta auditoría |
+| Citas, empleados, clientes, inventario, POS, fidelidad, alertas | ✅ Funcionales |
+| Facturación (`/admin/billing`) | 🔴 Stub — UI completa, sin persistencia ni cobro real |
+| Integraciones (`/admin/integrations`) | 🟡 Parcial — UI interactiva, sin conexiones reales a terceros |
+| Seguridad | 7/10 según `SECURITY-REPORT.md` — **rotación de secrets pendiente y vencida** |
 
-### ⭐ Calificaciones (M5)
-- Los clientes califican con 1-5 estrellas tras una cita completada
-- Comentario opcional
+No asumas que "está en el código" significa "está verificado en producción". Ver [Limitaciones conocidas](#limitaciones-conocidas) abajo.
 
-### 💰 Comisiones (M2)
-- Porcentaje de comisión por empleado configurable
-- Cálculo automático al completar una cita
+## Stack técnico
 
-### 🕐 Jornada Laboral Persistente (M3)
-- Estado "trabajando / no trabajando" se guarda en la base de datos
-- Persiste aunque se cierre o recargue el navegador
+- **Framework:** Next.js 15.2.4 (App Router) + React 19 + TypeScript 5.9
+- **Estilos:** Tailwind CSS 3.4
+- **Backend:** Supabase (`@supabase/ssr`, `@supabase/supabase-js`) — Postgres + Auth + RLS
+- **Estado:** Zustand
+- **Formularios/validación:** React Hook Form + Zod
+- **Notificaciones:** Resend (email) + Twilio (WhatsApp) vía cola asíncrona y Edge Function
+- **Rate limiting:** Upstash Redis (con fallback en memoria)
+- **Reportes/exportación:** Recharts, jsPDF, XLSX
+- **Testing:** Vitest + Testing Library (unitarios), Playwright (e2e)
+- **Gestor de paquetes:** pnpm (fijado en `10.14.0` vía `packageManager`)
 
-### 🔑 Recuperación de Contraseña (M4)
-- Flujo de reset por email integrado con Supabase Auth
+## Requisitos previos
 
-### 🏆 Puntos de Fidelidad (M6)
-- 1 punto por dólar gastado en citas o POS
-- Historial de transacciones con saldo en tiempo real
+- Node.js 18.x o superior
+- pnpm 10.x (`corepack enable` si no lo tenés instalado)
+- Cuenta de Supabase (free tier alcanza) — **solo necesaria para modo producción**, el modo demo no la requiere
 
-### 🛒 Punto de Venta — POS (M7)
-- Registro de ventas directas (efectivo, tarjeta, transferencia)
-- Items por servicio o producto
-- Descuentos y notas por venta
+## Instalación
 
-### 🚨 Alertas de Calificación Baja (M8)
-- Alerta automática cuando un cliente califica con 1 o 2 estrellas
-- Panel de resolución en el dashboard de admin
-
-5. Ejecuta el proyecto:
 ```bash
+# Clonar el repositorio
+git clone https://github.com/risso-patron/barber-manager-app.git
+cd barber-manager-app
+
+# Instalar dependencias
+pnpm install
+
+# Modo demo: no requiere configuración adicional
 pnpm dev
 ```
 
-6. Abre [http://localhost:3000](http://localhost:3000) en tu navegador
+Para modo producción con Supabase real:
 
-## 🔒 Seguridad
-
-Este proyecto implementa múltiples capas de seguridad:
-
-### Protecciones Implementadas
-- ✅ **Rate Limiting**: Protección contra brute force y spam
-- ✅ **Input Validation**: Sanitización y validación de datos
-- ✅ **Security Headers**: CSP, HSTS, X-Frame-Options, etc.
-- ✅ **Pre-commit Hooks**: Bloqueo de secrets en commits
-- ✅ **Environment Validation**: Verificación de configuración
-
-### Scripts de Seguridad
 ```bash
-# Validar variables de entorno
-pnpm validate-env
+cp .env.example .env.local
+# Completar .env.local con tus credenciales de Supabase (ver sección siguiente)
 
-# Verificar seguridad del código
-pnpm security-check
+# Ejecutar los scripts SQL en orden desde el SQL Editor de Supabase
+# Ver docs/manuales/manual-sistema.md §12 para el orden exacto
 
-# Configurar git hooks
-pnpm setup-hooks
+pnpm dev
 ```
 
-### Documentación de Seguridad
-- 📄 [SECURITY-REPORT.md](SECURITY-REPORT.md) - Análisis completo de seguridad
-- 📄 [docs/SECRET-ROTATION.md](docs/SECRET-ROTATION.md) - Guía de rotación de secrets
-- 📄 [docs/SECURITY-IMPLEMENTATION.md](docs/SECURITY-IMPLEMENTATION.md) - Implementaciones actuales
+Abrir [http://localhost:3000](http://localhost:3000).
 
-⚠️ **IMPORTANTE**: Antes de producción, revisa [SECURITY-REPORT.md](SECURITY-REPORT.md) y rota todos los secrets.
+## Variables de entorno
 
-## Scripts Disponibles
+| Variable | Obligatoria | Descripción |
+|---|:---:|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Para modo producción | URL del proyecto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Para modo producción | Clave pública anónima |
+| `SUPABASE_SERVICE_ROLE_KEY` | Para modo producción | Clave de servicio — **solo server-side, nunca exponer al cliente** |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Opcional | Rate limiting persistente (sin esto, usa memoria en proceso — no apto para serverless multi-instancia) |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Opcional | Envío de emails de notificación |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_WHATSAPP_FROM` | Opcional | Notificaciones por WhatsApp |
+
+Si `NEXT_PUBLIC_SUPABASE_URL` no está configurada (o está vacía), la app **arranca automáticamente en modo demo**.
+
+Validar variables antes de deploy: `pnpm validate-env`. Tabla completa con tipos y defaults en [docs/manuales/manual-sistema.md §2](docs/manuales/manual-sistema.md#2-variables-de-entorno).
+
+## Comandos disponibles
 
 ```bash
 # Desarrollo
-pnpm dev          # Inicia el servidor de desarrollo
-pnpm build        # Genera build de producción
-pnpm start        # Inicia servidor de producción
+pnpm dev              # Servidor de desarrollo (Turbopack) en localhost:3000
+pnpm build            # Build de producción
+pnpm start            # Servidor de producción (requiere build previo)
 
 # Calidad de código
-pnpm lint         # Ejecuta ESLint
-pnpm type-check   # Verifica tipos TypeScript
-pnpm format       # Formatea código con Prettier
+pnpm lint             # ESLint
+pnpm type-check       # tsc --noEmit
+pnpm format           # Prettier (write)
+pnpm format:check     # Prettier (check only)
 
-# Seguridad
-pnpm validate-env # Valida variables de entorno
-pnpm security-check # Verifica seguridad antes de commit
-pnpm setup-hooks  # Configura git hooks de seguridad
-pnpm predeploy    # Checklist pre-deployment
+# Testing
+pnpm test             # Tests unitarios (Vitest)
+pnpm test:watch       # Vitest en modo watch
+pnpm test:coverage    # Vitest con cobertura
+pnpm test:e2e         # Tests end-to-end (Playwright) — requiere `pnpm dev` corriendo
+
+# Seguridad y entorno
+pnpm validate-env             # Valida variables de entorno
+pnpm security-check           # Chequeo de seguridad (pre-commit-security.js)
+pnpm security:supply-chain    # Auditoría de cadena de suministro
+pnpm setup-hooks               # Configura git hooks de seguridad
+pnpm predeploy                 # Checklist completo pre-deploy (env + security + types + lint)
 ```
 
-## Estructura del Proyecto
+## Estructura general
 
 ```
-├── app/                    # App Router de Next.js
-│   ├── auth/              # Páginas de autenticación
-│   ├── dashboard/         # Dashboard principal
-│   ├── admin/             # Rutas de administrador
-│   ├── employee/          # Rutas de empleado
-│   └── client/            # Rutas de cliente
-├── components/            # Componentes reutilizables
-│   ├── auth/              # Componentes de autenticación
-│   ├── dashboard/         # Componentes del dashboard
-│   ├── layout/            # Componentes de layout
-│   └── ui/                # Componentes de UI (shadcn)
-├── lib/                   # Utilidades y configuración
-│   ├── supabase/          # Configuración de Supabase
-│   ├── auth.ts            # Utilidades de autenticación
-│   ├── store.ts           # Estado global (Zustand)
-│   └── types.ts           # Tipos de TypeScript
-├── scripts/               # Scripts SQL para la base de datos
-└── middleware.ts          # Middleware de Next.js
+app/                    # Next.js App Router
+├── admin/               # Rutas exclusivas de administrador
+├── employee/            # Rutas de empleado (módulo actual)
+├── barber/               # Dashboard de empleado legacy (huérfano, ver limitaciones)
+├── client/               # Rutas de cliente autenticado
+├── auth/                 # Login, registro, recuperación de contraseña
+├── reservar/, book/      # Reserva pública sin cuenta
+├── dashboard/             # Dispatcher: redirige según rol
+└── api/                   # API routes server-side
+components/               # Componentes React por dominio (admin, employee, client, auth, ui)
+lib/                      # Lógica de negocio: supabase/, auth.ts, demo-config.ts, types.ts, rate-limit.ts
+hooks/                    # useAuth, useRequireAuth
+middleware.ts             # Control de acceso por rol (solo activo con Supabase configurado)
+scripts/                  # 31 scripts SQL versionados + scripts de seguridad/CI
+docs/                     # Documentación (manuales, seguridad)
+e2e/, tests/              # Playwright y Vitest
 ```
 
-## Base de Datos
+Detalle completo en [docs/manuales/manual-sistema.md §4](docs/manuales/manual-sistema.md#4-arquitectura-general).
 
-### Tablas Principales
+## Roles disponibles
 
-- `users`: Perfiles con roles, `commission_rate` y `loyalty_points`
-- `appointments`: Citas con `rating`, `review_text` y `rescheduled_at`
-- `services`: Servicios ofrecidos
-- `inventory`: Productos e inventario
-- `inventory_movements`: Historial de movimientos
-- `business_settings`: Configuración del negocio
-- `attendance_logs`: Jornadas laborales de empleados (M3)
-- `employee_commissions`: Comisiones por cita completada (M2)
-- `loyalty_transactions`: Historial de puntos de fidelidad (M6)
-- `pos_sales`: Ventas del punto de venta (M7)
-- `pos_sale_items`: Líneas de detalle de ventas POS (M7)
-- `low_rating_alerts`: Alertas de calificaciones bajas (M8)
+El modelo oficial son **3 roles**: `client`, `employee`, `admin` (definidos en `lib/types.ts` y `openspec/specs/auth-roles.md`).
 
-### Políticas de Seguridad (RLS)
+| Rol | Acceso |
+|---|---|
+| **Cliente** | Reserva de citas, historial, calificaciones, puntos de fidelidad |
+| **Empleado** | Agenda diaria, control de jornada laboral, estadísticas, comisiones |
+| **Administrador** | Todo lo anterior + gestión de empleados/clientes, inventario, POS, reportes, alertas |
 
-Todas las tablas implementan Row Level Security para garantizar que los usuarios solo accedan a sus datos autorizados según su rol.
+⚠️ El código de rutas (`middleware.ts`, `useRequireAuth.ts`) todavía referencia dos roles adicionales fuera de este modelo (`manager`, `barber`) que son deuda técnica heredada, no funcionalidades soportadas activamente. Detalle completo en [docs/manuales/manual-sistema.md §6](docs/manuales/manual-sistema.md#6-autenticación-y-roles).
 
-## Despliegue
+## Credenciales demo
 
-### Vercel (Recomendado)
+Solo válidas en modo demo (sin Supabase configurado). Todas usan password `Demo1234`:
 
-1. Conecta tu repositorio a Vercel
-2. Configura las variables de entorno
-3. Despliega automáticamente
+| Email | Rol | Nombre |
+|---|---|---|
+| `admin@demo.com` | admin | Admin Demo |
+| `employee@demo.com` | employee | Sofía Ramírez |
+| `barber@demo.com` | barber* | Carlos Martínez |
+| `client@demo.com` | client | Juan Pérez |
+| `vincent@ornodemo.com` | client | Vincent |
 
-### Variables de Entorno Requeridas
+\* `barber` no es un rol oficial del sistema (ver sección anterior) pero es una cuenta demo real y funcional.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
-```
+## Rutas principales
 
-## Funcionalidades por Rol
+| Ruta | Acceso | Descripción |
+|---|---|---|
+| `/` | Pública | Landing |
+| `/reservar`, `/book/[slug]` | Pública | Reserva sin cuenta |
+| `/auth/login`, `/auth/register` | Pública | Autenticación |
+| `/dashboard` | Cualquier sesión | Dispatcher, redirige según rol |
+| `/admin/*` | admin | Panel de administración |
+| `/employee/*` | employee, admin | Panel de empleado (módulo vigente) |
+| `/client/*` | client | Panel de cliente |
+| `/barber` | employee, admin | Dashboard de empleado legacy — accesible pero fuera del flujo de navegación principal |
 
-### Cliente
-- ✅ Registro e inicio de sesión
-- ✅ Reserva de citas
-- ✅ Selección de barbero
-- ✅ Historial de servicios
-- 🔄 Sistema de feedback
-- 🔄 Notificaciones por email
+## Estado de funcionalidades
 
-### Empleado
-- ✅ Agenda diaria
-- 🔄 Control de entrada/salida
-- 🔄 Gestión de pausas
-- 🔄 Estadísticas personales
+| Funcionalidad | Estado |
+|---|---|
+| Registro, login, reserva de citas, selección de empleado, historial | ✅ |
+| Calificaciones de citas (1-5 estrellas) | ✅ |
+| Notificaciones por email/WhatsApp (cola asíncrona + Edge Function) | ✅ |
+| Agenda diaria, control de jornada (clock in/out), bloqueos de agenda | ✅ |
+| Estadísticas y comisiones por empleado | ✅ |
+| Gestión de empleados y clientes (admin) | ✅ |
+| Control de inventario | ✅ |
+| Punto de venta (POS) con descuentos y puntos de fidelidad | ✅ |
+| Alertas de calificación baja | ✅ |
+| Reportes y exportación (PDF/Excel) | ✅ |
+| Recuperación de contraseña | ✅ |
+| Facturación (`/admin/billing`) | 🔴 Stub — sin persistencia real |
+| Integraciones con terceros (`/admin/integrations`) | 🟡 UI sin conexiones reales |
+| Pagos online | 🔴 No implementado |
 
-### Administrador
-- ✅ Dashboard general
-- 🔄 Gestión de empleados
-- 🔄 Control de inventario
-- 🔄 Reportes financieros
-- 🔄 Configuración de servicios
-- 🔄 Exportación de datos
+## Limitaciones conocidas
 
-## Próximas Funcionalidades
+- **Rotación de secrets vencida** — ver `docs/SECRET-ROTATION.md`. Esto es lo más urgente del proyecto en este momento.
+- **Roles `manager` y `barber`** siguen referenciados en código de rutas pese a que el modelo oficial es de 3 roles — ver `docs/manuales/manual-sistema.md §6`.
+- **`/barber` es una ruta huérfana**: funcional pero sin entrada en el flujo de navegación real (el dispatcher nunca redirige ahí).
+- **Middleware bypaseado en modo demo**: sin Supabase configurado, el control de acceso por rol es 100% client-side y evadible editando `localStorage`. No confundir demo con producción.
+- **RLS no verificado en runtime**: las políticas existen como scripts SQL; su aplicación efectiva en una instancia real no fue confirmada en esta auditoría documental.
+- **Dos catálogos de datos demo desincronizados** (`lib/demo-config.ts` vs `lib/demo-appointments.ts`).
+- **Facturación e integraciones** aparentan estar terminadas en la UI pero no lo están.
 
-- [ ] Sistema de notificaciones push
-- [ ] Integración con WhatsApp/SMS
-- [ ] Programa de fidelidad
-- [ ] Reportes avanzados con gráficas
-- [ ] App móvil nativa
-- [ ] Sistema de pagos online
-- [ ] Integración con redes sociales
+Detalle técnico completo en [docs/manuales/manual-sistema.md §15](docs/manuales/manual-sistema.md#15-limitaciones-técnicas-y-roadmap-recomendado).
+
+## Próximos pasos
+
+1. Rotar los secrets pendientes (urgente).
+2. Resolver los roles `manager`/`barber` (formalizar o eliminar).
+3. Verificar RLS contra una instancia real de Supabase.
+4. Decidir el destino de `/admin/billing` e `/admin/integrations` (completar, ocultar o marcar como "próximamente" en la UI).
+5. Unificar los catálogos de datos demo.
+6. Implementar pagos online y notificaciones push (no iniciado).
+
+## Documentación interna
+
+- [docs/manuales/INDEX.md](docs/manuales/INDEX.md) — índice de todos los manuales
+- [docs/manuales/manual-sistema.md](docs/manuales/manual-sistema.md) — arquitectura técnica completa
+- [docs/manuales/manual-admin.md](docs/manuales/manual-admin.md) — manual de administrador
+- [docs/manuales/manual-empleado.md](docs/manuales/manual-empleado.md) — manual de empleado
+- [docs/manuales/manual-cliente.md](docs/manuales/manual-cliente.md) — manual de cliente
+- [docs/EXECUTIVE-SUMMARY.md](docs/EXECUTIVE-SUMMARY.md) — resumen ejecutivo
+- [docs/GO-LIVE-PLAN.md](docs/GO-LIVE-PLAN.md) — plan de salida a producción
+- [SECURITY-REPORT.md](SECURITY-REPORT.md) — auditoría de seguridad completa (fuente autoritativa)
+- [docs/SECRET-ROTATION.md](docs/SECRET-ROTATION.md) — procedimiento de rotación de secrets
+- [docs/SECURITY-CHECKLIST.md](docs/SECURITY-CHECKLIST.md) — checklist pre-deploy
 
 ## Contribución
 
 1. Fork el proyecto
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+3. Commit tus cambios (`git commit -m 'feat: add some feature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 

@@ -1,321 +1,137 @@
-# 🎯 Resumen Ejecutivo - Implementaciones de Seguridad
+# 🎯 Resumen Ejecutivo — Seguridad
 
-**Fecha:** 29 de noviembre de 2025  
-**Proyecto:** Barber Manager App  
-**Estado:** Seguridad mejorada de 4/10 a 7/10
-
----
-
-## 📊 Métricas de Mejora
-
-| Aspecto | Antes | Ahora | Mejora |
-|---------|-------|-------|--------|
-| **Security Score** | 4/10 | 7/10 | +75% |
-| **Vulnerabilidades Críticas** | 3 | 0* | -100% |
-| **Protecciones Activas** | 0 | 8 | ∞ |
-| **Tiempo de Response** | N/A | <100ms | ✅ |
-
-\* Requiere rotación manual de secrets
+**Proyecto:** Ornō (`barber-manager-app`) — `v0.1.0`
+**Implementación original:** 29 de noviembre de 2025
+**Esta revisión:** 30 de junio de 2026 — auditoría documental contra el código real
 
 ---
 
-## ✅ Implementaciones Completadas (1 hora)
+## ⚠️ Aviso sobre esta revisión
 
-### 1. Rate Limiting System
-**Archivo:** `lib/rate-limit.ts` (250 líneas)
+La versión anterior de este documento contenía **fragmentos reales de secrets en texto plano** (Resend API Key, Twilio Auth Token, CRON Secret) en la sección de acciones pendientes. Esos valores fueron **eliminados de este documento** en esta revisión — nunca deben pegarse secrets, ni siquiera truncados, en archivos versionados en git. Si necesitás conocer el estado de rotación de un secret específico, consultá [`docs/SECRET-ROTATION.md`](SECRET-ROTATION.md), que tampoco debe contener valores reales (corregido en la misma fecha).
 
-**Qué hace:**
-- Limita intentos de login: 5 cada 15 minutos
-- Limita API calls: 60 por minuto
-- Limita reservas: 10 por hora
-- Bloquea automáticamente IPs abusivas
-
-**Impacto:**
-- ✅ Previene ataques de fuerza bruta
-- ✅ Previene spam de reservas
-- ✅ Reduce costos de infraestructura
-- ✅ Mejora experiencia de usuarios legítimos
-
-**Aplicado en:**
-- `/api/auth/login` - Login endpoint
-- `/api/appointments` - Reservas endpoint
+Esta revisión también corrige afirmaciones de la versión original que ya no son ciertas — el roadmap de noviembre 2025 daba la autenticación con Supabase como trabajo futuro ("Fase 2"); a junio de 2026, el modo dual demo/Supabase **ya está implementado en el código**, aunque su funcionamiento contra una instancia real de Supabase no fue verificado de forma independiente en esta auditoría documental.
 
 ---
 
-### 2. Input Validation & Sanitization
-**Archivo:** `lib/validation.ts` (400 líneas)
+## 📊 Estado de seguridad (según `SECURITY-REPORT.md`, fuente autoritativa)
 
-**Qué hace:**
-- Valida emails, teléfonos, nombres, fechas
-- Sanitiza HTML para prevenir XSS
-- Detecta intentos de SQL injection
-- Valida passwords seguros (8+ chars, mayúsculas, números)
+| Aspecto | Score | Estado |
+|---|---|---|
+| Protección de secrets | 6/10 | ⚠️ Rotación pendiente y vencida |
+| Rate limiting | 10/10 | ✅ Implementado |
+| Input validation | 10/10 | ✅ Implementado |
+| Security headers | 10/10 | ✅ Implementado |
+| Autenticación | 3/10 (según `SECURITY-REPORT.md`, fechado nov-2025) | 🟡 Ver nota abajo |
+| Logging y monitoreo | 8/10 | ✅ Básico implementado |
+| Error handling | 9/10 | ✅ Implementado |
 
-**Impacto:**
-- ✅ Previene XSS attacks
-- ✅ Previene SQL injection
-- ✅ Mejora calidad de datos
-- ✅ Feedback claro al usuario
+**Score global:** 7/10
 
-**Aplicado en:**
-- `/api/auth/login` - Validación de credenciales
-- `/api/appointments` - Validación de reservas
-- Todos los formularios (futuro)
+> 🟡 **Nota de discrepancia detectada en esta auditoría:** el score de Autenticación (3/10, "demo mode only") de `SECURITY-REPORT.md` describe el estado de noviembre 2025. El código actual ya implementa modo dual (demo vía `localStorage` / producción vía Supabase + cookies), por lo que ese número probablemente esté desactualizado. No lo corregimos acá porque `SECURITY-REPORT.md` es la fuente autoritativa de scores de seguridad — la corrección de ese puntaje específico queda pendiente como tarea de la próxima revisión de seguridad (ver `docs/manuales/manual-sistema.md §15`).
 
 ---
 
-### 3. Security Headers
-**Archivo:** `lib/security-headers.ts` (60 líneas)
+## ✅ Protecciones implementadas (resumen, sin cambios desde nov-2025)
 
-**Qué hace:**
-- Content Security Policy (CSP)
-- Strict Transport Security (HSTS)
-- X-Frame-Options (anti-clickjacking)
-- X-Content-Type-Options (anti-MIME sniffing)
+| Protección | Archivo principal | Qué hace |
+|---|---|---|
+| Rate limiting | `lib/rate-limit.ts` | 5 intentos de login / 15 min, 60 req/min de API, 10 reservas/hora |
+| Validación e input sanitization | `lib/validation.ts` | Valida emails/teléfonos/fechas, sanitiza HTML, detecta SQLi |
+| Security headers | `lib/security-headers.ts`, `next.config.mjs` | CSP, HSTS, X-Frame-Options, X-Content-Type-Options |
+| Pre-commit hooks | `scripts/pre-commit-security.js` | Bloquea commits con `.env.local` o keys hardcodeadas |
+| Validación de entorno | `lib/env.ts`, `scripts/validate-env.js` | Valida variables al iniciar; `pnpm validate-env` |
+| Logging de seguridad | `lib/security-logger.ts` | Logs de login, rate limiting, intentos de XSS/SQLi |
 
-**Impacto:**
-- ✅ Fuerza HTTPS en producción
-- ✅ Previene clickjacking
-- ✅ Previene MIME attacks
-- ✅ Mejora score en security scanners
-
-**Aplicado en:**
-- Todas las rutas vía `next.config.mjs`
+Estas protecciones siguen activas en el código a junio de 2026 — no se detectaron regresiones durante esta auditoría documental.
 
 ---
 
-### 4. Pre-commit Security Hooks
-**Archivo:** `scripts/pre-commit-security.js` (120 líneas)
+## 🚨 Acciones pendientes (verificado a 2026-06-30)
 
-**Qué hace:**
-- Bloquea commits con archivos `.env.local`
-- Detecta API keys hardcodeadas
-- Detecta passwords en código
-- Instrucciones automáticas de remediación
+### 1. Rotar secrets expuestos — **urgente, vencido**
 
-**Impacto:**
-- ✅ Previene exposición de secrets
-- ✅ Educa al equipo
-- ✅ Reduce incidentes de seguridad
-- ✅ Automatiza best practices
+Los siguientes secrets están comprometidos por haber estado en texto plano en el historial de git (en este documento y en `docs/SECRET-ROTATION.md`, ambos corregidos en esta revisión, pero **el historial de git conserva las versiones anteriores**):
 
-**Uso:**
+- Resend API Key
+- Twilio Auth Token
+- CRON Secret
+
+Procedimiento completo en [`docs/SECRET-ROTATION.md`](SECRET-ROTATION.md). Tras rotar, validar con `pnpm validate-env`.
+
+> Rotar el valor en el proveedor (Resend/Twilio) **no es suficiente** por sí solo — el valor expuesto sigue siendo recuperable del historial de git mientras no se reescriba ese historial o se considere el repositorio comprometido para esos secrets específicos.
+
+### 2. Configurar git hooks de seguridad (si no están activos)
+
 ```bash
-npm run setup-hooks  # Instalar una vez
-# Después funciona automáticamente en cada commit
+pnpm setup-hooks
 ```
 
----
+### 3. Verificar el modo producción contra una instancia real de Supabase
 
-### 5. Environment Validation
-**Archivos:** `lib/env.ts`, `scripts/validate-env.js` (300 líneas)
+A diferencia del roadmap original (que daba esto como trabajo no iniciado), el código **ya contiene** la integración: `@supabase/ssr`, middleware con gating por rol, y 31 scripts SQL con políticas RLS en `scripts/`. Lo que falta, y no se hizo en esta auditoría documental, es **verificar en runtime** que esas políticas se comporten como están escritas contra un proyecto Supabase real.
 
-**Qué hace:**
-- Valida variables de entorno al iniciar
-- Detecta secrets expuestos
-- Warnings para servicios no configurados
-- Script CLI para validación manual
+### 4. Resolver el bypass de control de acceso en modo demo
 
-**Impacto:**
-- ✅ Falla rápido si hay config inválida
-- ✅ Detecta secrets comprometidos
-- ✅ Guía en setup de entorno
-- ✅ Reduce errores en producción
-
-**Uso:**
-```bash
-npm run validate-env  # Antes de deploy
-```
+`middleware.ts` solo aplica gating por rol cuando existe una sesión/cookies de Supabase. En modo demo, el control de acceso es 100% client-side (`useRequireAuth` leyendo `localStorage`) y es evadible editando el storage del navegador. No es un riesgo de producción si el modo demo nunca se expone públicamente con datos reales, pero si se usa para mostrar el producto a un cliente, debe quedar claro que **no es representativo de la seguridad real del sistema**. Detalle en `docs/manuales/manual-sistema.md §11`.
 
 ---
 
-### 6. Secure API Endpoints
-**Archivos:** 
-- `app/api/auth/login/route.ts` (100 líneas)
-- `app/api/appointments/route.ts` (80 líneas)
+## 📈 Roadmap de seguridad (actualizado)
 
-**Qué hace:**
-- Aplica rate limiting
-- Valida y sanitiza inputs
-- Manejo seguro de errores
-- Logging de intentos sospechosos
+### Fase 1 — Protecciones básicas ✅ Completado (nov-2025)
+- [x] Rate limiting, input validation, security headers, pre-commit hooks, validación de entorno, logging
 
-**Impacto:**
-- ✅ APIs resilientes a ataques
-- ✅ Errores sin info sensible
-- ✅ Facilita debugging
-- ✅ Preparadas para auditoría
+### Fase 2 — Autenticación real 🟡 Parcialmente completado
+- [ ] Rotar secrets expuestos (sigue pendiente)
+- [x] Modo Supabase implementado en código (login, cookies, middleware)
+- [ ] Verificar RLS contra una instancia real
+- [ ] Resolver el bypass de middleware en modo demo (o documentar explícitamente que el demo no debe usarse como entorno expuesto)
+- [ ] Formalizar o eliminar los roles `manager`/`barber`, hoy fuera del modelo oficial de 3 roles (ver `docs/manuales/manual-sistema.md §6`)
 
----
-
-### 7. Documentación Completa
-**Archivos:**
-- `docs/SECRET-ROTATION.md` (400 líneas)
-- `docs/SECURITY-IMPLEMENTATION.md` (200 líneas)
-- `.env.local.template` (100 líneas)
-
-**Qué incluye:**
-- Guía paso a paso de rotación de secrets
-- Checklist pre-producción
-- Plan de respuesta a incidentes
-- Contactos de emergencia
-- Template seguro de environment
-
-**Impacto:**
-- ✅ Equipo sabe qué hacer en emergencia
-- ✅ Onboarding más rápido
-- ✅ Reduce errores de configuración
-- ✅ Cumplimiento de compliance
-
----
-
-## 🚨 Acciones Pendientes (URGENTE)
-
-### 1. Rotar Secrets Expuestos (30 minutos)
-```bash
-# Seguir guía en docs/SECRET-ROTATION.md
-
-# Servicios a rotar:
-- Resend API Key: re_jE4Rnrkv_...
-- Twilio Auth Token: 7050dd63...
-- CRON Secret: barber_cron_...
-
-# Después validar:
-npm run validate-env
-```
-
-### 2. Configurar Git Hooks (5 minutos)
-```bash
-npm run setup-hooks
-git add .
-git commit -m "test"  # Debería ejecutar validaciones
-```
-
-### 3. Habilitar Supabase Auth (Fase 2)
-- Crear proyecto en Supabase
-- Configurar Row Level Security (RLS)
-- Descomentar middleware.ts
-- Migrar autenticación a servidor
-
----
-
-## 📈 Roadmap de Seguridad
-
-### Fase 1: Protecciones Básicas ✅ COMPLETADO
-- [x] Rate limiting
-- [x] Input validation
-- [x] Security headers
-- [x] Pre-commit hooks
-- [x] Environment validation
-- [x] Documentación
-
-### Fase 2: Autenticación Real (Siguiente)
-- [ ] Rotar secrets expuestos
-- [ ] Habilitar Supabase Auth
-- [ ] Row Level Security (RLS)
-- [ ] Session management
-- [ ] Email verification
-
-### Fase 3: Hardening (Futuro)
+### Fase 3 — Hardening 🔴 No iniciado
 - [ ] 2FA opcional
-- [ ] Rate limiting con Redis/Upstash
-- [ ] WAF (Web Application Firewall)
-- [ ] Security monitoring (Axiom)
+- [ ] WAF
+- [ ] Monitoreo de seguridad en producción
 - [ ] Penetration testing
-- [ ] SOC 2 compliance
+- [ ] Completar o retirar `/admin/billing` (stub) e `/admin/integrations` (parcial) antes de cualquier uso comercial real — ver `docs/manuales/manual-admin.md §12` y `§13`
 
 ---
 
-## 🎓 Knowledge Transfer
+## 🎓 Para el equipo
 
-### Para el Equipo de Desarrollo:
-1. Leer [SECURITY-REPORT.md](../SECURITY-REPORT.md)
-2. Ejecutar `npm run setup-hooks` en su máquina
-3. Familiarizarse con `lib/validation.ts` para formularios
-4. Usar `withRateLimit()` en nuevos endpoints
+**Desarrollo:**
+1. Leer [`SECURITY-REPORT.md`](../SECURITY-REPORT.md) (fuente autoritativa de scores)
+2. `pnpm setup-hooks` en la máquina local
+3. Usar `lib/validation.ts` para formularios nuevos y `withRateLimit()` en endpoints nuevos
 
-### Para DevOps:
-1. Rotar secrets siguiendo [SECRET-ROTATION.md](SECRET-ROTATION.md)
-2. Configurar variables en Vercel Dashboard
+**DevOps:**
+1. Rotar secrets siguiendo `docs/SECRET-ROTATION.md`
+2. Configurar variables en el dashboard del proveedor de hosting
 3. Monitorear métricas de rate limiting
-4. Configurar alertas en servicios externos
 
-### Para QA:
-1. Probar validaciones de formularios
-2. Intentar bypass de rate limiting (debe bloquear)
-3. Verificar headers con securityheaders.com
-4. Probar con inputs maliciosos (XSS, SQL injection)
+**QA:**
+1. Probar validaciones de formularios e intentar bypass de rate limiting
+2. Verificar headers con un escáner externo (ej. securityheaders.com)
+3. Confirmar que el modo demo no esté expuesto como si fuera producción
 
 ---
 
-## 💰 ROI Estimado
+## ✅ Checklist de deploy
 
-### Tiempo Invertido
-- Implementación: 1 hora
-- Documentación: 30 minutos
-- **Total: 1.5 horas**
-
-### Beneficios (Anuales)
-- **Prevención de brechas:** $50,000+ (promedio de data breach)
-- **Reducción de spam:** $5,000 (costos de Twilio/Resend)
-- **Tiempo de debugging:** 20 horas ahorradas
-- **Compliance:** Facilita auditorías futuras
-
-**ROI: 33,233% en el primer año**
-
----
-
-## 🏆 Certificaciones de Seguridad
-
-### Actual
-- ✅ Security Headers A+ (potencial)
-- ✅ OWASP Top 10 mitigations
-- ✅ Best practices de Next.js
-
-### Futuro (con Fase 2)
-- 🎯 SOC 2 Type II ready
-- 🎯 GDPR compliant
-- 🎯 PCI DSS compatible (si procesas pagos)
-
----
-
-## 📞 Soporte y Escalación
-
-### Nivel 1: Documentación
-- README.md - Overview
-- SECURITY-REPORT.md - Análisis completo
-- docs/SECRET-ROTATION.md - Rotación de secrets
-- docs/SECURITY-IMPLEMENTATION.md - Detalles técnicos
-
-### Nivel 2: Scripts de Validación
-```bash
-npm run validate-env      # Diagnóstico rápido
-npm run security-check    # Pre-commit check
-```
-
-### Nivel 3: Incidente de Seguridad
-Ver sección "Qué Hacer Si Sospechas Compromiso" en SECRET-ROTATION.md
-
----
-
-## ✅ Checklist de Deploy
-
-### Pre-Deploy
-- [ ] `npm run validate-env` pasa sin errores
-- [ ] Secrets rotados y no expuestos
+### Pre-deploy
+- [ ] `pnpm validate-env` sin errores
+- [ ] Secrets rotados (y considerados comprometidos en el historial de git anterior a esta fecha)
 - [ ] Git hooks configurados
-- [ ] Tests de seguridad pasados
-- [ ] Variables configuradas en Vercel
+- [ ] `pnpm type-check` y `pnpm lint` sin errores bloqueantes
+- [ ] RLS verificado contra el proyecto Supabase real que se va a usar
 
-### Post-Deploy
-- [ ] Verificar headers con securityheaders.com
-- [ ] Probar rate limiting en producción
-- [ ] Revisar logs por errores
-- [ ] Configurar monitoring/alerting
-- [ ] Notificar al equipo del deploy
+### Post-deploy
+- [ ] Headers verificados con escáner externo
+- [ ] Rate limiting probado en producción
+- [ ] Monitoreo/alertas configurados
+- [ ] Confirmado que `/admin/billing` e `/admin/integrations` no se presentan como funcionalidades terminadas
 
 ---
 
-**Implementado por:** GitHub Copilot  
-**Revisado por:** [Pendiente]  
-**Aprobado para:** Desarrollo ✅ | Producción ⏳ (pendiente rotación)
+**Estado del proyecto:** desarrollo activo, no apto para producción sin completar la Fase 2 del roadmap de seguridad y la rotación de secrets.

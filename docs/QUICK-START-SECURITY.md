@@ -1,8 +1,10 @@
-# 🚀 Quick Start - Security Features
+# 🚀 Quick Start - Seguridad
 
-## En 5 Minutos
+> Auditado y corregido el 2026-06-30. Esta revisión corrige los comandos (el proyecto usa `pnpm`, no `npm`, según `package.json`) y la tabla de score al final, que daba la autenticación con Supabase como trabajo futuro cuando ya está implementada en el código.
 
-### 1. Configurar Environment (2 min)
+## En 5 minutos
+
+### 1. Configurar environment (2 min)
 ```bash
 # Copiar template
 cp .env.local.template .env.local
@@ -11,60 +13,60 @@ cp .env.local.template .env.local
 # IMPORTANTE: NO uses las keys del template, son ejemplos
 
 # Validar
-npm run validate-env
+pnpm validate-env
 ```
 
-### 2. Configurar Git Hooks (1 min)
+### 2. Configurar git hooks (1 min)
 ```bash
-npm run setup-hooks
+pnpm setup-hooks
 ```
 
-### 3. Probar Seguridad (2 min)
+### 3. Probar seguridad (2 min)
 ```bash
 # Intentar commit con .env.local (debería bloquearse)
 git add .env.local
 git commit -m "test"  # ❌ Bloqueado
 
 # Validar headers
-npm run dev
+pnpm dev
 # Visitar: http://localhost:3000
 # Abrir DevTools > Network > Ver headers
 ```
 
 ---
 
-## Comandos Esenciales
+## Comandos esenciales
 
 ```bash
 # Antes de commitear
-npm run security-check
+pnpm security-check
 
 # Antes de deploy
-npm run validate-env
-npm run predeploy
+pnpm validate-env
+pnpm predeploy
 
 # Después de rotar secrets
-npm run validate-env
+pnpm validate-env
 
 # Configurar hooks (una vez)
-npm run setup-hooks
+pnpm setup-hooks
 ```
 
 ---
 
-## Rate Limiting Cheat Sheet
+## Rate limiting — referencia rápida
 
-### Login Endpoint
+### Endpoint de login
 - **Límite:** 5 intentos / 15 minutos
 - **Reset:** Automático después de 15 min
-- **Response:** HTTP 429 con `Retry-After` header
+- **Response:** HTTP 429 con header `Retry-After`
 
-### Appointments Endpoint
+### Endpoint de citas
 - **Límite:** 10 reservas / minuto
 - **Reset:** Cada minuto
 - **Response:** HTTP 429 con tiempo de espera
 
-### Aplicar en Nuevos Endpoints
+### Aplicar en endpoints nuevos
 ```typescript
 import { withRateLimit, apiLimiter } from '@/lib/rate-limit'
 
@@ -77,9 +79,9 @@ export async function POST(request: Request) {
 
 ---
 
-## Validation Cheat Sheet
+## Validación — referencia rápida
 
-### Validar Inputs
+### Validar inputs
 ```typescript
 import { 
   validateEmail, 
@@ -100,7 +102,7 @@ if (!pwdCheck.valid) return { errors: pwdCheck.errors }
 const cleanText = sanitizeInput(userInput)
 ```
 
-### Validar Citas Completas
+### Validar citas completas
 ```typescript
 import { validateAppointmentInput } from '@/lib/validation'
 
@@ -113,79 +115,78 @@ if (!result.valid) {
 
 ---
 
-## Emergency Procedures
+## Procedimientos de emergencia
 
-### Secret Comprometido
+### Secret comprometido
 ```bash
 # 1. Rotar inmediatamente (ver docs/SECRET-ROTATION.md)
 
 # 2. Validar nuevo secret
-npm run validate-env
+pnpm validate-env
 
-# 3. Actualizar en Vercel (si aplica)
-vercel env pull
+# 3. Actualizar en el proveedor de hosting (si aplica)
 
 # 4. Redeploy
 git push origin main
 ```
 
-### Ataque Detectado
+### Ataque detectado
 ```bash
-# 1. Revisar logs
-vercel logs
+# 1. Revisar logs del proveedor de hosting
 
 # 2. Identificar IP atacante
 # Ver X-Forwarded-For en logs
 
-# 3. Rate limiter ya bloqueó automáticamente
-# Esperar que se reset o banear IP en Vercel/Cloudflare
+# 3. El rate limiter ya bloqueó automáticamente
+# Esperar el reset o banear la IP en el proveedor de hosting/CDN
 
 # 4. Notificar al equipo
-# Usar plantilla en docs/SECRET-ROTATION.md
+# Seguir el runbook de "Qué hacer si sospechás un compromiso" en docs/SECRET-ROTATION.md
 ```
 
 ---
 
-## Security Headers - Verificación Rápida
+## Security headers — verificación rápida
 
 ### Localmente
 ```bash
-npm run dev
+pnpm dev
 
 # En otra terminal
-curl -I http://localhost:3000 | grep -E "(X-|Content-Security)"
+curl -I http://localhost:3000
+# Revisar manualmente los headers X-* y Content-Security-Policy en la respuesta
 ```
 
 ### Producción
 Visitar: https://securityheaders.com/?q=tudominio.com
 
-Esperado: **A+** score
+Esperado: score **A** o superior (no verificado de forma independiente en esta auditoría — pendiente correr contra un deploy real).
 
 ---
 
-## Common Issues
+## Problemas comunes
 
 ### ❌ "Too many requests"
-**Causa:** Rate limit alcanzado  
-**Solución:** Esperar el tiempo en `Retry-After` header
+**Causa:** rate limit alcanzado
+**Solución:** esperar el tiempo indicado en el header `Retry-After`
 
 ### ❌ "Invalid environment variables"
-**Causa:** `.env.local` mal configurado  
-**Solución:** `npm run validate-env` para detalles
+**Causa:** `.env.local` mal configurado
+**Solución:** `pnpm validate-env` para ver el detalle
 
 ### ❌ "Commit blocked by security"
-**Causa:** Intentando commitear secrets  
-**Solución:** Remover archivo sensible del staging
+**Causa:** se intentó commitear un archivo sensible
+**Solución:** sacarlo del staging (`git restore --staged <archivo>`)
 
 ### ❌ "Email validation failed"
-**Causa:** Email no válido o SQL injection attempt  
-**Solución:** Verificar formato de email
+**Causa:** email con formato inválido o intento de SQL injection
+**Solución:** verificar el formato del email
 
 ---
 
-## Testing Security
+## Probar la seguridad manualmente
 
-### Test Rate Limiting
+### Rate limiting
 ```bash
 # Hacer múltiples requests rápidos
 for i in {1..10}; do
@@ -195,10 +196,10 @@ for i in {1..10}; do
     -H "Content-Type: application/json"
 done
 
-# Debería bloquearse después de 5
+# Debería bloquearse después del 5to intento
 ```
 
-### Test Input Validation
+### Validación de inputs
 ```bash
 # XSS attempt (debería sanitizarse)
 curl http://localhost:3000/api/appointments \
@@ -213,15 +214,11 @@ curl http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json"
 ```
 
-### Test Security Headers
-```bash
-curl -I https://tudominio.com | grep X-Frame-Options
-# Esperado: X-Frame-Options: SAMEORIGIN
-```
+> Estos comandos son ejemplos de prueba manual local, no un test automatizado del repositorio — no existe un script `pnpm test:integrations` ni equivalente para esto (ver nota en `docs/SECRET-ROTATION.md`).
 
 ---
 
-## Files to NEVER Commit
+## Archivos que NUNCA hay que commitear
 
 ```
 .env.local
@@ -233,34 +230,35 @@ secrets.json
 credentials.json
 ```
 
-**Protección activa:** Pre-commit hook bloquea automáticamente
+**Protección activa:** el pre-commit hook (`scripts/pre-commit-security.js`) bloquea estos patrones automáticamente, una vez corrido `pnpm setup-hooks`.
 
 ---
 
-## Security Score Tracking
+## Evolución del score de seguridad
 
 | Fecha | Score | Cambios |
 |-------|-------|---------|
 | 28/11/2025 | 4/10 | Estado inicial |
-| 29/11/2025 | 7/10 | Rate limiting, validation, headers |
-| [Futuro] | 9/10 | Supabase Auth, RLS |
+| 29/11/2025 | 7/10 | Rate limiting, validación, headers |
+| 2026-06-30 (esta auditoría) | 7/10 (sin cambios respecto a nov-2025, según `SECURITY-REPORT.md`) | Modo dual demo/Supabase ya está en el código, pero la rotación de secrets sigue pendiente y vencida — ver `docs/EXECUTIVE-SUMMARY.md` |
+
+> Corrige una afirmación anterior: esta tabla daba "Supabase Auth, RLS" como mejora futura con score proyectado 9/10. El código de autenticación con Supabase **ya existe**, pero no se verificó en runtime contra una instancia real, y los secrets siguen sin rotar — por eso el score no sube todavía. No inventamos un score nuevo acá.
 
 ---
 
-## Resources
+## Recursos
 
-### Documentación
-- [SECURITY-REPORT.md](../SECURITY-REPORT.md) - Análisis completo
-- [SECRET-ROTATION.md](SECRET-ROTATION.md) - Rotación de secrets
-- [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md) - Detalles técnicos
-- [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md) - Resumen ejecutivo
+### Documentación interna
+- [SECURITY-REPORT.md](../SECURITY-REPORT.md) — análisis completo (fuente autoritativa de scores)
+- [SECRET-ROTATION.md](SECRET-ROTATION.md) — rotación de secrets
+- [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md) — detalles técnicos
+- [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md) — resumen ejecutivo
 
-### External
+### Externos
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Security Headers](https://securityheaders.com)
 - [Next.js Security](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
 
 ---
 
-**Última actualización:** 29/11/2025  
-**Mantenido por:** Dev Team
+**Última revisión:** 2026-06-30

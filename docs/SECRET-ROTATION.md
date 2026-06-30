@@ -1,220 +1,198 @@
 # 🔐 Guía de Rotación de Secrets
 
-## 🚨 URGENTE: Secrets Expuestos
+> Auditado y corregido el 2026-06-30. **La versión anterior de este documento contenía los valores reales de los secrets expuestos, en texto plano.** Esos valores fueron eliminados en esta revisión — nunca deben volver a pegarse acá, ni siquiera parcialmente. Si necesitás confirmar si un valor coincide con el expuesto, comparalo manualmente desde el dashboard del proveedor, no lo escribas en ningún archivo versionado.
 
-Los siguientes secrets fueron expuestos en el repositorio y **DEBEN** ser rotados inmediatamente:
+## 🚨 URGENTE: Secrets expuestos — rotación vencida
+
+Los siguientes 3 secrets fueron expuestos en texto plano en este repositorio (en commits anteriores de este mismo archivo y de `docs/EXECUTIVE-SUMMARY.md`) y **deben rotarse de inmediato**:
+
+1. **Resend API Key** (`RESEND_API_KEY`)
+2. **Twilio Auth Token** (`TWILIO_AUTH_TOKEN`)
+3. **CRON Secret** (`CRON_SECRET`)
+
+🔴 **Estado real:** la rotación programada para el 27 de febrero de 2026 **no se ejecutó** — a la fecha de esta auditoría (30 de junio de 2026) lleva más de 4 meses de atraso. Mientras no se rote, estos 3 secrets deben considerarse comprometidos.
+
+> 🔴🔴 **Hallazgo crítico de esta auditoría — exposición ACTIVA, no solo histórica:** `scripts/validate-env.js` (líneas 145-149) tiene los tres valores reales de estos secrets **hardcodeados en texto plano**, en un archivo de código trackeado por git y vigente en el commit `9aaf6dd` (2026-06-23). Esto significa que la exposición **no es solo del historial de git** — está en el árbol de trabajo actual. Esta auditoría es exclusivamente de documentación y no modifica código funcional, por lo que **este archivo no fue corregido acá**. Recomendación clara para el equipo de desarrollo: reemplazar la comparación de valores en texto plano por un hash (ej. SHA-256) de cada secret expuesto, de forma que el script pueda seguir detectando si alguien reutiliza el valor filtrado sin tener que guardar ese valor en texto plano en el repositorio. Este cambio debe tratarse como código funcional y hacerse en una tarea aparte, no como parte de esta revisión documental.
+
+> ⚠️ **Importante:** rotar el valor en el dashboard del proveedor no "borra" la exposición. El valor anterior queda igual en el historial de git de este repositorio. Si el repositorio es o fue público, o tuvo colaboradores externos, los valores viejos deben tratarse como filtrados permanentemente — la única mitigación real es invalidarlos en el proveedor.
+
+---
 
 ### 1. Resend API Key
-**Expuesta:** `re_jE4Rnrkv_KKPpYp2tpxYxVjymWTF2QT9w`
 
 **Pasos para rotar:**
 ```bash
 # 1. Ir a Resend Dashboard
 https://resend.com/api-keys
- 
-# 2. Eliminar la key expuesta
-- Buscar: re_jE4Rnrkv_KKPpYp2tpxYxVjymWTF2QT9w
-- Click en "Delete"
 
-# 3. Generar nueva key
-- Click "Create API Key"
-- Nombre: "Barber Manager - Production"
-- Permisos: "Full Access" o "Sending Access"
-- Copiar la nueva key
+# 2. Eliminar la key expuesta (compararla manualmente contra el valor que tengas en tu .env.local actual)
+
+# 3. Generar una nueva key
+- "Create API Key" → nombre descriptivo (ej. "Orno - Production")
+- Permisos: el mínimo necesario (Sending Access, no Full Access, salvo que se use la API de dominios)
 
 # 4. Actualizar .env.local
-RESEND_API_KEY=re_NUEVA_KEY_AQUI
+RESEND_API_KEY=<la_nueva_key>
 
-# 5. Si está en Vercel, actualizar también allí
+# 5. Actualizar también en el proveedor de hosting (Vercel u otro) si hay un deploy activo
 ```
 
 ---
 
 ### 2. Twilio Auth Token
-**Expuesto:** `7050dd63b32c8d8ba3f97e6bf01b8e0b`
 
 **Pasos para rotar:**
 ```bash
-# 1. Ir a Twilio Console
+# 1. Ir a Twilio Console → Settings → General
 https://console.twilio.com
 
-# 2. En la vista del proyecto
-- Click en "Settings" → "General"
+# 2. En "API Credentials", click en "Reset Auth Token" y confirmar
 
-# 3. Scroll a "API Credentials"
-- Click en el ícono de "View" junto a Auth Token
-- Click "Reset Auth Token"
-- Confirmar la rotación
+# 3. Actualizar .env.local
+TWILIO_AUTH_TOKEN=<el_nuevo_token>
 
-# 4. Copiar el nuevo token
-
-# 5. Actualizar .env.local
-TWILIO_AUTH_TOKEN=NUEVO_TOKEN_AQUI
-
-# 6. Si está en Vercel, actualizar también
+# 4. Actualizar también en el proveedor de hosting si aplica
 ```
 
 ---
 
 ### 3. CRON Secret
-**Expuesto:** `barber_cron_secret_2024`
 
 **Pasos para rotar:**
 ```bash
-# 1. Generar nuevo secret seguro
+# 1. Generar un secret nuevo y aleatorio (no reutilizar el patrón anterior)
 openssl rand -hex 32
 
 # 2. Actualizar .env.local
-CRON_SECRET=el_output_del_comando_anterior
+CRON_SECRET=<el_output_del_comando_anterior>
 
-# 3. Actualizar en Vercel si aplica
+# 3. Actualizar en el proveedor de hosting si aplica
 
-# 4. Actualizar cualquier servicio que llame a los cron jobs
-# (e.g., Vercel Cron, GitHub Actions, etc.)
+# 4. Actualizar cualquier servicio externo que dispare los cron jobs (Vercel Cron, GitHub Actions, etc.)
 ```
 
 ---
 
-## 📋 Checklist de Seguridad Post-Rotación
+## 📋 Checklist de seguridad post-rotación
 
-### Paso 1: Actualizar Local
+### Paso 1: Local
 - [ ] Nuevas keys en `.env.local`
-- [ ] Verificar que `.env.local` está en `.gitignore`
-- [ ] Probar que la aplicación funciona con las nuevas keys
-- [ ] Probar envío de emails (Resend)
-- [ ] Probar envío de WhatsApp (Twilio)
+- [ ] Confirmar que `.env.local` está en `.gitignore`
+- [ ] `pnpm validate-env` sin errores
+- [ ] Probar envío de email (Resend) y de WhatsApp (Twilio) en modo desarrollo
 
-### Paso 2: Actualizar Producción (si aplica)
-- [ ] Ir a Vercel Dashboard → Proyecto → Settings → Environment Variables
-- [ ] Actualizar `RESEND_API_KEY`
-- [ ] Actualizar `TWILIO_AUTH_TOKEN`
-- [ ] Actualizar `CRON_SECRET`
-- [ ] Redeploy para aplicar cambios
+### Paso 2: Producción (si aplica)
+- [ ] Actualizar `RESEND_API_KEY`, `TWILIO_AUTH_TOKEN` y `CRON_SECRET` en el proveedor de hosting
+- [ ] Redeploy para aplicar los cambios
 
 ### Paso 3: Verificación
 - [ ] Probar login en producción
-- [ ] Probar creación de cita
-- [ ] Verificar que llega email de confirmación
-- [ ] Verificar que llega WhatsApp de notificación
+- [ ] Probar creación de una cita
+- [ ] Verificar que llega el email de confirmación
+- [ ] Verificar que llega la notificación de WhatsApp
 - [ ] Revisar logs por errores
 
 ### Paso 4: Limpieza
-- [ ] Revocar/eliminar las keys viejas de los dashboards
-- [ ] Documentar la fecha de rotación
-- [ ] Programar próxima rotación (recomendado: cada 90 días)
+- [ ] Revocar/eliminar las keys viejas en los dashboards de Resend y Twilio
+- [ ] Documentar la fecha real de rotación en este archivo
+- [ ] Programar la próxima rotación (recomendado: cada 90 días)
 
 ---
 
-## 🔒 Mejores Prácticas
+## 🔒 Mejores prácticas
 
-### 1. Nunca Commitear Secrets
+### 1. Nunca commitear secrets
 ```bash
-# Siempre verificar antes de commit
 git status
 git diff --cached
 
-# Si accidentalmente agregaste .env.local:
+# Si se agregó .env.local por error:
 git reset HEAD .env.local
 git rm --cached .env.local
 ```
 
-### 2. Usar el Template
+### 2. Usar el template
 ```bash
-# Copiar el template para nuevos desarrolladores
 cp .env.local.template .env.local
-
 # Nunca commitear .env.local, solo .env.local.template
 ```
 
-### 3. Rotar Regularmente
-- **API Keys de terceros:** Cada 90 días
-- **Secrets internos:** Cada 180 días
-- **Passwords de bases de datos:** Al menos anualmente
-- **Después de que un empleado se va:** Inmediatamente
+### 3. Rotar regularmente
+- API keys de terceros: cada 90 días
+- Secrets internos (CRON_SECRET, etc.): cada 180 días
+- Después de que alguien con acceso al repo se va: inmediatamente
 
 ### 4. Monitoreo
-- Configurar alertas en Resend para uso inusual
-- Configurar alertas en Twilio para picos de uso
-- Revisar logs semanalmente por patrones sospechosos
+- Alertas de uso inusual en Resend y Twilio
+- Revisión periódica de logs por patrones sospechosos
 
-### 5. Principle of Least Privilege
-- Resend: Solo permisos de "Sending" si no necesitas otros
-- Twilio: Solo permisos de WhatsApp si no usas SMS/Voice
-- Supabase: Usar `anon_key` en cliente, `service_role` solo en servidor
+### 5. Principio de mínimo privilegio
+- Resend: permisos de "Sending" únicamente si no se necesita más
+- Twilio: permisos de WhatsApp únicamente si no se usa SMS/Voice
+- Supabase: `anon key` en cliente, `service_role key` **solo en servidor**, nunca expuesta al navegador
 
 ---
 
-## 🚨 Qué Hacer Si Sospechas Compromiso
+## 🚨 Qué hacer si sospechás un compromiso
 
-### Detección
-Señales de que tus secrets pueden estar comprometidos:
-- Picos inesperados en uso de Resend/Twilio
-- Emails enviados que no reconoces
+### Señales
+- Picos inesperados de uso en Resend/Twilio
+- Emails o mensajes enviados que no reconocés
 - Cambios en la base de datos que no hiciste
 - Facturas más altas de lo normal
 
-### Respuesta Inmediata (hacer en 15 minutos)
-1. **Rotar todos los secrets** siguiendo las guías arriba
-2. **Revisar facturas** de Resend y Twilio
-3. **Revisar logs** de acceso a la base de datos
-4. **Desactivar servicios** temporalmente si es necesario
+### Respuesta inmediata (primeros 15 minutos)
+1. Rotar todos los secrets (ver arriba)
+2. Revisar facturación de Resend y Twilio
+3. Revisar logs de acceso a la base de datos
+4. Desactivar servicios temporalmente si es necesario
 
 ### Investigación (primeras 2 horas)
-1. Revisar commits recientes en Git
-2. Revisar access logs de Vercel
-3. Revisar webhooks y integraciones activas
+1. Revisar commits recientes en git
+2. Revisar access logs del proveedor de hosting
+3. Revisar webhooks e integraciones activas
 4. Contactar soporte de los servicios afectados
 
 ### Notificación (primeras 24 horas)
 1. Notificar al equipo
 2. Documentar el incidente
-3. Si afecta a usuarios, considerar notificarles
-4. Revisar obligaciones legales (GDPR, etc.)
+3. Si afecta a usuarios reales, evaluar notificarles
+4. Revisar obligaciones legales aplicables (ej. protección de datos)
 
-### Post-Mortem (primera semana)
+### Post-mortem (primera semana)
 1. ¿Cómo se comprometieron los secrets?
-2. ¿Qué daño se hizo?
+2. ¿Qué impacto tuvo?
 3. ¿Cómo prevenirlo en el futuro?
-4. Implementar controles adicionales
+4. Implementar controles adicionales (ej. secret scanning automatizado en CI)
 
 ---
 
-## 📞 Contactos de Emergencia
+## 📞 Contactos de los proveedores
 
-### Resend
-- Dashboard: https://resend.com
-- Soporte: support@resend.com
-- Documentación: https://resend.com/docs
-
-### Twilio
-- Console: https://console.twilio.com
-- Soporte: https://support.twilio.com
-- Emergency: Disable API key en console
-
-### Supabase
-- Dashboard: https://supabase.com/dashboard
-- Soporte: support@supabase.io
-- Docs: https://supabase.com/docs
+| Servicio | Dashboard | Soporte |
+|---|---|---|
+| Resend | https://resend.com | support@resend.com |
+| Twilio | https://console.twilio.com | https://support.twilio.com |
+| Supabase | https://supabase.com/dashboard | support@supabase.io |
 
 ---
 
-## ✅ Verificación Post-Rotación
-
-Ejecuta este script después de rotar:
+## ✅ Verificación post-rotación
 
 ```bash
-# Verificar que las variables están configuradas
-npm run validate-env
+# Verificar que las variables están configuradas correctamente
+pnpm validate-env
+```
 
-# Probar conexión a servicios
-npm run test:integrations
+> Corrige una instrucción anterior: este documento mencionaba un comando `npm run test:integrations` que **no existe** en `package.json`. Los scripts reales disponibles para verificación son `pnpm validate-env`, `pnpm test`, `pnpm test:e2e` y `pnpm security-check` — ver la lista completa en el [README.md](../README.md#comandos-disponibles).
 
-# Si todo pasa, hacer commit
+Una vez verificado, commitear el cambio de configuración (sin incluir nunca el valor del secret):
+```bash
 git add .
-git commit -m "chore: Rotate API keys for security"
+git commit -m "chore: rotar API keys por seguridad"
 ```
 
 ---
 
-**Última actualización:** 29 de noviembre de 2025  
-**Próxima rotación programada:** 27 de febrero de 2026
+**Última rotación documentada:** 29 de noviembre de 2025 (la única registrada hasta la fecha)
+**Próxima rotación programada:** vencida desde el 27 de febrero de 2026 — **pendiente de ejecutar**

@@ -1,13 +1,15 @@
-# 🔐 Implementaciones de Seguridad Completadas
+# 🔐 Implementaciones de Seguridad
 
-## ✅ Fase 1: Protecciones Básicas (COMPLETADO)
+> Auditado y corregido el 2026-06-30. Esta revisión corrige una afirmación significativa de la versión original: decía que `middleware.ts` estaba "deshabilitado, requiere Supabase" y listaba "descomentar middleware.ts" como trabajo de Fase 2. Verificado directamente contra `middleware.ts` (105 líneas): **el middleware está completo, activo y corriendo**, con gating por rol para `/admin`, `/employee`, `/barber`, `/client` y `/dashboard`. Lo que sí ocurre es que, si `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` no están configuradas (modo demo), el middleware hace *pass-through* sin aplicar gating — ese es justamente el diseño del modo demo, no una funcionalidad incompleta. También se corrigieron los comandos `npm` → `pnpm`.
+
+## ✅ Fase 1: Protecciones básicas (completado, nov-2025)
 
 ### 1. Rate Limiting
 **Archivo:** `lib/rate-limit.ts`
 
 ✅ Sistema de rate limiting en memoria implementado
 - `loginLimiter`: 5 intentos cada 15 minutos
-- `apiLimiter`: 60 requests por minuto  
+- `apiLimiter`: 60 requests por minuto
 - `bookingLimiter`: 10 reservas por hora
 - `strictLimiter`: 10 requests por minuto
 - Helper `withRateLimit()` para aplicar a rutas API
@@ -17,23 +19,25 @@
 - ✅ `app/api/auth/login/route.ts` (protección contra brute force)
 - ✅ `app/api/appointments/route.ts` (protección contra spam)
 
+> Nota: el rate limiting en memoria no persiste entre instancias/reinicios en un entorno serverless con múltiples instancias — esto es una limitación conocida del diseño actual, no verificada como bloqueante en esta auditoría, pero a tener en cuenta antes de un tráfico de producción alto.
+
 ---
 
-### 2. Validación y Sanitización
+### 2. Validación y sanitización
 **Archivo:** `lib/validation.ts`
 
-✅ Funciones completas de validación con Zod:
-- `sanitizeHTML()` - Previene XSS
-- `sanitizeInput()` - Remueve caracteres peligrosos
-- `validateEmail()` - Validación de emails
-- `validatePassword()` - Passwords seguros (8+ chars, mayúsculas, minúsculas, números)
-- `validatePhone()` - Formato de teléfono
-- `validateName()` - Solo letras y acentos
-- `validateFutureDate()` - Fechas futuras
-- `validateTime()` - Formato HH:MM
-- `isSQLInjectionAttempt()` - Detección de SQL injection
-- `validateUUID()` - UUIDs válidos
-- `validateAppointmentInput()` - Validación completa de citas
+✅ Funciones de validación implementadas:
+- `sanitizeHTML()` — previene XSS
+- `sanitizeInput()` — remueve caracteres peligrosos
+- `validateEmail()` — validación de emails
+- `validatePassword()` — passwords seguros (8+ caracteres, mayúsculas, minúsculas, números)
+- `validatePhone()` — formato de teléfono
+- `validateName()` — solo letras y acentos
+- `validateFutureDate()` — fechas futuras
+- `validateTime()` — formato HH:MM
+- `isSQLInjectionAttempt()` — detección de SQL injection
+- `validateUUID()` — UUIDs válidos
+- `validateAppointmentInput()` — validación completa de citas
 
 ---
 
@@ -41,13 +45,13 @@
 **Archivo:** `lib/security-headers.ts`
 
 ✅ Headers HTTP de seguridad configurados:
-- `Strict-Transport-Security` - Fuerza HTTPS
-- `X-Frame-Options` - Previene clickjacking
-- `X-Content-Type-Options` - Previene MIME sniffing
-- `X-XSS-Protection` - Protección XSS del navegador
-- `Referrer-Policy` - Control de referrer
-- `Permissions-Policy` - Deshabilita APIs no usadas
-- `Content-Security-Policy` - Política de contenido estricta
+- `Strict-Transport-Security` — fuerza HTTPS
+- `X-Frame-Options` — previene clickjacking
+- `X-Content-Type-Options` — previene MIME sniffing
+- `X-XSS-Protection` — protección XSS del navegador
+- `Referrer-Policy` — control de referrer
+- `Permissions-Policy` — deshabilita APIs no usadas
+- `Content-Security-Policy` — política de contenido
 
 **Configurado en:** `next.config.mjs`
 
@@ -64,7 +68,7 @@
 - Detecta keys de Stripe/Google
 - Instrucciones de remediación automáticas
 
-**Instalación:** `npm run setup-hooks`
+**Instalación:** `pnpm setup-hooks`
 
 ---
 
@@ -79,14 +83,14 @@
 - Detección de secrets expuestos
 - Estado de servicios en logs
 
-**Uso:** `npm run validate-env`
+**Uso:** `pnpm validate-env`
 
 ---
 
 ### 6. Template de Environment
 **Archivo:** `.env.local.template`
 
-✅ Template seguro con:
+✅ Template con:
 - Todas las variables documentadas
 - Warnings sobre secrets expuestos
 - Instrucciones de rotación
@@ -95,21 +99,34 @@
 
 ---
 
-### 7. Documentación de Rotación
+### 7. Documentación de rotación
 **Archivo:** `docs/SECRET-ROTATION.md`
 
-✅ Guía completa de rotación de secrets:
+✅ Guía de rotación de secrets (redactada en esta auditoría — la versión anterior contenía los valores reales en texto plano, ver advertencia al inicio de ese documento):
 - Pasos detallados para cada servicio (Resend, Twilio, CRON)
 - Checklist post-rotación
 - Mejores prácticas de seguridad
 - Plan de respuesta a incidentes
-- Contactos de emergencia
-- Calendario de rotación
+- Contactos de los proveedores
 
 ---
 
-### 8. API Routes Protegidas
-**Archivos:** 
+### 8. Middleware con gating por rol
+
+**Archivo:** `middleware.ts`
+
+✅ **Implementado y activo** (corrige la afirmación de la versión anterior de este documento, que lo daba como deshabilitado):
+- Protege las rutas `/dashboard`, `/admin`, `/employee`, `/barber`, `/client` vía `config.matcher`
+- Usa `@supabase/ssr` para leer la sesión desde cookies
+- Si no hay usuario autenticado en una ruta protegida → redirige a `/auth/login`
+- Resuelve el rol del usuario contra la tabla `users` y aplica reglas específicas por sección:
+  - `/admin/*`: acceso total para `admin`; para `manager`, bloquea `/admin/settings`, `/admin/reports` y `/admin/employees`; cualquier otro rol es redirigido
+  - `/employee/*` y `/barber/*`: permite `employee`, `barber` y `admin`
+  - `/client/*`: permite `client` y `admin`
+- 🟡 **Comportamiento intencional del modo demo:** si `NEXT_PUBLIC_SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_ANON_KEY` no están configuradas, el middleware hace *pass-through* sin aplicar ningún gating (líneas 14-17 de `middleware.ts`). En ese caso, el control de acceso pasa a ser 100% client-side vía `useRequireAuth()` leyendo `localStorage`, que es evadible editando el storage del navegador. Esto es aceptable mientras el modo demo no se use con datos reales, pero debe quedar claro si se usa para mostrar el producto a un cliente.
+
+### 9. API Routes protegidas
+**Archivos:**
 - `app/api/auth/login/route.ts`
 - `app/api/appointments/route.ts`
 
@@ -119,21 +136,20 @@
 - Sanitización de datos
 - Manejo de errores seguro (sin revelar detalles internos)
 - Logs de seguridad
-- Modo demo vs producción
+- Soporte de modo demo vs producción
 
 ---
 
-## 📊 Mejora de Security Score
+## 📊 Evolución del Security Score
 
-### Antes: 4/10
+### Estado inicial (28/11/2025): 4/10
 - 🔴 Secrets expuestos
-- 🔴 Middleware deshabilitado
-- 🔴 Auth solo en cliente
+- 🔴 Sin auth de servidor implementada
 - 🔴 Sin rate limiting
 - 🔴 Sin validación de inputs
 - 🔴 Sin security headers
 
-### Ahora: 7/10
+### Estado tras Fase 1 (29/11/2025) — y vigente a 2026-06-30: 7/10
 - ✅ Rate limiting implementado
 - ✅ Validación y sanitización completa
 - ✅ Security headers configurados
@@ -141,68 +157,74 @@
 - ✅ Environment validation
 - ✅ Documentación de rotación
 - ✅ Templates seguros
-- 🟡 Secrets aún expuestos (pendiente rotación manual)
-- 🟡 Middleware aún deshabilitado (requiere Supabase)
-- 🟡 Auth aún en localStorage (requiere Supabase)
+- ✅ Middleware con gating por rol implementado y activo (corrección de esta auditoría)
+- ✅ Auth con Supabase (cookies, server-side) implementada en código — coexiste con el modo demo (localStorage)
+- 🔴 Secrets aún expuestos en el historial de git — rotación vencida desde el 27/02/2026 (ver `docs/SECRET-ROTATION.md`)
+- 🟡 RLS de Supabase definida en 31 scripts SQL pero no verificada en runtime contra una instancia real
+- 🟡 Modo demo sin gating de middleware (comportamiento intencional, no un bug — ver punto 8 arriba)
 
 ---
 
-## 🎯 Próximos Pasos (Fase 2)
+## 🎯 Próximos pasos para subir el score
 
-### Para alcanzar 9/10:
-1. **URGENTE:** Rotar todos los secrets expuestos
+1. **Urgente:** rotar los 3 secrets expuestos
    - Seguir `docs/SECRET-ROTATION.md`
-   - Ejecutar `npm run validate-env` después
+   - Ejecutar `pnpm validate-env` después
 
-2. **Habilitar Supabase Auth:**
-   - Configurar Supabase project
-   - Crear tablas con RLS
-   - Descomentar `middleware.ts`
-   - Migrar auth a servidor
+2. **Verificar RLS en runtime:**
+   - Probar las políticas de los 31 scripts SQL contra un proyecto Supabase real
+   - Confirmar que un usuario no puede leer/escribir datos de otro tenant/rol indebidamente
 
-3. **Mejoras adicionales:**
-   - Implementar 2FA opcional
-   - Email verification obligatorio
-   - Session timeout (30 min)
+3. **Resolver los 2 errores de `pnpm type-check`:**
+   - `app/admin/page.tsx:134`
+   - `components/admin/appointments/appointment-modal.tsx:47`
+
+4. **Mejoras adicionales (no iniciadas):**
+   - 2FA opcional
+   - Verificación de email obligatoria
+   - Session timeout explícito
    - Audit logs en Supabase
+   - Decidir el tratamiento del modo demo: ocultarlo en producción pública, o documentarlo explícitamente como entorno de demostración sin garantías de seguridad
 
 ---
 
-## 🚀 Comandos Disponibles
+## 🚀 Comandos disponibles
 
 ```bash
 # Validar configuración de entorno
-npm run validate-env
+pnpm validate-env
 
 # Verificar seguridad antes de commit
-npm run security-check
+pnpm security-check
 
 # Configurar git hooks automáticos
-npm run setup-hooks
+pnpm setup-hooks
 
-# Ejecutar con logs de seguridad
-npm run dev
+# Ejecutar en desarrollo (con logs de seguridad)
+pnpm dev
 ```
 
 ---
 
-## 📝 Checklist Pre-Producción
+## 📝 Checklist pre-producción
 
-- [ ] Rotar todos los secrets expuestos
-- [ ] Ejecutar `npm run validate-env` sin errores
-- [ ] Configurar hooks con `npm run setup-hooks`
+- [ ] Rotar todos los secrets expuestos (vencido)
+- [ ] Ejecutar `pnpm validate-env` sin errores
+- [ ] Configurar hooks con `pnpm setup-hooks`
 - [ ] Verificar que `.env.local` NO está en Git
-- [ ] Habilitar Supabase Auth
-- [ ] Descomentar middleware
+- [x] Auth con Supabase implementada en código ✅ (verificar en runtime contra una instancia real antes de producción)
+- [x] Middleware activo con gating por rol ✅
 - [ ] Probar rate limiting en endpoints
 - [ ] Probar validación de inputs maliciosos
 - [ ] Verificar security headers con securityheaders.com
-- [ ] Configurar variables en Vercel
+- [ ] Configurar variables en el proveedor de hosting
+- [ ] Verificar RLS de Supabase contra una instancia real
+- [ ] Resolver los 2 errores de `pnpm type-check`
 - [ ] Hacer penetration testing básico
 - [ ] Revisar logs por comportamiento sospechoso
 
 ---
 
-**Implementado por:** GitHub Copilot  
-**Fecha:** 29 de noviembre de 2025  
-**Próxima revisión:** Al habilitar Supabase Auth
+**Implementación original:** GitHub Copilot, 29 de noviembre de 2025
+**Esta revisión documental:** 2026-06-30
+**Próxima revisión recomendada:** al rotar los secrets y verificar RLS en runtime

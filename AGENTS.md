@@ -18,16 +18,18 @@ Este archivo guía a los agentes de IA para ser productivos y seguros en el proy
 
 ## 🏗️ Comandos Esenciales
 
-- `npm run dev` — Servidor de desarrollo
-- `npm run build` — Build de producción
-- `npm run start` — Servidor de producción
-- `npm run lint` — Linter
-- `npm run type-check` — Verificación de tipos
-- `npm run format` — Formateo de código
-- `npm run validate-env` — Validación de variables de entorno
-- `npm run security-check` — Chequeo de seguridad
-- `npm run setup-hooks` — Configuración de git hooks
-- `npm run predeploy` — Checklist pre-deployment
+> El proyecto usa `pnpm` (ver `package.json`), no `npm`.
+
+- `pnpm dev` — Servidor de desarrollo
+- `pnpm build` — Build de producción
+- `pnpm start` — Servidor de producción
+- `pnpm lint` — Linter
+- `pnpm type-check` — Verificación de tipos
+- `pnpm format` — Formateo de código
+- `pnpm validate-env` — Validación de variables de entorno
+- `pnpm security-check` — Chequeo de seguridad
+- `pnpm setup-hooks` — Configuración de git hooks
+- `pnpm predeploy` — Checklist pre-deployment
 
 ---
 
@@ -43,9 +45,11 @@ Este archivo guía a los agentes de IA para ser productivos y seguros en el proy
 
 ## 🔒 Seguridad y Buenas Prácticas
 
-- Todas las tablas de base de datos usan Row Level Security (RLS)
-- Validar siempre variables de entorno antes de deploy
-- Revisar y rotar secrets antes de producción
+- Hay 31 scripts SQL en `scripts/` que definen políticas de Row Level Security (RLS) — su aplicación efectiva no fue verificada en runtime contra una instancia real (ver `SECURITY-REPORT.md`)
+- `middleware.ts` aplica gating por rol cuando hay sesión de Supabase; en modo demo (sin Supabase configurado) el middleware hace pass-through y el control de acceso es solo client-side
+- Validar siempre variables de entorno antes de deploy (`pnpm validate-env`)
+- Revisar y rotar secrets antes de producción — la rotación está vencida desde el 27/02/2026, ver `docs/SECRET-ROTATION.md`
+- 🔴 `scripts/validate-env.js` tiene los 3 secrets comprometidos hardcodeados en texto plano (código funcional, no documentación) — ver advertencia en `docs/SECRET-ROTATION.md`
 - Seguir los checklists de seguridad y pre-deployment
 - Usar los scripts de seguridad antes de cada release
 
@@ -65,8 +69,8 @@ Este archivo guía a los agentes de IA para ser productivos y seguros en el proy
 ## 🚦 Flujo recomendado para agentes
 
 1. Leer `README.md` y `docs/README.md` para contexto general y seguridad
-2. Validar entorno (`npm run validate-env`)
-3. Ejecutar chequeos de seguridad (`npm run security-check`)
+2. Validar entorno (`pnpm validate-env`)
+3. Ejecutar chequeos de seguridad (`pnpm security-check`)
 4. Seguir los checklists antes de merge/deploy
 5. Documentar cambios relevantes en seguridad
 
@@ -80,4 +84,4 @@ Este archivo guía a los agentes de IA para ser productivos y seguros en el proy
 
 ---
 
-> Última actualización: 2026-04-20
+> Última actualización: 2026-06-30

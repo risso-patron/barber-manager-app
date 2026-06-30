@@ -1,10 +1,12 @@
 # Manual del Sistema
 
-**Barber Manager App — Versión 1.3**  
+**Ornō (paquete técnico: `barber-manager-app`) — v0.1.0**  
 **Perfil:** Desarrolladores y administradores técnicos  
-**Stack:** Next.js 15 (App Router) · TypeScript 5 · Supabase · Tailwind CSS · pnpm
+**Stack:** Next.js 15.2.4 (App Router) · React 19 · TypeScript 5.9 · Supabase · Tailwind CSS · pnpm 10
 
-> Actualización v1.3: se documentan alias de rutas de empleado (`/barber/*` y `/employee/*`) y consolidación de la documentación operativa.
+> Nota sobre versionado: el `package.json` está en `0.1.0` (proyecto en desarrollo activo, no en release semver formal). Las etiquetas `M1`–`M8` y `v1.2`/`v1.3` que aparecen en este documento son **nombres internos de lotes de funcionalidades** (usados en scripts SQL y commits), no versiones de producto publicadas. No tratarlas como número de versión oficial.
+>
+> Este manual fue auditado y corregido el 2026-06-29 contra el código real del branch `work/cambios-personales`. Donde el código y la documentación previa no coincidían, se corrigió la documentación.
 
 ---
 
@@ -24,7 +26,8 @@
 12. [Scripts de base de datos](#12-scripts-de-base-de-datos)
 13. [Despliegue en Vercel](#13-despliegue-en-vercel)
 14. [Comandos de desarrollo](#14-comandos-de-desarrollo)
-15. [Troubleshooting](#15-troubleshooting)
+15. [Limitaciones técnicas y roadmap recomendado](#15-limitaciones-técnicas-y-roadmap-recomendado)
+16. [Troubleshooting](#16-troubleshooting)
 
 ---
 
@@ -33,7 +36,7 @@
 | Requisito | Versión mínima | Notas |
 |-----------|---------------|-------|
 | Node.js | 18.x | Recomendado: LTS más reciente |
-| pnpm | 8.x | Gestor de paquetes del proyecto |
+| pnpm | 10.x | Fijado en `package.json` → `"packageManager": "pnpm@10.14.0"` |
 | Supabase | — | Proyecto activo (free tier es suficiente) |
 | Git | cualquiera | |
 
@@ -388,7 +391,7 @@ RLS: solo admin/manager pueden SELECT y UPDATE.
 
 ### Row Level Security (RLS)
 
-Todas las tablas tienen RLS habilitado. Políticas activas:
+Los scripts SQL en `scripts/` (ver §12) definen políticas RLS para todas las tablas, pensadas para aplicarse en orden sobre una instancia limpia de Supabase. **Esta auditoría documental no verificó de forma independiente que las políticas estén efectivamente activas en una instancia de producción real** — esa verificación requiere acceso al panel de Supabase y queda fuera del alcance de una revisión de código estático. Tratar la siguiente tabla como "lo que el código pretende", no como un hecho confirmado en runtime:
 
 | Tabla | Política | Rol | Acción |
 |-------|---------|-----|--------|
@@ -473,6 +476,34 @@ if (!user) return <Redirect to="/auth/login" />
 
 > `useAuth` NO reemplaza al middleware — es solo para la UI. El control de acceso real ocurre en el servidor.
 
+### ⚠️ Modelo de roles: el tipo dice 3, el runtime tiene 4 (y un quinto solo en rutas)
+
+El modelo canónico, definido en `lib/types.ts` y formalizado en `openspec/specs/auth-roles.md`, declara:
+
+```typescript
+type UserRole = "client" | "employee" | "admin"
+```
+
+Pero `DEMO_USERS` en `lib/demo-config.ts` **no está tipado contra `UserRole`** (es un objeto literal con `as const` campo por campo), y de hecho incluye un usuario real con un cuarto rol fuera del tipo:
+
+```typescript
+barber: { email: 'barber@demo.com', password: 'Demo1234', role: 'barber' as const, ... }
+```
+
+Es decir: **`barber@demo.com` es una cuenta demo real y funcional con `role: "barber"`**, un valor que `lib/types.ts` no reconoce. No es una inconsistencia teórica — cualquiera que inicie sesión con esas credenciales obtiene ese rol.
+
+Además, el código de enrutamiento referencia un quinto valor, `manager`, que **no aparece en ningún usuario demo ni en el formulario de registro** — ese sí es puramente inalcanzable hoy:
+
+| Rol | ¿Está en `UserRole`? | ¿Tiene usuario demo? | Dónde vive en el código de rutas |
+|-----|:---:|:---:|---|
+| `client`, `employee`, `admin` | ✅ | ✅ | En todos lados — son los 3 roles oficiales |
+| `barber` | ❌ | ✅ (`barber@demo.com`) | `middleware.ts`, `hooks/useRequireAuth.ts`, `app/dashboard/page.tsx`, `app/barber/page.tsx` |
+| `manager` | ❌ | ❌ ninguno | `middleware.ts` (bloquea `/admin/settings`, `/admin/reports`, `/admin/employees`), `hooks/useRequireAuth.ts`, `app/dashboard/page.tsx`, `components/layout/sidebar.tsx` (menú propio) |
+
+Esto es **deuda técnica real, no un error de esta auditoría**: la decisión de equipo registrada en `openspec/changes/archive/2026-05-27-unificar-auth/design.md` estableció que el modelo válido es de 3 roles, pero esa limpieza nunca llegó a `lib/demo-config.ts` ni al código de rutas. En esta misma auditoría documental (ciclo de revisión de rol empleado, 2026-06-29) ya se corrigió un caso concreto: `app/employee/layout.tsx` dejó de aceptar `"manager"` en su lista de roles permitidos. El resto de las referencias a `manager` y `barber` listadas arriba **siguen sin limpiar** al momento de escribir este manual.
+
+**Recomendación pendiente:** decidir si `barber` se formaliza como alias real de `employee` (y se documenta como tal) o se elimina de `DEMO_USERS` y del código de rutas; eliminar `manager` por completo si no hay intención de usarlo. Hasta que esto se resuelva, no asumir que "solo hay 3 roles" al leer el código de rutas o los datos demo — eso solo es cierto al leer `lib/types.ts`.
+
 ---
 
 ## 7. Middleware y control de acceso
@@ -485,15 +516,24 @@ if (!user) return <Redirect to="/auth/login" />
 
 | Prefijo | Rol permitido | Redirige a si otro rol accede |
 |---------|--------------|-------------------------------|
-| `/admin/*` | `admin` | `/dashboard` |
+| `/admin/*` | `admin` (y `manager`, parcialmente — ver §6) | `/dashboard` |
+| `/employee/*` | `employee` | `/dashboard` |
 | `/barber/*` | `employee` | `/dashboard` |
 | `/client/*` | `client` | `/dashboard` |
+
+#### `/barber/*` NO es un alias de `/employee/*` — son dos implementaciones distintas
+
+Documentación previa de este manual afirmaba que `/barber/*` y `/employee/*` eran "alias, ambas rutas activas". **Eso es impreciso.** Son dos módulos de código separados que casualmente comparten roles permitidos en el middleware:
+
+- **`app/employee/*`** — módulo actual y completo: layout propio con sidebar (`EmployeeSidebar`), múltiples páginas (citas, agenda, historial, control horario, estadísticas, perfil), usa `lib/demo-appointments.ts` en modo demo y Supabase en producción. Es el destino real al que redirige el dispatcher (ver abajo).
+- **`app/barber/page.tsx`** — una única página monolítica, más antigua ("Mi Espacio de Trabajo": fichaje, agenda del día, ingresos del mes), con consulta directa a Supabase sin pasar por `lib/demo-appointments.ts`. **No forma parte del flujo de navegación actual**: ningún dispatcher redirige hacia ella. Sigue siendo accesible por URL directa para roles `employee`, `barber` o `admin`, y el middleware la sigue protegiendo, pero es código huérfano desde el punto de vista de navegación.
+
+**Recomendación pendiente:** decidir si `app/barber/page.tsx` se elimina (si `/employee/*` ya cubre su funcionalidad) o si se documenta explícitamente como ruta de acceso directo con un propósito propio. Mientras tanto, no asumir que son intercambiables — tienen lógica y fuentes de datos distintas.
 
 #### Rutas genéricas protegidas (cualquier sesión activa)
 
 ```
-/dashboard     ← dispatcher; redirige según rol
-/employee/*    ← alias heredado, mismo acceso que /barber/*
+/dashboard     ← dispatcher; redirige según rol (ver app/dashboard/page.tsx)
 ```
 
 #### Rutas públicas (sin sesión requerida)
@@ -516,22 +556,26 @@ if (!user) return <Redirect to="/auth/login" />
 | Rol | Ruta intentada | Resultado |
 |-----|---------------|----------|
 | `admin` | `/admin/*` | ✅ Acceso permitido |
-| `admin` | `/barber/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/admin` |
-| `employee` | `/barber/*` | ✅ Acceso permitido |
-| `employee` | `/admin/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/barber` |
+| `admin` | `/employee/*`, `/barber/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/admin` |
+| `employee` | `/employee/*` o `/barber/*` | ✅ Acceso permitido |
+| `employee` | `/admin/*` o `/client/*` | 🔄 Redirect → `/dashboard` → `/employee/dashboard` |
 | `client` | `/client/*` | ✅ Acceso permitido |
-| `client` | `/admin/*` o `/barber/*` | 🔄 Redirect → `/dashboard` → `/client` |
+| `client` | `/admin/*`, `/employee/*` o `/barber/*` | 🔄 Redirect → `/dashboard` → `/client` |
 | sin sesión | cualquier ruta protegida | 🔄 Redirect → `/auth/login?next={ruta}` |
 
 ### `/dashboard` — Dispatcher de roles
 
-La ruta `/dashboard` no tiene UI propia; detecta el rol y redirige en el servidor:
+La ruta `/dashboard` (`app/dashboard/page.tsx`) no tiene UI propia; detecta el rol (en `localStorage` si es modo demo, o consultando `users.role` en Supabase) y redirige client-side:
 
 ```
 admin    → /admin
-employee → /barber
+manager  → /admin
+employee → /employee/dashboard
+barber   → /employee/dashboard
 client   → /client
 ```
+
+> Nota: ningún camino del dispatcher real redirige hacia `/barber`. Esa ruta solo se alcanza si alguien la teclea o la tiene en favoritos — confirma que es una ruta legacy, no parte del flujo principal (ver nota anterior sobre `/barber` vs `/employee`).
 
 ---
 
@@ -971,12 +1015,25 @@ export const isDemoMode = (): boolean =>
 
 - Formularios aparentan guardar pero no persisten
 - Reservas públicas generan una reserva ficticia exitosa
-- El login acepta las credenciales demo (`admin@demo.com`, `barber@demo.com`, `client@demo.com`)
+- El login acepta las 5 credenciales demo de `DEMO_USERS`: `admin@demo.com`, `barber@demo.com`, `employee@demo.com`, `client@demo.com` y `vincent@ornodemo.com` (todas con password `Demo1234`)
 - Las API routes que detectan `isDemoMode()` devuelven datos demo en lugar de consultar Supabase
+
+### ⚠️ Dos catálogos de datos demo desincronizados
+
+El proyecto mantiene **dos fuentes de datos demo distintas para citas/empleados** que no están sincronizadas entre sí:
+
+- `lib/demo-config.ts` → `DEMO_EMPLOYEES`, `DEMO_APPOINTMENTS` (usado por dashboards generales y `app/barber/page.tsx` indirectamente vía Supabase real, no demo)
+- `lib/demo-appointments.ts` → su propio set de citas/empleados (usado específicamente por `app/employee/*`)
+
+Esto significa que, en modo demo, lo que ve un admin sobre las citas de un empleado puede no coincidir exactamente con lo que ese mismo empleado ve en su propio panel, porque leen de catálogos distintos. No es un bug que rompa la app, pero es una inconsistencia de datos real detectada durante la auditoría de rol empleado de este ciclo (2026-06-29). **Recomendación pendiente:** unificar en una sola fuente de datos demo.
 
 ---
 
 ## 11. Seguridad
+
+> **Estado general:** la auditoría de seguridad más reciente y completa del proyecto vive en `SECURITY-REPORT.md` (raíz del repo), con un puntaje de **7/10** y al menos un hallazgo crítico pendiente (rotación de secrets — ver más abajo, **vencida** al momento de esta auditoría documental). Tratar `SECURITY-REPORT.md` como la fuente autoritativa de seguridad; este manual solo resume los mecanismos implementados.
+>
+> El middleware de control de acceso por rol (`middleware.ts`) **solo se ejecuta cuando Supabase está configurado**. En modo demo (sin `NEXT_PUBLIC_SUPABASE_URL`), el middleware no tiene sesión de Supabase que leer y el control de acceso queda en manos exclusivamente del cliente (`useRequireAuth`, que lee `localStorage`) — es decir, **trivialmente evadible** editando `localStorage` desde DevTools. Esto es aceptable para una demo pero debe quedar explícito: no hay control de acceso real del lado del servidor sin Supabase configurado.
 
 ### OWASP Top 10 — Mitigaciones implementadas
 
@@ -1130,7 +1187,36 @@ Ver `docs/SECURITY-CHECKLIST.md` para el checklist completo.
 
 ---
 
-## 15. Troubleshooting
+## 15. Limitaciones técnicas y roadmap recomendado
+
+### Estado de Supabase
+
+El proyecto soporta dos modos operativos (ver §10): demo (sin Supabase, datos hardcodeados) y producción (Supabase completo). La configuración de Supabase está **implementada en código pero no necesariamente activa en todos los entornos** — depende de que `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` estén correctamente configuradas y que los 31 scripts de `scripts/` se hayan ejecutado en orden contra esa instancia. No asumir que "el código soporta Supabase" implica "Supabase está corriendo en producción ahora mismo" — son cosas distintas.
+
+### Limitaciones técnicas conocidas (a 2026-06-29)
+
+| Limitación | Detalle | Severidad |
+|---|---|---|
+| Roles fantasma sin limpiar | `manager` y `barber` siguen en `middleware.ts`, `useRequireAuth.ts`, `app/dashboard/page.tsx` y `Sidebar` pese a que el modelo oficial es de 3 roles (ver §6) | Media — deuda técnica, no vulnerabilidad |
+| `/barber` huérfano | Página completa y funcional pero sin entrada en el flujo de navegación real (ver §7) | Baja — código muerto desde navegación, no desde acceso directo |
+| Catálogos demo desincronizados | `lib/demo-config.ts` vs `lib/demo-appointments.ts` (ver §10) | Baja — solo afecta consistencia visual en modo demo |
+| Middleware bypaseado en modo demo | Sin Supabase configurado, el control de acceso por rol es 100% client-side y evadible (ver §11) | Alta si se confunde demo con producción |
+| RLS no verificado en runtime | Las políticas existen como scripts SQL; su aplicación efectiva en la instancia real no fue confirmada en esta auditoría (ver §5) | Por confirmar |
+| Secret rotation vencida | Ver `docs/SECRET-ROTATION.md` y `SECURITY-REPORT.md` — fecha límite original ya pasó | Crítica |
+| Módulos parcialmente implementados | `app/admin/billing` (mock 100% client-side, sin persistencia) e `integrations` (UI sin conexiones reales a terceros) — ver manuales de rol correspondientes | Media |
+
+### Roadmap técnico recomendado
+
+1. Eliminar `manager` y `barber` de todo el código de enrutamiento, o formalizarlos en `UserRole` si hay intención real de usarlos — no dejarlos a medio camino.
+2. Decidir el destino de `app/barber/page.tsx` (eliminar o documentar como ruta intencional).
+3. Unificar `lib/demo-config.ts` y `lib/demo-appointments.ts` en una sola fuente de datos demo.
+4. Rotar los secrets pendientes (`docs/SECRET-ROTATION.md`) — esto es lo más urgente de toda esta lista.
+5. Verificar en una instancia real de Supabase que las políticas RLS de los 31 scripts están efectivamente aplicadas.
+6. Definir si `app/admin/billing` e `integrations` se completan, se ocultan del menú, o se marcan explícitamente como "próximamente" en la UI — actualmente aparentan estar terminados y no lo están.
+
+---
+
+## 16. Troubleshooting
 
 ### "Missing Supabase admin environment variables"
 

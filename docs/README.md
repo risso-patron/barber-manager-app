@@ -1,162 +1,116 @@
-# 📚 Security Documentation Index
+# 📚 Índice de Documentación de Seguridad
 
-Esta carpeta contiene toda la documentación de seguridad del proyecto Barber Manager.
+Esta carpeta contiene la documentación de seguridad de Ornō (`barber-manager-app`).
+
+> Auditado y corregido el 2026-06-30. Corrige comandos (`npm` → `pnpm`), la descripción del contenido de `EXECUTIVE-SUMMARY.md` (la versión anterior tenía cifras de ROI que ya no están en la versión actual), y fechas/estados desactualizados.
 
 ---
 
-## 📖 Documentos Disponibles
+## 📖 Documentos disponibles
 
 ### 🚀 Quick Start
-**[QUICK-START-SECURITY.md](QUICK-START-SECURITY.md)**  
-Guía rápida de 5 minutos para configurar las funcionalidades de seguridad.
+**[QUICK-START-SECURITY.md](QUICK-START-SECURITY.md)**
+Guía rápida para configurar las funcionalidades de seguridad.
 
-**Para:**
-- Nuevos desarrolladores en el proyecto
-- Setup rápido del entorno
-- Comandos esenciales de seguridad
+**Para:** nuevos desarrolladores, setup rápido del entorno, comandos esenciales de seguridad.
 
 ---
 
 ### 📊 Executive Summary
-**[EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md)**  
-Resumen ejecutivo de las implementaciones de seguridad.
+**[EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md)**
+Resumen ejecutivo del estado de seguridad para stakeholders no técnicos.
 
-**Para:**
-- Product managers
-- Stakeholders
-- Decisiones de negocio
-- Métricas y ROI
+**Para:** product managers, stakeholders, decisiones de negocio.
 
-**Incluye:**
-- Mejora de security score (4/10 → 7/10)
-- ROI estimado (33,233%)
-- Tiempo de implementación
-- Beneficios por área
+**Incluye:** estado actual del security score (7/10), acciones pendientes priorizadas, roadmap de seguridad. No incluye cifras de ROI ni estimaciones de tiempo de implementación — fueron removidas en la revisión de 2026-06-30 por no estar verificadas.
 
 ---
 
 ### ✅ Security Checklist
-**[SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md)**  
-Checklist completo de seguridad para desarrollo y deployment.
+**[SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md)**
+Checklist de seguridad para desarrollo y deployment.
 
-**Para:**
-- Developers antes de deploy
-- DevOps en configuración
-- QA en testing
-- Auditorías de seguridad
+**Para:** developers antes de deploy, DevOps, QA, auditorías.
 
-**Incluye:**
-- Pre-deploy checklist
-- Security hardening checklist
-- Incident response checklist
-- Compliance checklist
-- Maintenance schedule
+**Incluye:** pre-deploy checklist, hardening checklist, incident response checklist, compliance checklist, maintenance schedule.
 
 ---
 
 ### 🔐 Secret Rotation Guide
-**[SECRET-ROTATION.md](SECRET-ROTATION.md)**  
-Guía detallada para rotar secrets comprometidos.
+**[SECRET-ROTATION.md](SECRET-ROTATION.md)**
+Guía para rotar los secrets comprometidos — **sin valores reales** (fueron redactados en la revisión de 2026-06-30).
 
-**Para:**
-- Respuesta a incidentes de seguridad
-- Rotación programada de secrets
-- Onboarding de nuevos servicios
+**Para:** respuesta a incidentes, rotación programada, onboarding de nuevos servicios.
 
-**Incluye:**
-- Pasos para rotar cada servicio (Resend, Twilio, CRON)
-- Checklist post-rotación
-- Mejores prácticas
-- Plan de respuesta a incidentes
-- Contactos de emergencia
+**Incluye:** pasos para rotar cada servicio (Resend, Twilio, CRON), checklist post-rotación, mejores prácticas, runbook de respuesta a incidentes, y un hallazgo crítico sobre `scripts/validate-env.js` que aún contiene los secrets en texto plano en código funcional (sin corregir — fuera del alcance de esta revisión documental).
 
 ---
 
 ### 🛠️ Security Implementation Details
-**[SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md)**  
-Detalles técnicos de todas las implementaciones de seguridad.
+**[SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md)**
+Detalle técnico de las implementaciones de seguridad.
 
-**Para:**
-- Developers que implementarán nuevas features
-- Code reviews
-- Documentación técnica
-- Training de equipo
+**Para:** developers, code reviews, documentación técnica, training de equipo.
 
-**Incluye:**
-- Rate limiting system
-- Input validation
-- Security headers
-- Pre-commit hooks
-- Environment validation
-- Security logging
-- Comandos disponibles
+**Incluye:** rate limiting, validación de inputs, security headers, pre-commit hooks, environment validation, security logging, middleware con gating por rol.
 
 ---
 
-## 📁 Archivos en Raíz del Proyecto
+## 📁 Archivo en la raíz del proyecto
 
 ### 🔐 SECURITY-REPORT.md
 **Ubicación:** `../SECURITY-REPORT.md`
 
-Análisis completo de seguridad del proyecto con vulnerabilidades identificadas y plan de remediación.
-
-**Secciones:**
-- Security score actual (7/10)
-- Implementaciones completadas
-- Vulnerabilidades críticas
-- Vulnerabilidades medium/low
-- Plan de implementación en 3 fases
-- Checklist pre-producción
+Reporte completo de seguridad — la fuente autoritativa de scores. Incluye la sección de vulnerabilidades activas y el roadmap de seguridad por fases.
 
 ---
 
-## 🗂️ Estructura Recomendada de Lectura
+## 🗂️ Orden de lectura recomendado
 
-### Para Nuevos Developers
-1. ✅ [QUICK-START-SECURITY.md](QUICK-START-SECURITY.md) - 5 minutos
-2. ✅ [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md) - 15 minutos
-3. ✅ [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) - 10 minutos
-4. ⏭️ [SECRET-ROTATION.md](SECRET-ROTATION.md) - Referencia cuando se necesite
+### Para nuevos developers
+1. [QUICK-START-SECURITY.md](QUICK-START-SECURITY.md)
+2. [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md)
+3. [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md)
+4. [SECRET-ROTATION.md](SECRET-ROTATION.md) — referencia cuando se necesite
 
-### Para Product/Business
-1. ✅ [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md) - 10 minutos
-2. ✅ [../SECURITY-REPORT.md](../SECURITY-REPORT.md) - 15 minutos
+### Para product/business
+1. [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md)
+2. [../SECURITY-REPORT.md](../SECURITY-REPORT.md)
 
 ### Para DevOps/SRE
-1. ✅ [SECRET-ROTATION.md](SECRET-ROTATION.md) - 20 minutos
-2. ✅ [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) - 20 minutos
-3. ✅ [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md) - 15 minutos
+1. [SECRET-ROTATION.md](SECRET-ROTATION.md)
+2. [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md)
+3. [SECURITY-IMPLEMENTATION.md](SECURITY-IMPLEMENTATION.md)
 
-### En Caso de Incidente
-1. 🚨 [SECRET-ROTATION.md](SECRET-ROTATION.md) - Sección "Qué Hacer Si Sospechas Compromiso"
-2. 🚨 [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) - Sección "Incident Response Checklist"
+### En caso de incidente
+1. [SECRET-ROTATION.md](SECRET-ROTATION.md) — sección "Qué hacer si sospechás un compromiso"
+2. [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) — sección "Incident Response Checklist"
 
 ---
 
-## 🔗 Quick Links
+## 🔗 Comandos rápidos
 
-### Scripts de Seguridad
 ```bash
 # Validar configuración
-npm run validate-env
+pnpm validate-env
 
 # Verificar seguridad pre-commit
-npm run security-check
+pnpm security-check
 
 # Configurar git hooks
-npm run setup-hooks
+pnpm setup-hooks
 
-# Pre-deployment checklist
-npm run predeploy
+# Checklist pre-deployment
+pnpm predeploy
 ```
 
-### Recursos Externos
+### Recursos externos
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Security Headers Checker](https://securityheaders.com)
 - [Next.js Security Best Practices](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy)
 - [Supabase Security](https://supabase.com/docs/guides/platform/security)
 
-### Service Dashboards
+### Dashboards de los proveedores
 - [Resend Dashboard](https://resend.com/api-keys)
 - [Twilio Console](https://console.twilio.com)
 - [Supabase Dashboard](https://supabase.com/dashboard)
@@ -164,37 +118,26 @@ npm run predeploy
 
 ---
 
-## 📊 Métricas de Seguridad
+## 📊 Estado actual (verificado 2026-06-30)
 
-### Estado Actual
-- **Security Score**: 7/10 ✅
-- **Vulnerabilidades Críticas**: 0* (pendiente rotación manual)
-- **Protecciones Activas**: 8
-- **Coverage de Tests**: Pendiente
-- **Última Auditoría**: 29/11/2025
-
-### Objetivos
-- **Score Fase 2**: 9/10 (con Supabase Auth)
-- **Score Fase 3**: 10/10 (full hardening)
-- **Próxima Revisión**: Al habilitar Supabase Auth
+- **Security Score:** 7/10 (según `SECURITY-REPORT.md`, score de Authentication marcado como posiblemente desactualizado)
+- **Vulnerabilidades críticas activas:** rotación de secrets vencida + secrets en texto plano en `scripts/validate-env.js` (código funcional, no corregido en esta revisión) + RLS sin verificar en runtime
+- **Protecciones activas:** rate limiting, validación de inputs, security headers, pre-commit hooks, environment validation, security logging, middleware con gating por rol
+- **Última auditoría documental:** 2026-06-30
 
 ---
 
-## 🤝 Contribuir a la Documentación
-
-Si encuentras información desactualizada o quieres mejorar la documentación:
+## 🤝 Contribuir a la documentación
 
 1. Crear issue describiendo la mejora
 2. Hacer PR con los cambios
-3. Marcar como "documentation" label
-4. Actualizar fecha de "Última actualización"
+3. Marcar como "documentation"
+4. Actualizar la fecha de "Última actualización" del documento modificado
 
-### Guía de Estilo
-- Usar emojis para mejor navegación
-- Incluir ejemplos de código cuando aplique
-- Mantener TOC actualizado
+### Guía de estilo
 - Links relativos dentro del proyecto
-- Versionar cambios significativos
+- No incluir valores reales de secrets, ni siquiera truncados
+- Si una afirmación no se puede verificar contra el código, marcarla explícitamente como no verificada
 
 ---
 
@@ -202,16 +145,15 @@ Si encuentras información desactualizada o quieres mejorar la documentación:
 
 **Para consultas de seguridad:**
 - Email: luisrissopa@gmail.com
-- GitHub Issues: Marcar como "security"
-- Urgencias: Seguir proceso en SECRET-ROTATION.md
+- GitHub Issues: marcar como "security"
+- Urgencias: seguir el proceso en `SECRET-ROTATION.md`
 
 **Para reportar vulnerabilidades:**
 - Email: luisrissopa@gmail.com
-- Subject: `[SECURITY] Vulnerabilidad en Barber Manager`
-- Incluir: Descripción, pasos para reproducir, impacto estimado
+- Subject: `[SECURITY] Vulnerabilidad en Ornō`
+- Incluir: descripción, pasos para reproducir, impacto estimado
 
 ---
 
-**Última actualización:** 29 de noviembre de 2025  
-**Mantenido por:** Dev Team  
-**Próxima revisión:** Al completar Fase 2 (Supabase Auth)
+**Última actualización:** 2026-06-30
+**Próxima revisión recomendada:** al rotar los secrets y corregir `scripts/validate-env.js`

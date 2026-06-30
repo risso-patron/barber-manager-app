@@ -1,18 +1,19 @@
-# Barber Manager — Centro de Documentación
+# Ornō — Centro de Documentación
 
-**Versión:** 1.3 — Junio 2026  
-**Aplicación:** Barber Manager App (Next.js 15 + Supabase)
+**Aplicación:** Ornō / `barber-manager-app` (Next.js 15 + Supabase) — `v0.1.0`, desarrollo activo
+
+> Los rótulos `v1.1`/`v1.2`/`v1.3`/`M1`-`M8` de este documento son **nombres internos de lotes de funcionalidades** usados históricamente en commits y scripts, no versiones de producto publicadas. La versión real de paquete es `0.1.0` (`package.json`).
 
 ---
 
 ## Manuales disponibles
 
-| Manual | Dirigido a | Descripción |
-|--------|-----------|-------------|
-| [Manual del Administrador](manual-admin.md) | Dueño / gestor de la barbería | Gestión completa: citas, empleados, clientes, inventario, reportes y configuración |
-| [Manual del Empleado / Barbero](manual-empleado.md) | Barberos y staff de la barbería | Gestión de la agenda personal, estado de trabajo y citas del día |
-| [Manual del Cliente](manual-cliente.md) | Clientes de la barbería | Cómo reservar, cancelar, ver historial y usar beneficios |
-| [Manual del Sistema](manual-sistema.md) | Desarrolladores y administradores técnicos | API, seguridad, variables de entorno, base de datos y despliegue |
+| Manual | Dirigido a | Descripción | Estado | Última revisión |
+|--------|-----------|-------------|--------|------------------|
+| [Manual del Sistema](manual-sistema.md) | Desarrolladores y administradores técnicos | Arquitectura, API, seguridad, variables de entorno, base de datos y despliegue | ✅ Actualizado | 2026-06-29 |
+| [Manual del Administrador](manual-admin.md) | Dueño / gestor de la barbería | Gestión completa: citas, empleados, clientes, inventario, reportes, facturación, integraciones y configuración | ✅ Actualizado | 2026-06-30 |
+| [Manual del Empleado](manual-empleado.md) | Empleados de la barbería | Gestión de la agenda personal, estado de trabajo y citas del día | ✅ Actualizado | 2026-06-30 |
+| [Manual del Cliente](manual-cliente.md) | Clientes de la barbería | Cómo reservar, cancelar, ver historial y usar beneficios | ✅ Actualizado | 2026-06-30 |
 
 ---
 
@@ -66,8 +67,10 @@
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
 | `admin@demo.com` | `Demo1234` | Administrador |
-| `barber@demo.com` | `Demo1234` | Empleado / Barbero |
+| `employee@demo.com` | `Demo1234` | Empleado |
+| `barber@demo.com` | `Demo1234` | Empleado (rol legacy `barber`, ver manual del sistema §6) |
 | `client@demo.com` | `Demo1234` | Cliente |
+| `vincent@ornodemo.com` | `Demo1234` | Cliente |
 
 > El modo demo funciona **sin Supabase configurado**. Los datos son ficticios y no se guardan.
 
@@ -80,8 +83,10 @@ Administrador (/admin/*)
   └── Acceso total: citas, empleados, clientes, servicios, inventario,
        punto de venta, reportes, configuración, alertas de calificación
 
-Empleado (/barber/*)
+Empleado (/employee/*)
   └── Su agenda personal, citas del día, estado de jornada y comisiones
+       (existe también /barber, un dashboard legacy con funcionalidad
+        similar — ver manual del sistema §7)
 
 Cliente (/client/*)
   └── Sus citas, reagendamiento, calificaciones, puntos de fidelidad,

@@ -1,17 +1,10 @@
 # Manual del Cliente
 
-**Barber Manager App — Versión 1.3**  
-**Perfil:** Cliente de la barbería  
-**Acceso:** Puede usar la app con o sin cuenta registrada
+**Ornō — v0.1.0**
+**Perfil:** Cliente de la barbería
+**Acceso:** Con cuenta (`/client/*`) o sin cuenta, vía enlace público (`/reservar`, `/book/[slug]`)
 
----
-
-## Novedades v1.3
-
-- Se renovó la interfaz del módulo cliente con estilo editorial oscuro (tema Orno).
-- Navegación optimizada: sidebar en escritorio y barra inferior en móvil.
-- Pantalla de citas mejorada con pestañas claras de **Próximas** y **Pasadas**.
-- Historial de citas rediseñado para una lectura más rápida de estados y acciones.
+> Auditado y corregido contra el código real el 2026-06-30. Esta revisión corrige varias afirmaciones desactualizadas: la reserva con varios servicios a la vez solo existe en el flujo **sin cuenta**, no en el panel de cliente logueado; los regalos no se "canjean" desde la app (se presentan en persona); las calificaciones sí se pueden editar; y el modal de creación de cuenta aparece después de confirmar la reserva, no durante el flujo.
 
 ---
 
@@ -29,7 +22,7 @@
 10. [Historial de citas](#10-historial-de-citas)
 11. [Puntos de fidelidad](#11-puntos-de-fidelidad)
 12. [Mi perfil](#12-mi-perfil)
-13. [Beneficios: Regalos y cupones](#13-beneficios-regalos-y-cupones)
+13. [Regalos recibidos](#13-regalos-recibidos)
 14. [Mensajes](#14-mensajes)
 15. [Preguntas frecuentes](#15-preguntas-frecuentes)
 
@@ -37,46 +30,23 @@
 
 ## 1. Registrarme como cliente
 
-Si es la primera vez que usás la app, podés crear tu cuenta para gestionar tus citas, ver tu historial y recibir beneficios.
-
-### Pasos para registrarse
-
 1. Ir a `/auth/register`
-2. Completar el formulario:
-
-| Campo | Obligatorio | Detalles |
-|-------|------------|---------|
-| Nombre completo | Sí | Mínimo 3 caracteres |
-| Email | Sí | Dirección de correo válida; no puede estar ya registrada |
-| Contraseña | Sí | Mínimo 8 caracteres, debe incluir mayúscula, minúscula y número |
-| Confirmar contraseña | Sí | Debe coincidir con la contraseña |
-| Teléfono | No | Útil para que la barbería te contacte |
-| Rol | — | Se asigna automáticamente como **Cliente** |
-
-3. Hacer clic en **Registrarme**
-4. Se muestra el modal de **Términos y Condiciones**
-5. Leer los términos y hacer clic en **Aceptar** para continuar
-6. Serás redirigido al login — ingresar con tu email y contraseña recién creados
-
-> **Consejo:** Usá un email al que tengas acceso fácil desde el celular para recibir las notificaciones de tus citas.
+2. Completar: Nombre completo (mín. 3 caracteres), Email, Contraseña (mín. 8, con mayúscula/minúscula/número), Confirmar contraseña, Teléfono (opcional). El rol se asigna automáticamente como **Cliente**
+3. **Registrarme**
+4. Aceptar el modal de Términos y Condiciones
+5. Te redirige al login para ingresar con tus credenciales recién creadas
 
 ---
 
 ## 2. Iniciar sesión
 
 1. Ir a `/auth/login`
-2. Ingresar tu **email** y **contraseña**
-3. Hacer clic en **Iniciar sesión**
-4. El sistema detecta que sos cliente y te lleva a `/client`
+2. Ingresar email y contraseña → **Iniciar sesión**
+3. El sistema te lleva a `/client`
 
 ### Olvidé mi contraseña
 
-1. En la pantalla de login, hacer clic en **¿Olvidaste tu contraseña?**
-2. Ingresar tu email y hacer clic en **Enviar instrucciones**
-3. Revisar tu correo y hacer clic en el enlace de restablecimiento
-4. Ingresar la nueva contraseña (mínimo 8 caracteres, mayúscula, minúscula y número)
-5. Confirmar la nueva contraseña y hacer clic en **Guardar nueva contraseña**
-6. El sistema te redirige al login para que ingreses con tu nueva contraseña
+En login, **¿Olvidaste tu contraseña?** → ingresar email → seguir el enlace recibido por correo → definir nueva contraseña.
 
 ---
 
@@ -84,23 +54,21 @@ Si es la primera vez que usás la app, podés crear tu cuenta para gestionar tus
 
 **Ruta:** `/client`
 
-Al ingresar, tu panel muestra una vista general con:
+> Nota técnica: esta sección acepta sesiones con rol `client` **o `admin`** (`useRequireAuth(["client", "admin"])`) — un administrador puede entrar al panel de cliente sin que esto forme parte de un flujo de uso documentado para administradores.
 
-| Sección | Descripción |
-|---------|-------------|
-| Mi perfil | Resumen con tu nombre, email y teléfono. Botón para editar. |
-| Próximas citas | Lista de tus citas confirmadas o pendientes |
-| Historial | Acceso rápido a tus citas pasadas |
-| Puntos de fidelidad | Saldo de puntos acumulados y últimas transacciones |
-| Beneficios / Regalos | Códigos de regalo o cupones disponibles para vos |
-| Mensajes | Bandeja de mensajes de la barbería |
-| Mi carrito | Productos disponibles para comprar |
+El panel principal muestra:
 
-### Navegación del módulo cliente
+| Sección | Qué contiene |
+|---|---|
+| Mi perfil | Resumen de nombre, email, teléfono |
+| Próximas citas | Tus citas pendientes o confirmadas |
+| Fidelidad | Saldo de puntos y últimas transacciones — ver §11 |
+| Regalos | Códigos de regalo enviados por la barbería — ver §13 |
+| Mensajes | Mensajes enviados por la barbería, con contador de no leídos — ver §14 |
 
-- **Escritorio:** barra lateral fija con accesos a Inicio, Reservar, Mis citas e Historial.
-- **Celular:** barra inferior fija con los mismos accesos principales.
-- El tema visual es consistente en todas las pantallas del cliente para facilitar lectura y uso diario.
+### Navegación
+
+Barra lateral en escritorio / barra inferior en móvil, con 5 accesos: **Inicio · Reservar · Mis citas · Historial · Mi perfil**. No existen páginas separadas para Regalos o Mensajes — ambos son widgets dentro del panel de Inicio, no secciones de navegación propias.
 
 ---
 
@@ -108,56 +76,23 @@ Al ingresar, tu panel muestra una vista general con:
 
 **Ruta:** `/client/book`
 
-El flujo de reserva guiado tiene **4 pasos**:
+⚠️ **Esta reserva es de un solo servicio por cita** — a diferencia del flujo sin cuenta (§5), acá no hay carrito multi-servicio. Si querés reservar varios servicios en un solo turno, usá el enlace público de §5.
 
-### Paso 1: Elegí los servicios
+### Paso 1: Elegí el servicio
 
-- Se muestran todos los servicios activos de la barbería
-- Cada tarjeta indica: **nombre**, **descripción**, **precio** y **duración**
-- Hacer clic en una tarjeta **la agrega al carrito**; hacer clic otra vez **la quita**
-- Podes seleccionar **varios servicios** en la misma reserva
-
-**Panel mini-carrito (lateral o inferior):**
-- Muestra los servicios seleccionados con el precio de cada uno
-- Indica el **total acumulado** ($) y la **duración total** (minutos)
-- Botón **"Continuar con N servicios"** (deshabilitado si no hay ningún servicio seleccionado)
-
-> **Consejo:** Podes combinar servicios como "Corte" + "Barba" en una sola reserva. El barbero los realiza en secuencia.
+Se muestran los servicios activos (nombre, descripción, precio, duración). Hacer clic en uno lo selecciona (selección única, no acumulable).
 
 ### Paso 2: Elegí el barbero
 
-- Se muestran todos los empleados disponibles
-- Cada tarjeta muestra la foto, nombre y especialidad
-- Hacer clic en el barbero de tu preferencia
+Tarjetas con foto, nombre y especialidad de cada empleado disponible.
 
 ### Paso 3: Elegí fecha y hora
 
-- Se muestra un calendario con los días disponibles
-- Al seleccionar una fecha, aparecen los **horarios disponibles** para ese día
-- Los horarios están basados en el horario de atención configurado por la barbería
-- Hacer clic en el horario que te convenga
+Calendario con días disponibles; al elegir una fecha aparecen los horarios libres según el horario de atención configurado por la barbería.
 
-### Paso 4: Confirmá los datos
+### Paso 4: Confirmá
 
-Revisar y completar:
-
-| Campo | Obligatorio | Notas |
-|-------|------------|-------|
-| Nombre | Sí | Pre-completado con tu nombre de perfil |
-| Teléfono | Sí | Pre-completado si lo cargaste en tu perfil |
-| Email | Sí | Pre-completado con tu email |
-| Notas adicionales | No | Podés dejar indicaciones especiales al barbero |
-
-El resumen muestra **todos los servicios seleccionados** con el total a pagar.
-
-Hacer clic en **Confirmar reserva**.
-
-### Confirmación
-
-Al confirmar exitosamente:
-- La cita queda registrada con estado **Pendiente**
-- Aparece en tu lista de próximas citas
-- La barbería la verá en su panel de administración
+Formulario pre-completado con tu nombre, teléfono y email (editable), más un campo opcional de notas para el barbero. **Confirmar reserva** crea la cita en estado **Pendiente**, visible de inmediato en tu lista de próximas citas y en el panel del administrador.
 
 ---
 
@@ -165,27 +100,14 @@ Al confirmar exitosamente:
 
 **Ruta:** `/reservar` o `/book/[slug]` (enlace compartido por la barbería)
 
-Si no tenés cuenta o no querés crear una, podés reservar directamente desde el enlace público de la barbería.
+Mismo flujo de 4 pasos que §4, con dos diferencias importantes:
 
-### El flujo es idéntico (4 pasos), con estas diferencias:
+- **Paso 1 permite elegir varios servicios** en la misma reserva (carrito multi-servicio, con total acumulado y duración total) — esto es exclusivo de este flujo sin cuenta.
+- **Paso 4** pide tus datos de contacto (nombre, teléfono, email) porque no hay perfil pre-cargado.
 
-**Paso 1:** igual que la reserva con cuenta: podés elegir **uno o varios servicios** con el mini-carrito.
+### Modal de creación de cuenta
 
-**Paso 4: Tus datos de contacto**
-
-| Campo | Obligatorio | Notas |
-|-------|------------|-------|
-| Nombre completo | Sí | |
-| Teléfono | Sí | Para que la barbería te confirme |
-| Email | Sí | Para recibir la confirmación |
-| ¿Querés crear una cuenta? | No | Checkbox opcional — te ahorra los datos para la próxima vez |
-
-### ¿Crear cuenta al reservar?
-
-Si hacés clic en **"Crear cuenta"** durante la reserva:
-- Se abre un modal invitándote a registrarte
-- Podés crearte la cuenta en ese momento o seleccionar **"Luego"**
-- Elegir **"Luego"** no cancela ni afecta tu reserva
+Después de confirmar la reserva (no durante el flujo), aparece un modal invitándote a crear una cuenta para gestionar tus citas más fácilmente. El botón para omitirlo dice **"Tal vez después"** — omitirlo no afecta la reserva ya confirmada.
 
 ---
 
@@ -193,101 +115,48 @@ Si hacés clic en **"Crear cuenta"** durante la reserva:
 
 **Ruta:** `/client/appointments`
 
-Desde esta sección podés ver y gestionar todas tus citas.
+Dos pestañas:
 
-### Próximas citas
+- **Próximas:** citas en estado Pendiente o Confirmada, con acciones **Reagendar** (§7) y **Cancelar** (§8)
+- **Pasadas:** citas Completadas o Canceladas (solo consulta)
 
-Lista de citas con estado **Pendiente** o **Confirmada**:
-
-| Columna | Descripción |
-|---------|-------------|
-| Servicio | Qué servicio reservaste |
-| Barbero | A quién le reservaste |
-| Fecha | Día de la cita |
-| Hora | Horario de la cita |
-| Estado | Pendiente / Confirmada |
-
-Acciones disponibles:
-- **Reagendar** — ver sección 7
-- **Cancelar** — ver sección 8
-
-### Navegación por pestañas
-
-La pantalla separa las citas en dos pestañas:
-
-- **Próximas:** citas pendientes o confirmadas.
-- **Pasadas:** citas completadas o canceladas.
-
-Esto permite encontrar acciones pendientes con mayor rapidez.
-
-### Citas completadas
-
-Lista de citas con estado **Completada** (ya fueron atendidas) o **Cancelada**.
+Columnas mostradas: servicio, barbero, fecha, hora, estado.
 
 ---
 
 ## 7. Reagendar una cita
 
-> **Disponible para:** citas en estado **Pendiente** o **Confirmada** cuya fecha aún no haya pasado.
+Disponible para citas Pendiente o Confirmada cuya fecha aún no pasó.
 
-Si necesitás cambiar la fecha u hora de una cita **sin cancelarla**, podés reagendarla:
-
-1. Ir a `/client/appointments`
-2. Localizar la cita que querés reagendar
-3. Hacer clic en **Reagendar**
-4. Se abre el modal de reagendamiento con:
-   - Selector de **nueva fecha** (mínimo: mañana)
-   - Selector de **nueva hora** (formato 24hs)
-5. Hacer clic en **Confirmar reagendamiento**
-6. La cita se actualiza con la nueva fecha/hora y el estado permanece igual
-
-> **Nota:** Si la nueva fecha es anterior a hoy el sistema rechazará el cambio.
+1. `/client/appointments` → localizar la cita → **Reagendar**
+2. Modal con selector de nueva fecha (mínimo: **mañana**, no se puede elegir hoy ni una fecha pasada) y nueva hora
+3. **Confirmar reagendamiento** — la cita mantiene su estado, solo cambian fecha/hora
 
 ---
 
 ## 8. Cancelar una cita
 
-> **Importante:** Solo podés cancelar citas que aún **no hayan pasado** y que estén en estado Pendiente o Confirmada.
+Disponible para citas Pendiente o Confirmada que aún no pasaron.
 
-### Pasos para cancelar
+1. `/client/appointments` → localizar la cita → **Cancelar**
+2. Modal con campo opcional de motivo, y una nota fija de política: *"Por favor cancela con al menos 24 horas de anticipación para evitar cargos."*
+3. **Confirmar cancelación**
 
-1. Ir a `/client/appointments` o usar el botón **Cancelar** en tu panel de inicio
-2. Localizar la cita que querés cancelar
-3. Hacer clic en **Cancelar**
-4. Se abre un modal de confirmación con el siguiente campo:
-
-| Campo | Obligatorio | Notas |
-|-------|------------|-------|
-| Motivo de cancelación | No | Podés explicar el motivo (texto libre) |
-
-5. Hacer clic en **Confirmar cancelación** (o **No cancelar** para cerrar sin cambios)
-6. La cita cambia a estado **Cancelada**
-
-> **Nota sobre fees de cancelación:** Si la barbería tiene configurado un cargo por cancelación, este se informará en el modal antes de confirmar.
+> Esta advertencia es un texto genérico de 24 horas — **no muestra el monto real configurado por la barbería** en `/admin/settings` (fee de cancelación). Si necesitás saber el monto exacto, consultá directamente con la barbería.
 
 ---
 
 ## 9. Calificar una cita
 
-Una vez que tu cita queda con estado **Completada**, podés dejar una calificación y reseña para la barbería.
+Disponible una vez que la cita queda en estado **Completada**.
 
-### Cómo calificar
+1. Ir al historial (`/client/history`) o al panel principal → localizar la cita completada → **Calificar**
+2. Modal: calificación de 1 a 5 estrellas (obligatoria) + reseña de texto libre, **hasta 1000 caracteres** (opcional)
+3. **Enviar calificación**
 
-1. Ir al **historial de citas** (`/client/history`) o al panel principal
-2. Localizar la cita completada
-3. Hacer clic en **Calificar** (o el ícono de estrella)
-4. Se abre el modal de calificación:
+> A diferencia de versiones anteriores de este manual: **sí podés volver a editar tu calificación** después de enviarla — el botón cambia a "★ Editar" sobre una cita ya calificada.
 
-| Campo | Obligatorio | Notas |
-|-------|------------|-------|
-| Calificación | Sí | Escala de 1 a 5 estrellas (★★★★★) |
-| Reseña / comentario | No | Texto libre, máximo 500 caracteres |
-
-5. Hacer clic en **Enviar calificación**
-
-> Cada cita se puede calificar **una sola vez**. Una vez enviada, la calificación no se puede editar.
-
-> Las calificaciones de 1–2★ generan una **alerta interna** que el administrador verá en su dashboard para dar seguimiento.
+Las calificaciones de 1-2★ generan una alerta interna que el administrador ve en su dashboard.
 
 ---
 
@@ -295,138 +164,90 @@ Una vez que tu cita queda con estado **Completada**, podés dejar una calificaci
 
 **Ruta:** `/client/history`
 
-Muestra todas tus citas pasadas con estadísticas personales.
+### Estadísticas mostradas
 
-### Estadísticas de tu historial
+Total de citas · Total gastado (citas completadas) · Calificación promedio (solo sobre citas que calificaste) · Cantidad de canceladas · Servicio favorito · Barbero favorito.
 
-| Métrica | Qué mide |
-|---------|---------|
-| Total de citas | Cantidad total de citas que hiciste |
-| Citas completadas | Cuántas se realizaron exitosamente |
-| Total gastado | Suma de los servicios completados |
-| Calificación promedio | Promedio de tus ratings (si los hay) |
+### Filtros
 
-### Búsqueda y filtros
+Búsqueda por servicio o barbero + filtro por estado.
 
-| Filtro | Opciones |
-|--------|---------|
-| Búsqueda | Por nombre del servicio o del barbero |
-| Estado | Todas / Completadas / Canceladas / Pendientes |
+### Cada tarjeta del historial muestra
 
-### Detalle de cada cita en el historial
-
-Cada tarjeta muestra:
-- ✓ Ícono de completada (verde) o el estado que corresponda
-- **Servicio** realizado
-- **Barbero** que te atendió
-- **Fecha** de la cita
-- **Hora**
-- **Monto** pagado
-- **Notas** del administrador o barbero (si las hay)
-- **Calificación** que dejaste (si ya calificaste)
+Estado, servicio, barbero, fecha, hora, monto, y tu calificación si ya la dejaste.
 
 ---
 
 ## 11. Puntos de fidelidad
 
-**Sección:** Fidelidad en el panel de cliente
+Acumulás **1 punto por cada dólar** gastado en citas completadas o en compras directas en la barbería.
 
-Acumulás **1 punto por cada dólar** gastado en citas completadas o en compras directas en la barbería (POS).
+En el panel de Inicio, la sección **Fidelidad** muestra tu saldo y tus últimas 5 transacciones, cada una etiquetada como:
 
-### Ver tu saldo
+| Etiqueta mostrada | Significa |
+|---|---|
+| Cita completada | Puntos ganados por una cita completada |
+| Canje | Puntos descontados al usar un beneficio |
+| Ajuste | Cambio manual hecho por el administrador |
 
-En tu panel de cliente, la sección **Fidelidad** muestra:
-- Tu saldo actual de puntos (número grande)
-- La descripción: “Ganás 1 punto por cada dólar gastado en citas y compras”
-- Las últimas 5 transacciones con delta verde (ganaste) o rojo (canjeaste)
+> Corrige una afirmación anterior: no existe una categoría "POS" visible para el cliente — las compras directas en mostrador suman puntos, pero en tu historial aparecen bajo las mismas etiquetas de arriba.
 
-### Tipos de transacciones
-
-| Tipo | Signo | Descripción |
-|------|-------|-------------|
-| Completado | +Nº | Puntos ganados por una cita completada |
-| POS | +Nº | Puntos ganados por una compra directa |
-| Ajuste | +Nº | Puntos agregados manualmente por el admin |
-| Canje | −Nº | Puntos restados al canjear un beneficio |
-
-> El canje de puntos por beneficios (descuentos, productos) lo gestiona el administrador de la barbería directamente.
+El canje de puntos por descuentos lo gestiona el administrador desde su panel (no hay una pantalla de autocanje para el cliente).
 
 ---
 
 ## 12. Mi perfil
 
-Desde el panel de cliente → sección **Mi perfil** → botón **"Ver perfil completo"**:
+**Ruta:** `/client/profile`
 
-- **Nombre completo** — editable
-- **Email** — de solo lectura (no se puede cambiar desde la app)
+- **Nombre** — editable
 - **Teléfono** — editable
+- **Email** — de solo lectura, con la nota "El email no se puede cambiar desde aquí"
 
-Para editar, hacer clic en **Editar** → modificar los campos → **Guardar**.
+**Editar** → modificar → **Guardar**.
 
 ---
 
-## 13. Beneficios: Regalos y cupones
+## 13. Regalos recibidos
 
-**Sección:** Mi carrito / Ofertas en el panel de cliente
+La barbería puede enviarte códigos de regalo o beneficio desde su panel (ver `manual-admin.md §7`): % de descuento, descuento fijo, servicio gratis o producto gratis.
 
-La barbería puede enviarte **códigos de regalo o cupones de descuento** personalizados.
+En el panel de Inicio, la tarjeta **Regalos** muestra el código (en formato monoespaciado), su descripción y si ya fue marcado como canjeado.
 
-### Ver mis beneficios
-
-En el panel de cliente → tarjeta **"Beneficios / Regalos"**:
-- Muestra el código del regalo o cupón activo
-- Fecha de vencimiento (si aplica)
-
-### Canjear un cupón
-
-1. Hacer clic en **"Canjear"**
-2. Ingresar el código recibido (o usar el que ya está cargado)
-3. Confirmar el canje
-
-> La disponibilidad de esta feature depende de la configuración de la barbería.
+> ⚠️ Corrige una afirmación anterior: **no hay un botón "Canjear" ni un campo para ingresar el código desde la app.** El código se muestra para que lo **presentes en persona en la barbería**; quien lo marca como canjeado es el administrador desde su panel, no vos.
 
 ---
 
 ## 14. Mensajes
 
-**Sección:** Mensajes en el panel de cliente
+La barbería puede enviarte mensajes (recordatorios, promociones, avisos) desde su panel (ver `manual-admin.md §7`).
 
-La barbería puede enviarte mensajes directos (recordatorios, promociones, avisos).
-
-### Ver mensajes
-
-En el panel de cliente → tarjeta **"Mensajes"** → **"Ver mensajes"**:
-- Lista de mensajes ordenados por fecha
-- Los mensajes no leídos se muestran con un contador
-- Hacer clic en un mensaje para leerlo completo
+En el panel de Inicio, la tarjeta **Mensajes** muestra la lista ordenada por fecha, con un contador de mensajes no leídos. Hacer clic en un mensaje lo abre y lo marca como **Leído**.
 
 ---
 
 ## 15. Preguntas frecuentes
 
-**¿Puedo reservar sin tener cuenta?**  
-Sí. Usá el enlace público de la barbería (`/reservar` o el link que te compartieron) para reservar sin registrarte.
+**¿Puedo reservar sin tener cuenta?**
+Sí, en `/reservar` o el enlace que te compartieron. Es además la única forma de reservar **varios servicios en una sola cita** — ver §5.
 
-**¿Puedo cambiar la hora de una cita ya reservada?**  
-Sí. Desde `/client/appointments`, localizá la cita y hacé clic en **Reagendar**. Podés cambiar fecha y hora siempre que la cita esté en estado Pendiente o Confirmada y la fecha no haya pasado.
+**¿Por qué en mi panel solo puedo reservar un servicio a la vez?**
+Es una limitación real del flujo logueado (`/client/book`) frente al flujo público (`/reservar`), que sí soporta varios servicios. Si necesitás combinar servicios, usá el enlace público aunque tengas cuenta.
 
-**¿Cómo sé si mi reserva fue confirmada?**  
-Al hacer la reserva queda con estado **Pendiente**. La barbería la confirmará y el estado cambiará a **Confirmada**. Podés verificarlo en `/client/appointments`.
+**¿Puedo cambiar la hora de una cita ya reservada?**
+Sí, con **Reagendar** desde `/client/appointments`, mientras la cita esté Pendiente o Confirmada y la fecha no haya pasado. La fecha mínima seleccionable es mañana.
 
-**Olvidé mi contraseña, ¿qué hago?**  
-En la pantalla de login hacé clic en **¿Olvidaste tu contraseña?**, ingresá tu email y seguí las instrucciones que llegarán a tu correo.
+**¿Puedo corregir una calificación que ya envié?**
+Sí, podés editarla en cualquier momento desde el historial o el panel principal.
 
-**¿Para qué sirven los puntos de fidelidad?**  
-Acumulás 1 punto por cada dólar gastado. Los puntos se canjean por beneficios (descuentos, productos) a discreción de la barbería. Podés ver tu saldo y el historial en tu panel.
+**¿Cómo canjeo un código de regalo?**
+Mostrándolo en la barbería — no hay forma de canjearlo desde la app.
 
-**¿Mis datos están seguros?**  
-Sí. La aplicación utiliza Supabase con cifrado en tránsito (HTTPS) y Row Level Security (RLS) en la base de datos, lo que significa que solo vos podés ver tus propias citas.
+**¿Mis datos están seguros?**
+La aplicación usa Supabase con HTTPS y Row Level Security (RLS) definida en scripts SQL. Su aplicación efectiva contra una instancia real no fue verificada de forma independiente en esta auditoría — ver `docs/manuales/manual-sistema.md §15`.
 
-**¿Puedo tener más de una cuenta?**  
-Técnicamente sí, pero no es recomendable. El historial y los puntos de fidelidad están atados a cada cuenta individualmente.
+**¿La app funciona en el celular?**
+Sí, es responsive.
 
-**¿La app funciona en el celular?**  
-Sí. La aplicación es responsive y funciona en Chrome, Safari y Firefox en dispositivos móviles.
-
-**¿Qué hago si no puedo iniciar sesión?**  
-Verificá que el email y la contraseña sean correctos. Si olvidaste la contraseña usá el flujo de recuperación desde el login.
+**¿Qué hago si no puedo iniciar sesión?**
+Verificá tu email y contraseña. Si la olvidaste, usá el flujo de recuperación desde el login.

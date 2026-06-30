@@ -1,10 +1,10 @@
 # Manual del Administrador
 
-**Barber Manager App — Versión 1.3**  
-**Perfil:** Administrador (dueño o gestor de la barbería)  
-**Ruta de acceso:** `/admin`
+**Ornō — v0.1.0**
+**Perfil:** Administrador (dueño o gestor de la barbería)
+**Ruta de acceso:** `/admin/*`
 
-> Última revisión funcional: junio 2026. Esta versión mantiene el flujo operativo del administrador y consolida mejoras previas de clientes, POS y paginación.
+> Auditado y corregido contra el código real el 2026-06-30. Esta revisión reemplaza afirmaciones desactualizadas de versiones anteriores del manual (especialidades de empleado, flujo de inventario, contraseñas temporales) y agrega dos secciones que faltaban por completo: **Facturación** y **Configuración → Integraciones**, ambas en estado incompleto — ver §12 y §13.
 
 ---
 
@@ -16,12 +16,15 @@
 4. [Gestión de empleados](#4-gestión-de-empleados)
 5. [Gestión de servicios](#5-gestión-de-servicios)
 6. [Gestión de clientes](#6-gestión-de-clientes)
-7. [Inventario](#7-inventario)
-8. [Punto de Venta (POS)](#8-punto-de-venta-pos)
-9. [Reportes](#9-reportes)
-10. [Compartir enlace de reservas](#10-compartir-enlace-de-reservas)
-11. [Configuración del negocio](#11-configuración-del-negocio)
-12. [Preguntas frecuentes](#12-preguntas-frecuentes)
+7. [Ficha de cliente: notas, mensajes y regalos](#7-ficha-de-cliente-notas-mensajes-y-regalos)
+8. [Inventario](#8-inventario)
+9. [Punto de Venta (POS)](#9-punto-de-venta-pos)
+10. [Reportes](#10-reportes)
+11. [Compartir enlace de reservas](#11-compartir-enlace-de-reservas)
+12. [Facturación — funcionalidad incompleta](#12-facturación--funcionalidad-incompleta)
+13. [Integraciones — funcionalidad parcial](#13-integraciones--funcionalidad-parcial)
+14. [Configuración del negocio](#14-configuración-del-negocio)
+15. [Preguntas frecuentes](#15-preguntas-frecuentes)
 
 ---
 
@@ -29,29 +32,27 @@
 
 ### Iniciar sesión
 
-1. Abrir el navegador y navegar a `/auth/login`
+1. Ir a `/auth/login`
 2. Ingresar **email** y **contraseña** del administrador
-3. Hacer clic en **Iniciar sesión**
-4. El sistema detecta el rol `admin` y redirige automáticamente a `/admin`
+3. Clic en **Iniciar sesión**
+4. El sistema detecta el rol `admin` y redirige a `/admin`
 
 ### Requisitos de la contraseña
 
-- Mínimo **8 caracteres**, máximo 50
-- Al menos **1 letra mayúscula**
-- Al menos **1 letra minúscula**
-- Al menos **1 número**
+- Mínimo 8 caracteres, máximo 50
+- Al menos 1 mayúscula, 1 minúscula y 1 número
 
 ### Olvidé mi contraseña
 
-1. En la pantalla de login, hacer clic en **¿Olvidaste tu contraseña?**
-2. Ingresar el email del administrador y hacer clic en **Enviar instrucciones**
-3. Revisar el correo y hacer clic en el enlace de restablecimiento
-4. Ingresar la nueva contraseña (mínimo 8 caracteres, mayúscula, minúscula y número)
-5. Al confirmar, el sistema redirige al login
+1. En login, clic en **¿Olvidaste tu contraseña?**
+2. Ingresar el email → **Enviar instrucciones**
+3. Abrir el enlace recibido por correo y definir la nueva contraseña
 
 ### Cerrar sesión
 
-Hacer clic en el ícono de usuario en la barra superior → **Cerrar sesión**. La sesión también se invalida automáticamente cuando el token de Supabase expira.
+Botón **Cerrar sesión** en la parte inferior de la barra lateral.
+
+> Nota técnica: el layout de `/admin/*` acepta sesiones con rol `admin` **o `manager`**. `manager` no es un rol oficial del sistema (no tiene cuenta demo ni vía de registro — ver [manual-sistema.md §6](manual-sistema.md#6-autenticación-y-roles)), pero si alguna vez se asigna manualmente en la base de datos, varias páginas internas (Citas, Clientes, Inventario, POS) también lo aceptan, mientras que otras (Empleados, Servicios, Reportes, Configuración, Compartir, Facturación) están restringidas únicamente a `admin`. Esta inconsistencia es deuda técnica conocida, no un control de acceso diseñado a propósito.
 
 ---
 
@@ -59,608 +60,426 @@ Hacer clic en el ícono de usuario en la barra superior → **Cerrar sesión**. 
 
 **Ruta:** `/admin`
 
-Al ingresar, el dashboard muestra una vista general del negocio con **8 tarjetas de métricas** en tiempo real:
+### Tarjetas de métricas (4)
 
 | Tarjeta | Qué muestra |
-|---------|-------------|
-| Total de citas | Suma histórica de todas las citas registradas |
-| Citas de hoy | Citas programadas para el día actual |
-| Total de empleados | Empleados registrados en el sistema |
-| Empleados activos | Empleados con estado activo |
-| Total de clientes | Clientes únicos registrados |
-| Clientes nuevos este mes | Clientes que se registraron en el mes en curso |
-| Ingresos mensuales | Suma de servicios de citas completadas en el mes |
-| Citas pendientes | Citas aún no confirmadas ni atendidas |
+|---|---|
+| Ingresos del mes | Suma de servicios completados en el mes en curso |
+| Citas hoy | Cantidad de citas programadas para hoy |
+| Clientes | Total de clientes, con variación "+X este mes" |
+| Empleados activos | Cantidad de empleados con estado activo |
 
-> **Modo demo:** Si el sistema no tiene Supabase configurado, el dashboard muestra datos ficticios: 14 citas, 3 empleados, 24 clientes, $840 mensuales.
+### Accesos rápidos a módulos
 
-### Alertas de calificación (sección inferior)
+Grid de tarjetas con acceso directo a Citas (con contador de pendientes), Empleados (con contador de activos), Servicios, Inventario, Punto de Venta, Reportes y Configuración.
 
-El panel muestra automáticamente las **alertas de baja calificación** pendientes de revisión.
+### Actividad reciente
 
-- Las calificaciones de **1★** se muestran con franja roja
-- Las calificaciones de **2★** se muestran con franja ámbar
-- Cada alerta muestra: estrellas, nombre del cliente, reseña (si la hay), empleado involucrado y fecha
-- Si no hay alertas pendientes se muestra “Sin alertas pendientes” en gris
+Lista de las últimas 3 citas registradas, con formato `{estado} · {cliente} · {servicio} · {fecha} {hora}`.
 
-> Para resolver alertas: ir a `/api/alerts` o usar el botón de resolver en cada alerta.
+### Alertas
+
+- Alertas de calificación baja (1★ con franja roja, 2★ con franja ámbar): estrellas, cliente, reseña, empleado involucrado, fecha
+- Contador de no-show por cliente
+- Aviso de citas pendientes de confirmar
+
+> **Modo demo:** sin Supabase configurado, las tarjetas muestran datos ficticios fijos.
 
 ### Navegación lateral
 
-El menú lateral izquierdo da acceso a todas las secciones:
+Orden real del menú (de arriba a abajo): **Dashboard → Citas → Empleados → Servicios → Inventario → Punto de Venta → Clientes → Reportes → Facturación → Integraciones**, y al pie, separado por una línea divisoria: **Configuración** y **Cerrar sesión**.
 
-- **Dashboard** — Panel principal
-- **Citas** — Gestión de turnos
-- **Empleados** — Alta y administración de staff
-- **Servicios** — Catálogo de servicios
-- **Clientes** — Base de clientes
-- **Inventario** — Stock y productos
-- **Punto de Venta** — Ventas directas sin cita previa
-- **Reportes** — Estadísticas y gráficos
-- **Compartir** — Enlace de reservas públicas
-- **Configuración** — Datos del negocio
+> ⚠️ **"Compartir" no está en el menú lateral.** La página existe y es funcional (`/admin/share`), pero solo se accede escribiendo la URL directamente — ver §11.
 
 ---
 
 ## 3. Gestión de citas
 
-**Ruta:** `/admin/appointments`
+**Ruta:** `/admin/appointments` — acceso: `admin`, `manager`.
 
-Esta sección permite ver, crear, editar y eliminar todas las citas de la barbería.
-
-### Vista de la tabla
-
-La tabla muestra todas las citas con las columnas:
-
-- **Cliente** — Nombre del cliente
-- **Empleado** — Barbero o staff asignado
-- **Servicio** — Servicio a realizar
-- **Fecha y hora** — Fecha programada
-- **Estado** — Badge con color según el status
-
-### Filtros y búsqueda
+### Vista de tabla y filtros
 
 | Filtro | Opciones |
-|--------|---------|
-| Búsqueda de texto | Por nombre de cliente, barbero o servicio |
+|---|---|
+| Búsqueda de texto | Por cliente, empleado o servicio |
 | Estado | Todos / Pendiente / Confirmada / Completada / Cancelada |
-| Fecha | Selector de rango de fechas |
+| Fecha | Selector de fecha puntual |
+| Empleado | Se puede llegar pre-filtrado desde "Ver Agenda" de un empleado |
 
-### Crear una nueva cita
+Dos modos de vista: **lista** (tabla) y **semana** (grilla de 7 días).
 
-1. Hacer clic en el botón **+ Nueva Cita** (arriba a la derecha)
-2. Se abre el modal de creación con los siguientes campos:
+### Crear una cita
 
-| Campo | Tipo | Obligatorio | Notas |
-|-------|------|------------|-------|
-| Cliente | Selector o "Nuevo cliente" | Sí | Puede crear un cliente nuevo directamente desde aquí (nombre + teléfono) |
-| Empleado / Barbero | Selector | Sí | Lista los usuarios con rol `employee` |
-| Servicio | Selector | Sí | Al seleccionar, se autocompletan duración y precio |
-| Fecha | Selector de fecha | Sí | Formato YYYY-MM-DD. Fecha mínima: hoy |
-| Hora | Selector de hora | Sí | Formato 24hs (HH:MM) |
-| Estado inicial | Selector | Sí | Por defecto: **Pendiente** |
-| Notas | Texto libre | No | Máximo 500 caracteres |
-
-3. Revisar los datos y hacer clic en **Guardar**
-4. La cita aparece inmediatamente en la tabla
-
-### Editar una cita existente
-
-1. Localizar la cita en la tabla
-2. Hacer clic en el **menú de tres puntos** (⋮) al final de la fila
-3. Seleccionar **Editar**
-4. Modificar los campos necesarios
-5. Hacer clic en **Guardar**
-
-### Eliminar una cita
-
-1. Menú (⋮) → **Eliminar**
-2. Confirmar la acción en el diálogo de confirmación
-
-> **Advertencia:** La eliminación es permanente. Si solo se quiere anular una cita, usar el cambio de estado a **Cancelada** en lugar de eliminar.
+1. **+ Nueva Cita** → modal con: Cliente (selector o alta rápida), Empleado, Servicio (autocompleta duración y precio), Fecha, Hora, Estado inicial (por defecto Pendiente), Notas (opcional, máx. 500 caracteres)
+2. **Guardar**
 
 ### Cambiar el estado de una cita
 
-Los estados posibles son:
+Las transiciones disponibles dependen del estado actual, desde el menú (⋮) de cada fila:
 
-| Estado | Color | Significado |
-|--------|-------|------------|
-| Pendiente | Amarillo | Cita creada, no confirmada |
-| Confirmada | Azul | El cliente o admin confirmó |
-| Completada | Verde | Servicio realizado exitosamente |
-| Cancelada | Rojo | Cita anulada (con razón opcional) |
-| No-show | Gris oscuro | El cliente no se presentó |
+| Estado actual | Acciones disponibles |
+|---|---|
+| Pendiente | ✅ Confirmar · ❌ Cancelar |
+| Confirmada | ✅ Marcar como completada · 💳 Cobrar en POS · ⏰ No se presentó · ❌ Cancelar |
+| Completada | 💳 Cobrar en POS |
+| Cancelada / No-show | Solo Editar o Eliminar |
 
-Cambio de estado desde la tabla: menú (⋮) → seleccionar el nuevo estado.
+> **Consejo:** usar **No-show** en vez de Cancelar cuando el cliente simplemente no aparece — distingue ausencias de cancelaciones voluntarias en los reportes.
 
-> **Consejo:** Usar **No-show** en lugar de Cancelada cuando el cliente simplemente no aparece. Esto permite distinguir cancelaciones voluntarias de ausencias en los reportes.
+### Eliminar una cita
 
-### Paginación de la tabla
+Menú (⋮) → **Eliminar** → confirmar. **La eliminación es permanente** — para anular sin perder el historial, usar el cambio de estado a Cancelada.
 
-La tabla muestra **25 citas por página**. El título de la sección indica la página actual (ej. "Citas — página 1 de 4") y debajo de la lista aparecen los controles:
+### Ir al POS desde una cita
 
-- **Anterior / Siguiente** para navegar entre páginas
-- Indicador **"X–Y de N citas"** que muestra el rango visible
+Menú (⋮) → **Cobrar en POS** (disponible en citas confirmadas o completadas) abre el Punto de Venta con cliente y servicio pre-cargados.
 
-> Al cambiar cualquier filtro (búsqueda, estado o fecha), la tabla vuelve automáticamente a la página 1.
+### Paginación
 
-### Ir al POS desde una cita (checkout unificado)
-
-Desde la tabla de citas es posible pasar directamente al POS con el cliente y el servicio pre-cargados:
-
-1. Menú (⋮) de la cita → **Cobrar en POS**
-2. El sistema abre el Punto de Venta con el cliente y el servicio ya seleccionados
-3. Agregar propina, aplicar canje de puntos o añadir productos extra si se desea
-4. Hacer clic en **Cobrar** para finalizar la transacción
+25 citas por página, con **Anterior / Siguiente** e indicador "X–Y de N". Cambiar cualquier filtro vuelve la tabla a la página 1.
 
 ---
 
 ## 4. Gestión de empleados
 
-**Ruta:** `/admin/employees`
+**Ruta:** `/admin/employees` — acceso: solo `admin`.
 
 ### Vista general
 
-Muestra todos los empleados con:
-- **Estadísticas:** Total empleados / Barberos / Staff / Activos / Por especialidad
-- **Tabla:** Nombre, email, teléfono, especialidad, estado
+Estadísticas (Total empleados / Barberos / Staff) + grilla de tarjetas (1 columna en mobile, 3 en desktop) con avatar, nombre, especialidad, email, teléfono y comisión (si está configurada).
 
 ### Filtros
 
-| Filtro | Opciones |
-|--------|---------|
-| Búsqueda | Por nombre, email o teléfono |
-| Rol/tipo | Todos / Barberos / Staff |
+Búsqueda por nombre/email/teléfono + filtro por rol (Todos / Barberos / Staff).
 
-### Crear un nuevo empleado
+### Crear un empleado
 
-1. Hacer clic en **+ Nuevo Empleado**
-2. Completar el formulario:
+**+ Nuevo Empleado** abre un formulario con estos campos exactos:
 
 | Campo | Tipo | Obligatorio | Notas |
-|-------|------|------------|-------|
-| Nombre completo | Texto | Sí | Mínimo 1 carácter, máximo 100 |
-| Email | Email | Sí | Debe ser único en el sistema |
-| Teléfono | Teléfono | Sí | Formato internacional aceptado |
-| Especialidad / Puesto | Selector | Sí | Ver lista de especialidades disponibles abajo |
-| Porcentaje de comisión | Número (%) | Sí | 0–100%. Define qué % del precio del servicio cobra el empleado |
-| Avatar | Selector | No | 15 avatares generados por DiceBear |
+|---|---|:---:|---|
+| Nombre completo | Texto | Sí | |
+| Email | Email | Sí | |
+| Teléfono | Teléfono | Sí | |
+| Especialidad / Puesto | Selector | Sí | Solo 4 opciones reales — ver tabla abajo |
+| Comisión | Número (%) | No | 0–100%, sobre el precio del servicio. Por defecto 0 (sin comisión) |
+| Avatar | Selector visual | No | Grilla de **15 avatares prediseñados** (DiceBear `avataaars`), no se puede subir uno propio ni pegar una URL |
 
-**Especialidades disponibles:**
-- Barbero
-- Estilista
-- Colorista
-- Manicurista
-- Pedicurista
-- Masajista
-- Cosmetóloga/o
-- Depilación
-- Maquillador/a
-- Recepcionista
-- Cajero/a
-- Vendedor/a
-- Encargado/a
-- Asistente
-- Otro
+**Especialidades reales (solo 4 — corrige listas anteriores con 15 opciones, que no existen en el código):**
 
-3. Al guardar, el sistema:
-   - Crea el usuario en Supabase Auth con **contraseña temporal** (formato: `Barber{código}!`)
-   - Crea el perfil en la tabla `users`
-   - Muestra la contraseña temporal **una única vez** — anotarla o comunicarla al empleado inmediatamente
+| Especialidad | Rol interno asignado | Qué ve ese empleado |
+|---|---|---|
+| Barbero / Estilista | `employee` | Su agenda, citas del día, control horario y sus estadísticas |
+| Recepcionista | `employee` | Agenda completa, gestión de clientes y citas |
+| Cajero/a | `employee` | Agenda completa e inventario de productos |
+| Gerente | `employee` | Acceso completo: agenda, clientes, inventario y estadísticas |
 
-> **Importante:** La contraseña temporal solo se muestra una vez. Si no se anota, hay que resetearla.
+Las 4 opciones asignan el mismo rol de sistema (`employee`); la especialidad es solo una etiqueta descriptiva, **no cambia los permisos reales de acceso a rutas** (esos los controla `useRequireAuth`, no este campo).
+
+Al guardar, el sistema crea el usuario en Supabase Auth con una contraseña temporal con formato `Barber` + 8 caracteres aleatorios + `!` (ej. `Barberx7k2p9qz!`), la muestra **una única vez** en pantalla, y crea el perfil en la tabla `users`. En modo demo, la contraseña mostrada es siempre el valor fijo `demo-1234` (no se genera ninguna real).
+
+> **Importante:** anotar o comunicar la contraseña temporal de inmediato — no se vuelve a mostrar.
 
 ### Editar un empleado
 
-Menú (⋮) → **Editar** → modificar los campos → **Guardar**.
+Menú (⋮) → **Editar** → modificar campos → **Guardar**. El email no es editable desde acá.
 
-No se puede editar el email desde aquí. Para cambiar email, se requiere gestión directa en Supabase.
+### Resetear contraseña
 
-### Resetear contraseña de un empleado
-
-1. Menú (⋮) → **Resetear contraseña**
-2. El sistema genera una nueva contraseña temporal
-3. La contraseña se muestra **una única vez** en pantalla
-4. Comunicarla al empleado para que la cambie en su primer acceso
+Menú (⋮) → **Resetear contraseña** → se genera una nueva con el mismo formato `Barber{aleatorio}!` y se muestra una única vez.
 
 ### Eliminar un empleado
 
-1. Menú (⋮) → **Eliminar**
-2. Confirmar en el diálogo
-3. El sistema elimina el usuario de Supabase Auth y su perfil
-
-> **Advertencia:** Esta acción elimina el acceso del empleado pero **no** elimina las citas ya registradas a su nombre.
+Menú (⋮) → **Eliminar** → confirmar. Elimina el usuario de Supabase Auth y su perfil, pero **no** borra las citas ya registradas a su nombre.
 
 ---
 
 ## 5. Gestión de servicios
 
-**Ruta:** `/admin/services`
+**Ruta:** `/admin/services` — acceso: solo `admin`.
 
-### Vista general
+Estadísticas (Total / Precio promedio / Duración promedio / Valor total) + grilla de tarjetas con nombre, descripción, precio y duración.
 
-Muestra el catálogo de servicios con:
-- **Estadísticas:** Total de servicios / Precio promedio / Duración promedio / Ingresos totales estimados
-- **Tabla:** Nombre, descripción, precio, duración, estado
+### Crear / editar un servicio
 
-### Búsqueda
+| Campo | Tipo | Obligatorio |
+|---|---|:---:|
+| Nombre | Texto | Sí |
+| Descripción | Texto largo | No |
+| Precio | Número | Sí |
+| Duración (minutos) | Número | Sí |
 
-Filtro de texto libre: por nombre o descripción del servicio.
-
-### Crear un servicio
-
-1. Hacer clic en **+ Nuevo Servicio**
-2. Completar el formulario:
-
-| Campo | Tipo | Obligatorio | Notas |
-|-------|------|------------|-------|
-| Nombre | Texto | Sí | Mínimo 2, máximo 100 caracteres |
-| Descripción | Texto largo | No | Máximo 500 caracteres |
-| Precio | Número | Sí | Mayor a 0; se muestra con formato moneda |
-| Duración | Número (minutos) | Sí | Entero positivo; ej: 30, 45, 60 |
-| Activo | Toggle | Sí | Activo = visible para reservas. Por defecto: activo |
-
-3. Hacer clic en **Guardar**
-
-### Editar un servicio
-
-Menú (⋮) → **Editar** → realizar cambios → **Guardar**.
-
-> Si se desactiva un servicio (toggle **Activo = No**), deja de aparecer en el flujo de reservas para clientes y en los selectores de nueva cita.
-
-### Eliminar un servicio
-
-Menú (⋮) → **Eliminar** → confirmar.
-
-> **Precaución:** Eliminar un servicio no elimina las citas históricas que lo tienen asignado.
+Menú (⋮) → Editar/Eliminar. Eliminar un servicio no borra las citas históricas que lo tienen asignado.
 
 ---
 
 ## 6. Gestión de clientes
 
-**Ruta:** `/admin/clients`
+**Ruta:** `/admin/clients` — acceso: `admin`, `manager`.
 
 ### Vista general
 
-Muestra la base de clientes con:
-- **Estadísticas:** Total clientes / Nuevos este mes / Nuevos mes pasado / % de crecimiento
-- **Tabla:** Nombre, email, teléfono, fecha de registro, estado
-
-### Búsqueda
-
-Filtro por: nombre, email o teléfono.
-
-### Paginación de la tabla de clientes
-
-La tabla muestra **25 clientes por página**. Los controles de navegación (Anterior / Siguiente e indicador de rango) aparecen debajo de la lista cuando hay más de 25 resultados. Al cambiar el filtro de búsqueda la tabla vuelve automáticamente a la página 1.
+4 tarjetas (Total / Nuevos este mes / Activos / Crecimiento %) + lista con avatar, nombre, badge de puntos de fidelidad, badge de no-show (si tiene), email, teléfono y antigüedad.
 
 ### Crear un cliente
 
-1. Hacer clic en **+ Nuevo Cliente**
-2. Completar los datos básicos: nombre, email, teléfono
-3. **Guardar**
+**+ Nuevo Cliente** → Nombre (obligatorio), Email y Teléfono (opcionales) → **Guardar**. También se puede crear un cliente al vuelo desde el alta de una cita (§3).
 
-> También es posible crear un cliente directamente al crear una cita (sección 3).
+### Gestionar puntos de fidelidad
 
-### Ver detalles de un cliente
+El cliente acumula 1 punto por cada dólar gastado (citas completadas + ventas POS).
 
-Menú (⋮) → **Ver** → se abre una vista con el historial de citas del cliente.
+Menú (⋮) → **Puntos** → modal con acción **Agregar** o **Restar**, cantidad, descripción opcional, y vista previa del saldo proyectado antes de confirmar.
 
-### Gestionar puntos de fidelidad de un cliente
+### Editar / eliminar
 
-Cada cliente acumula **1 punto por cada dólar** gastado en citas completadas y en ventas POS.
+Menú (⋮) → Editar o Eliminar → confirmar.
 
-Para ver o ajustar los puntos:
+### Paginación
 
-1. En la tabla de clientes, la columna **Puntos** muestra el saldo actual con una etiqueta ámbar
-2. Menú (⋮) → **Puntos** → se abre el modal de fidelidad
-3. Seleccionar la acción:
-   - **Agregar puntos** — para bonificar manualmente
-   - **Restar puntos** — para canjear un beneficio o corregir un error
-4. Ingresar la cantidad (número entero) y una descripción opcional
-5. El modal muestra el saldo actual y el nuevo saldo proyectado antes de confirmar
-6. Hacer clic en **Confirmar** — el ajuste se aplica de inmediato y queda registrado en el historial de transacciones del cliente
-
-### Editar un cliente
-
-Menú (⋮) → **Editar** → modificar datos → **Guardar**.
-
-### Eliminar un cliente
-
-Menú (⋮) → **Eliminar** → confirmar.
+25 clientes por página. Cambiar el filtro de búsqueda reinicia a la página 1.
 
 ---
 
-## 7. Inventario
+## 7. Ficha de cliente: notas, mensajes y regalos
 
-**Ruta:** `/admin/inventory`
+**Ruta:** `/admin/clients/[id]` — acceso: `admin`, `manager`. Se llega desde **Ver perfil** en el menú (⋮) de la lista de clientes.
+
+> Esta página no estaba documentada en versiones anteriores del manual. Tiene funcionalidad real, separada de la edición básica de §6.
+
+### Cabecera y métricas
+
+Datos de contacto, antigüedad, badge de no-show, y 4 tarjetas: total de citas, total gastado, próximas citas, servicio favorito.
+
+### Historial de citas
+
+Lista (hasta 20 más recientes) con servicio, estado, fecha, hora, barbero y precio.
+
+### Notas internas del administrador
+
+Cuadro de texto libre (ej. preferencias del cliente, cumpleaños) con botón **Guardar**. Se persiste en la columna `admin_notes` de la tabla `users` — **requiere Supabase configurado**, no funciona en modo demo.
+
+### Enviar mensaje
+
+Campo de asunto (opcional) + mensaje (obligatorio) → **Enviar**. Debajo se listan los últimos 20 mensajes enviados, con estado "Leído"/no leído.
+
+### Enviar regalo / beneficio
+
+Selector de tipo: **% Descuento**, **$ Descuento fijo**, **Servicio gratis** o **Producto gratis**, con título obligatorio, descripción opcional y el valor o nombre correspondiente según el tipo. Al enviarlo se genera un código de canje y queda listado abajo (últimos 20), con su estado "Canjeado" o pendiente.
+
+> No se verificó en esta auditoría cómo ni dónde el cliente ve o canjea estos mensajes/regalos desde su propio panel — queda como punto a confirmar en una futura revisión del manual del cliente.
+
+---
+
+## 8. Inventario
+
+**Ruta:** `/admin/inventory` — acceso: `admin`, `manager`.
 
 ### Vista general
 
-Gestiona el stock de productos, herramientas y suministros. Incluye:
-- **Estadísticas:** Total items / Stock bajo / Agotados / Valor total del inventario
-- **Tabla:** Producto, categoría, cantidad actual, stock mínimo, costo unitario, proveedor, estado
+4 tarjetas (Total artículos / Stock bajo / Agotados / Valor total) + tabla con nombre, categoría, cantidad, stock mínimo, costo, precio de venta, margen, proveedor y estado.
 
 ### Filtros
 
 | Filtro | Opciones |
-|--------|---------|
-| Búsqueda | Por nombre del producto o proveedor |
-| Categoría | Todos / Suministro / Producto / Herramienta |
-| Estado de stock | Todos / Disponible / Bajo stock / Agotado |
+|---|---|
+| Búsqueda | Por nombre o proveedor |
+| Categoría | Todas / Productos / Herramientas / Suministros |
+| Estado | Todos / Disponible / Stock bajo / Agotado |
 
-**Definición de estados:**
-- **Disponible:** cantidad > stock mínimo
-- **Bajo stock:** cantidad ≤ stock mínimo (y > 0)
-- **Agotado:** cantidad = 0
+**Definición de estados:** Disponible = cantidad ≥ stock mínimo · Bajo = 0 < cantidad < stock mínimo · Agotado = cantidad = 0.
 
-### Crear un ítem de inventario
+### Crear / editar un ítem
 
-1. Hacer clic en **+ Nuevo Item**
-2. Completar el formulario:
+| Campo | Tipo | Obligatorio |
+|---|---|:---:|
+| Nombre | Texto | Sí |
+| Categoría | Selector (producto/herramienta/suministro) | Sí |
+| Cantidad | Número | Sí |
+| Stock mínimo | Número | Sí |
+| Costo unitario | Número | No |
+| Precio de venta | Número | No |
+| SKU | Texto | No |
+| Proveedor | Texto | No |
 
-| Campo | Tipo | Obligatorio | Notas |
-|-------|------|------------|-------|
-| Nombre del producto | Texto | Sí | Mínimo 2, máximo 100 caracteres |
-| Categoría | Selector | Sí | Suministro / Producto / Herramienta |
-| Cantidad | Número | Sí | Mayor o igual a 0 |
-| Stock mínimo | Número | Sí | Mayor o igual a 0. Por defecto: 5 |
-| Proveedor | Texto | No | Máximo 100 caracteres |
-| Costo unitario | Número | No | Mayor a 0; formato moneda |
+### Reabastecer stock
 
-3. **Guardar**
-
-### Editar un ítem
-
-Menú (⋮) → **Editar** → realizar cambios → **Guardar**.
-
-### Registrar un movimiento de stock
-
-Cuando se recibe mercadería o se consume stock:
-
-1. Menú (⋮) → **Registrar movimiento** (o botón dedicado en la tabla)
-2. Ingresar la cantidad a sumar o restar
-3. Indicar el tipo de movimiento: entrada / salida
-4. **Confirmar**
-
-La cantidad disponible se actualiza automáticamente.
+> ⚠️ Corrige una afirmación anterior: **no existe un formulario para registrar movimientos de entrada/salida con cantidad personalizada.** Lo que hay es un botón **Reabastecer**, visible solo en ítems con estado Bajo o Agotado, que al hacer clic **suma automáticamente el doble del stock mínimo configurado** a la cantidad actual y actualiza la fecha de "último reabastecimiento". No se puede elegir cuánto sumar.
 
 ### Eliminar un ítem
 
-Menú (⋮) → **Eliminar** → confirmar.
+Menú (⋮) → Eliminar → confirmar.
 
-### Productos demo predefinidos
+### Paginación
 
-En modo demo el sistema carga 8 ítems de ejemplo:
-- Shampoo, cera para cabello, tijeras profesionales, máquina de corte, toallas, cuchillas de afeitar, gel para barba, aceite para barba
-
-## 8. Punto de Venta (POS)
-
-**Ruta:** `/admin/pos`
-
-Permite registrar **ventas directas** de productos y servicios sin necesidad de crear una cita. Ideal para venta de productos en mostrador, servicios pagados en el momento o cualquier transacción rápida.
-
-### Interfaz
-
-La pantalla está dividida en dos paneles:
-
-**Panel izquierdo — Catálogo:**
-- Pestañas **Servicios** y **Productos** para filtrar el catálogo
-- Campo de búsqueda para filtrar por nombre
-- Grid de tarjetas clickeables; al hacer clic en una se agrega al carrito
-
-**Panel derecho — Carrito:**
-- Lista de ítems con controles de cantidad (+/−) y botón de eliminar
-- Selector de **cliente** (opcional) — si se elige un cliente, la venta acumula puntos de fidelidad
-- Si hay cliente seleccionado: muestra puntos actuales y cuántos ganará con esta venta
-- Campo de **propina (tip)** — monto opcional en dólares que se suma al total y queda registrado en la venta
-- Campo de **canje de puntos** — si el cliente tiene puntos, se puede ingresar la cantidad a descontar (1 punto = $1 de descuento)
-- Campo de **descuento** ($) aplicado sobre el subtotal
-- Selector de **método de pago:** Efectivo / Tarjeta / Transferencia
-- Campo de **notas** opcionales
-- Resumen: subtotal, descuento, puntos canjeados, propina, **total**
-- Botón **"Cobrar $X.XX"** para registrar la venta
-
-### Registrar una venta
-
-1. Navegar a `/admin/pos` desde la barra lateral (icono carrito — "Punto de Venta")
-2. Hacer clic en los servicios o productos del catálogo para agregarlos
-3. Ajustar cantidades con los botones +/−
-4. Seleccionar el cliente si lo hay (opcional)
-5. Ingresar propina si el cliente deja una
-6. Canjear puntos si el cliente quiere usarlos como descuento
-7. Elegir el método de pago
-8. Aplicar descuento adicional si corresponde
-9. Hacer clic en **"Cobrar"**
-10. El sistema muestra una confirmación verde con el total cobrado
-11. El carrito se limpia automáticamente para la siguiente venta
-
-### Propinas (tip)
-
-El campo **Propina** permite registrar el monto que el cliente deja como propina:
-- Se suma al total de la venta pero se registra por separado en la base de datos
-- Queda visible en el historial de ventas POS
-- No se incluye en el cálculo de puntos de fidelidad (solo el subtotal genera puntos)
-
-### Canje de puntos de fidelidad en POS
-
-Si el cliente tiene puntos acumulados, puede usarlos como descuento directo:
-1. Seleccionar el cliente en el selector
-2. El sistema muestra los **puntos disponibles** del cliente
-3. Ingresar la cantidad de puntos a canjear en el campo **"Canjear puntos"**
-   - Máximo: el saldo de puntos del cliente (no se puede canjear más de lo que tiene)
-   - 1 punto = $1 de descuento
-4. El total se recalcula automáticamente
-5. Al cobrar, los puntos se descuentan del saldo del cliente
-
-### Puntos de fidelidad en POS
-
-Si se selecciona un cliente en la venta, el sistema asigna automáticamente **1 punto por cada dólar** del total de la venta (después de descuentos y puntos canjeados, antes de la propina).
+20 ítems por página.
 
 ---
 
-## 9. Reportes
+## 9. Punto de Venta (POS)
 
-**Ruta:** `/admin/reports`
+**Ruta:** `/admin/pos` — acceso: `admin`, `manager`.
 
-### Vista general
+Permite registrar ventas directas de productos y servicios sin cita previa.
 
-Panel de análisis con gráficos interactivos y métricas de rendimiento del negocio.
+### Catálogo (panel izquierdo)
 
-### Controles disponibles
+Pestañas Servicios/Productos, buscador, grilla de tarjetas clickeables que agregan al carrito.
 
-| Control | Descripción |
-|---------|-------------|
-| Período | Tabs: Hoy / Esta semana / Este mes / Este año |
-| Empleado | Filtrar todos los gráficos por un empleado específico |
-| Botón Sincronizar | Fuerza una nueva consulta a la base de datos |
+### Carrito y cobro (panel derecho)
 
-La pantalla muestra la **última sincronización** (timestamp).
+- Ítems con controles de cantidad (+/−) y eliminar
+- Cliente (opcional) — al seleccionarlo se muestran sus puntos actuales y la proyección de puntos a ganar (o a descontar, si se canjean)
+- Canje de puntos: checkbox visible solo si el cliente tiene puntos y el carrito no está vacío. Tasa: **$0.10 por punto**
+- Descuento ($) sobre el subtotal
+- Propina ($) — se suma al total y se registra por separado, **no genera puntos de fidelidad**
+- Método de pago: Efectivo / Tarjeta / Transferencia
+- Notas opcionales
+- Resumen: Subtotal, Descuento, Puntos canjeados, Total, Propina
+- Botón **"Cobrar $X"** — al confirmar muestra "✓ Venta registrada correctamente" y limpia el carrito
 
-### Gráficos disponibles
-
-**1. Ingresos por día (gráfico de barras)**
-- Eje X: Fechas del período seleccionado
-- Eje Y: Monto en $ por día
-- Permite identificar los días de mayor facturación
-
-**2. Estado de citas (gráfico circular)**
-- Distribución porcentual: Pendiente / Confirmada / Completada / Cancelada
-- Útil para detectar tasa de cancelaciones y de no-shows
-
-**3. Ingresos por empleado (gráfico de barras)**
-- Eje X: Nombre de cada empleado
-- Eje Y: Total $ generado en el período
-- Permite evaluar rendimiento individual
-
-**4. Servicios más solicitados (gráfico circular)**
-- Distribución % de cada servicio en el período
-- Útil para decidir qué servicios potenciar o discontinuar
-
-**5. Tendencia de ingresos (gráfico de línea)**
-- Compara el período actual vs el período anterior
-- Ayuda a detectar crecimiento o caída
-
-### Métricas principales (tarjetas)
-
-| Métrica | Qué mide |
-|---------|---------|
-| Ingresos totales del período | Suma de todos los servicios completados |
-| Total de citas completadas | Cantidad de atenciones realizadas |
-| Total de clientes activos | Clientes que tuvieron citas en el período |
-| Citas canceladas | Cantidad y % sobre el total |
+> Si se llega desde una cita vía "Cobrar en POS" (§3), el cliente y el servicio quedan pre-cargados automáticamente. La venta se envía al endpoint `/api/pos`.
 
 ---
 
-## 10. Compartir enlace de reservas
+## 10. Reportes
 
-**Ruta:** `/admin/share`
+**Ruta:** `/admin/reports` — acceso: solo `admin`.
 
-Permite generar un enlace personalizado para que los clientes reserven sin necesidad de que el administrador los cargue manualmente.
+### Controles
 
-### Configurar el slug del enlace
+Botones de período (Hoy / Semana / Mes / Año), filtro por empleado, y exportación: **Excel** (librería `xlsx`) y **PDF** (`jspdf` + `jspdf-autotable`) — ambos exportan los datos ya filtrados.
 
-1. Ingresar el **nombre del slug** en el campo de texto
-   - Ejemplo: `mi-barberia-premium`
-   - El enlace resultante será: `https://[tu-dominio]/reservar/mi-barberia-premium`
-2. El cambio se guarda automáticamente
+### Métricas principales (4 tarjetas)
 
-### Opciones para compartir
+Ingresos totales (con ticket promedio) · Citas completadas (con tasa de completitud) · Clientes únicos (con tasa de retención) · Duración promedio.
 
-| Acción | Descripción |
-|--------|-------------|
-| Copiar enlace | Copia la URL completa al portapapeles |
-| WhatsApp | Abre WhatsApp con mensaje pre-cargado con el enlace |
-| Facebook | Abre el compositor de Facebook con el enlace |
-| Twitter / X | Abre el compositor de Twitter con el enlace |
-| Ver página | Abre el enlace de reservas en una nueva pestaña |
+### Gráficos
+
+- **Ingresos diarios** (barras, últimos 14 días)
+- **Distribución de servicios** (torta, por ingresos)
+- **Tendencia de ingresos** (línea, período actual vs. anterior)
+
+### Comparativos
+
+Variación porcentual de ingresos y de cantidad de citas vs. el período anterior.
+
+### Rankings
+
+- **Servicios más rentables** — por ingresos generados
+- **Rendimiento por empleado** — por ingresos y ticket promedio
+
+### Liquidación de comisiones
+
+Tabla solo para empleados con comisión configurada (§4): ingreso bruto, % de comisión, monto a liquidar por empleado, con fila de totales. Esta es la única pantalla del sistema donde se ve el cálculo de comisiones consolidado.
+
+### Calificaciones
+
+Promedio general (5 estrellas), distribución por puntaje, y promedio por barbero.
+
+---
+
+## 11. Compartir enlace de reservas
+
+**Ruta:** `/admin/share` — acceso: solo `admin`. **No tiene entrada en el menú lateral** (ver §2) — se accede escribiendo la URL directamente.
+
+### Configurar el slug
+
+Campo de texto para el slug (ej. `mi-barberia`); el enlace resultante es `/book/[slug]`. El cambio se guarda automáticamente.
+
+### Compartir
+
+Copiar enlace, WhatsApp, Facebook, Twitter/X, o **Ver Página de Reservas** (abre el enlace en una pestaña nueva).
 
 ### Código QR
 
-La página genera automáticamente un **código QR** de alta resolución del enlace. Opciones:
-- **Descargar como PNG** — para imprimir y colocar en la barbería
+Se genera automáticamente (300×300) con botón **Descargar QR Code** (PNG) para imprimir.
 
 ---
 
-## 11. Configuración del negocio
+## 12. Facturación — funcionalidad incompleta
 
-**Ruta:** `/admin/settings`
+**Ruta:** `/admin/billing` — acceso: solo `admin`.
 
-Organizada en 4 pestañas:
+🔴 **Esta sección es un stub.** Existe en el menú lateral y tiene una interfaz completa, pero **no tiene ninguna conexión real**: no llama a ninguna API, no usa Supabase, y todos sus datos (plan actual, próximo cobro, tarjetas guardadas, facturas) son valores fijos cargados en el código (`useState` con datos de ejemplo). Cualquier cambio que hagas (cambiar tarjeta primaria, eliminar una tarjeta) se pierde al recargar la página, y los siguientes botones **no hacen nada**: "Cambiar plan", "Agregar método" y "Descargar" (factura).
 
-### Pestaña 1: Negocio
+### Qué muestra (todo de ejemplo, no real)
 
-Datos generales de la barbería:
+- 4 tarjetas: Plan actual (Pro, $49/mes), Próximo cobro, Método de pago, Facturas emitidas
+- Comparador de 3 planes (Starter / Pro / Enterprise)
+- Lista de métodos de pago de ejemplo (Visa, Mastercard)
+- Historial de 5 facturas de ejemplo, todas marcadas "Pagada"
 
-| Campo | Tipo | Notas |
-|-------|------|-------|
-| Nombre de la barbería | Texto | Se muestra en emails y página de reservas |
-| Email de contacto | Email | Para notificaciones del sistema |
-| Teléfono | Teléfono | Se muestra a los clientes |
-| Dirección | Texto | |
-| Ciudad | Texto | |
-| País | Texto | |
-| Sitio web | URL | Opcional |
-| Descripción | Texto largo | Se muestra en la página pública de reservas |
-
-### Pestaña 2: Horarios
-
-Configurar los horarios de atención por día de la semana:
-
-| Día | Configuración |
-|-----|--------------|
-| Lunes a Domingo | Hora de apertura / Hora de cierre / Toggle "Abierto" |
-
-**Valores por defecto:**
-- Lunes a Viernes: 09:00 — 18:00 (abierto)
-- Sábado: 10:00 — 16:00 (abierto)
-- Domingo: 10:00 — 14:00 (abierto)
-
-Si un día se marca como **cerrado**, no aparecerá disponible en el flujo de reservas.
-
-### Pestaña 3: Notificaciones
-
-Toggles de activación/desactivación por tipo de notificación:
-
-| Notificación | Descripción |
-|-------------|-------------|
-| Notificaciones por email | Habilita el envío general de emails |
-| Notificaciones SMS | Habilita el envío de SMS (requiere integración externa) |
-| Recordatorios de cita | Email/SMS automático antes de la cita |
-| Alertas de cancelación | Notificación cuando un cliente cancela |
-| Resumen diario | Email con el resumen del día |
-| Reporte semanal | Email con el reporte de la semana |
-
-### Pestaña 4: Pagos
-
-| Campo | Tipo | Notas |
-|-------|------|-------|
-| Acepta efectivo | Toggle | |
-| Acepta tarjeta | Toggle | |
-| Acepta transferencia | Toggle | |
-| Moneda | Selector | USD, ARS, EUR, etc. |
-| Tasa de impuesto | Número (%) | Se aplica al cálculo de reportes |
-| Fee de cancelación | Número ($) | Monto que se cobra al cancelar |
-
-### Guardar cambios
-
-Hacer clic en **Guardar configuración** al final de la pestaña activa. El sistema muestra un mensaje de confirmación.
+**Recomendación pendiente:** decidir el destino de esta pantalla antes de cualquier salida a producción — completarla con un proveedor de pagos real (ninguno está integrado hoy, ver `docs/manuales/manual-sistema.md §15`), ocultarla del menú hasta que esté lista, o marcarla explícitamente como "Próximamente" en la UI para no confundir a un administrador real.
 
 ---
 
-## 12. Preguntas frecuentes
+## 13. Integraciones — funcionalidad parcial
 
-**¿Por qué veo datos ficticios al entrar?**  
-El sistema está en **modo demo**. Esto ocurre cuando las variables de entorno de Supabase no están configuradas. Los datos son de prueba y no se guardan.
+**Ruta:** `/admin/integrations` — acceso: en el código actual **no tiene `useRequireAuth` configurado explícitamente**; cualquier sesión válida puede llegar a la URL aunque esté fuera del menú esperado para otros roles. Debería restringirse a `admin` igual que el resto del panel.
 
-**¿Puedo tener múltiples administradores?**  
-Sí. Crear un usuario desde `/auth/register` y asignarle el rol `admin` en la tabla `users` de Supabase directamente.
+🟡 **Esta sección es parcial.** La interfaz es interactiva (se puede "conectar" o "configurar" cada integración) pero **ninguna conexión es real**: no hay OAuth, no se guardan API keys, no hay llamadas a los proveedores listados, y el estado de cada integración (conectada/disponible/desconectada) es local — se pierde al recargar la página.
 
-**¿Qué pasa si un empleado olvida su contraseña?**  
-Ir a `/admin/employees` → menú del empleado → **Resetear contraseña**. Se genera una contraseña temporal que deberá compartirse con el empleado.
+### Integraciones listadas (12, todas simuladas)
 
-**¿Las citas eliminadas se pueden recuperar?**  
-No. La eliminación es permanente. Se recomienda **cancelar** las citas en lugar de eliminarlas para mantener el historial.
+| Categoría | Integraciones |
+|---|---|
+| Comunicación | WhatsApp Business, Google Calendar, Slack, Twilio |
+| Pagos | Stripe, Mercado Pago |
+| Automatización | OpenAI, Zapier |
+| Marketing | Mailchimp, Instagram Business, HubSpot |
+| Analítica | Google Analytics |
 
-**¿Los cambios en configuración se aplican de inmediato?**  
-Sí, en la mayoría de los casos. Los cambios de horario pueden tardar en reflejarse en el flujo de reservas si hay caché activa.
+El registro de "eventos recientes" que se ve en esta pantalla también es de ejemplo (datos fijos de WhatsApp y Stripe), no actividad real.
+
+> Nota: aunque esta pantalla no tiene integraciones reales, **WhatsApp (Twilio) y email (Resend) sí están realmente integrados en el sistema** a través de la cola de notificaciones del backend (ver `docs/manuales/manual-sistema.md`) — son dos cosas distintas. Esta pantalla de Integraciones no controla ni refleja esa integración real.
+
+**Recomendación pendiente:** restringir el acceso a `admin`, y luego decidir si esta pantalla se conecta a proveedores reales (Stripe para pagos, Google Calendar para sincronización) o se retira hasta tener ese trabajo planificado.
+
+---
+
+## 14. Configuración del negocio
+
+**Ruta:** `/admin/settings` — acceso: solo `admin`.
+
+### Pestaña Negocio
+
+Nombre, email, teléfono, sitio web, dirección, ciudad, país, descripción.
+
+### Pestaña Horarios
+
+Por cada día de la semana: toggle Abierto/Cerrado + hora de apertura y cierre.
+
+### Pestaña Notificaciones
+
+Canales: Email, SMS. Tipos: recordatorios de cita (24h antes), alertas de cancelación, resumen diario, reporte semanal.
+
+### Pestaña Pagos
+
+Métodos aceptados (Efectivo/Tarjeta/Transferencia — toggles), moneda (USD/EUR/MXN/COP/ARS), tasa de impuesto (%), fee de cancelación ($).
+
+### Guardar
+
+Botón **Guardar Cambios** arriba a la derecha. Muestra confirmación verde al guardar o error en rojo si falla. **En modo demo, el guardado es solo visual — no persiste.**
+
+---
+
+## 15. Preguntas frecuentes
+
+**¿Por qué veo datos ficticios al entrar?**
+El sistema está en modo demo (Supabase no configurado). Los datos no se guardan.
+
+**¿Puedo tener más de un administrador?**
+Sí, asignando el rol `admin` a un usuario en la tabla `users` de Supabase.
+
+**¿Las especialidades de empleado cambian lo que puede ver cada uno?**
+No directamente. La especialidad es una etiqueta descriptiva; el control de acceso real depende del rol de sistema (`employee`/`admin`), no del texto de la especialidad.
+
+**¿Las citas eliminadas se pueden recuperar?**
+No, es permanente. Usar "Cancelar" para conservar el historial.
+
+**¿Facturación e Integraciones realmente cobran o conectan algo?**
+No. Ambas son interfaces de demostración sin backend real — ver §12 y §13.
+
+**¿Por qué no encuentro "Compartir" en el menú?**
+No está enlazado en la barra lateral por una omisión del código, no por diseño. La URL `/admin/share` funciona igual — ver §11.

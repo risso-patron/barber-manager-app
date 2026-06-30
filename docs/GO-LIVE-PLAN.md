@@ -1,107 +1,113 @@
-# Plan de Ejecucion para Salida a Ingresos
+# Plan de Ejecución para Salida a Ingresos
 
 ## Objetivo
-Lanzar una version funcional y cobrada del producto con riesgo controlado, pasando por una fase de estabilizacion tecnica y una fase de piloto comercial.
 
-## Estado actual (22-05-2026)
-- Supply chain: aprobado (defensa en capas activa).
-- Entorno WSL: estable en /home/luisr/dev/barber-manager-app.
-- Bloqueador principal: deuda de calidad en frontend y hooks (lint con muchos errores) que afecta confiabilidad para pruebas reales.
+Lanzar una versión funcional y cobrada del producto con riesgo controlado, pasando por una fase de estabilización técnica y una fase de piloto comercial.
+
+## Estado actual (verificado 2026-06-30)
+
+> Esta sección reemplaza la versión anterior (22-05-2026), que hacía referencia a una ruta de entorno local específica (`/home/luisr/dev/...`) y a un estado de lint que ya no es preciso. Verificado directamente contra el código y los scripts del proyecto en esta fecha.
+
+| Chequeo | Resultado |
+|---|---|
+| `pnpm lint` | ✅ Sin errores — solo warnings (variables sin usar, `<img>` sin optimizar, un `console.log` no permitido) |
+| `pnpm type-check` | 🔴 **2 errores reales** — ver detalle abajo |
+| Seguridad (`SECURITY-REPORT.md`) | 7/10 — rotación de secrets pendiente y vencida (ver `docs/SECRET-ROTATION.md`) |
+| Facturación (`/admin/billing`) | 🔴 Stub sin backend — no se puede cobrar nada con esto |
+| Integraciones (`/admin/integrations`) | 🟡 UI sin conexiones reales a terceros |
+| RLS en Supabase | Definido en 31 scripts SQL; **no verificado en runtime** contra una instancia real |
+
+**Errores de `type-check` pendientes:**
+1. `app/admin/page.tsx:134` — `Property 'catch' does not exist on type 'PromiseLike<void>'`
+2. `components/admin/appointments/appointment-modal.tsx:47` — `Type 'string | undefined' is not assignable to type 'string'`
+
+**Bloqueador principal actualizado:** ya no es deuda de lint (resuelta), sino: (1) los 2 errores de type-check arriba, (2) la rotación de secrets vencida, y (3) que el sistema de cobro real (`/admin/billing`) no existe — es un requisito para la Fase 2 de este mismo plan (monetización) y hoy es 100% mock.
 
 ## Estrategia por fases
 
-### Fase 0 - Estabilizacion tecnica (48-72h)
-Objetivo: eliminar errores que rompen flujo de negocio.
+### Fase 0 — Estabilización técnica
+
+Objetivo: eliminar errores que rompen el flujo de negocio.
 
 Checklist de salida:
-- Lint sin errores en rutas de negocio criticas:
-  - app/reservar
-  - app/auth/login
-  - app/auth/register
-  - app/client
-  - app/admin/appointments
-- Type-check sin errores.
-- Variables de entorno validadas en local con script de entorno.
-- Flujo E2E minimo verde:
-  - Reserva publica
+- [ ] Corregir los 2 errores de `pnpm type-check` listados arriba
+- [x] Lint sin errores bloqueantes (verificado 2026-06-30)
+- [ ] Rotar los secrets expuestos (`docs/SECRET-ROTATION.md`) — bloqueante para cualquier despliegue público
+- [ ] Variables de entorno validadas con `pnpm validate-env`
+- [ ] Flujo E2E mínimo verde:
+  - Reserva pública (`/reservar`)
   - Login cliente
-  - Cancelacion/reprogramacion de cita
+  - Cancelación/reprogramación de cita
 
-Criterio go/no-go:
-- Go solo si rutas criticas no muestran errores y los 3 flujos E2E pasan.
+Criterio go/no-go: Go solo si los 2 errores de type-check están resueltos, los secrets están rotados, y los 3 flujos E2E pasan.
 
-### Fase 1 - Piloto cerrado (3-7 dias)
-Objetivo: probar dinero real con bajo riesgo.
+### Fase 1 — Piloto cerrado (3-7 días)
 
-Alcance:
-- 1 barberia
-- 1-2 empleados
-- Ventana limitada de turnos
+Objetivo: probar con una barbería real, sin cobrar todavía (la facturación no existe — ver Fase 2).
+
+Alcance: 1 barbería, 1-2 empleados, ventana limitada de turnos.
 
 Checklist:
-- Registro de eventos de reserva y cancelacion
-- Confirmacion de notificaciones (email/whatsapp)
-- Respaldo manual diario de citas
-- Protocolo de rollback definido
+- [ ] Registro de eventos de reserva y cancelación
+- [ ] Confirmación de notificaciones por email/WhatsApp (la integración de Resend/Twilio existe en código — confirmar que funciona end-to-end con secrets rotados)
+- [ ] Respaldo manual diario de citas (no hay backup automatizado documentado)
+- [ ] Protocolo de rollback definido
+- [ ] Confirmar que el rol asignado al dueño/staff sea `admin` o `employee` (no usar `manager` ni `barber` — son deuda técnica, ver `docs/manuales/manual-sistema.md §6`)
 
-KPI minimos:
-- Tasa de reserva completada >= 70%
-- Tasa de fallo tecnico < 5%
-- Tiempo de respuesta en soporte < 15 min
+KPI mínimos: tasa de reserva completada ≥ 70% · tasa de fallo técnico < 5% · tiempo de respuesta en soporte < 15 min.
 
-### Fase 2 - Monetizacion inicial (semanas 2-4)
+### Fase 2 — Monetización inicial (semanas 2-4)
+
 Objetivo: cobrar de forma repetible.
 
-Modelo sugerido:
-- Plan mensual base + limite de reservas
+🔴 **Bloqueador no resuelto:** `/admin/billing` es hoy una pantalla de demostración sin ningún backend de pagos conectado (ver `docs/manuales/manual-admin.md §12`). Antes de esta fase es necesario **decidir e implementar un proveedor de pagos real** (ninguno está integrado en el código actual — ni Stripe ni Mercado Pago, pese a estar listados en `/admin/integrations` como "disponibles").
+
+Modelo sugerido (sin cambios respecto al plan original):
+- Plan mensual base + límite de reservas
 - Onboarding asistido
 - Soporte por WhatsApp en horario comercial
 
 Checklist:
-- Pagina de pricing publicada
-- Proceso de cobro y comprobante definido
-- Politica simple de reembolso
-- Embudo de conversion medido
+- [ ] Implementar backend de cobro real (Stripe, Mercado Pago u otro) — no existe hoy
+- [ ] Página de pricing publicada
+- [ ] Proceso de cobro y comprobante definido
+- [ ] Política simple de reembolso
+- [ ] Embudo de conversión medido
 
-KPI minimos:
-- 3 clientes pagos
-- Churn mensual < 20%
-- CAC recuperado <= 1 mes
+KPI mínimos: 3 clientes pagos · churn mensual < 20% · CAC recuperado ≤ 1 mes.
 
-## Priorizacion tecnica inmediata (hoy/manana)
-1. Corregir rutas que hoy mas impactan ingresos:
-- Login/Register
-- Reserva publica
-- Cliente (mis citas)
+## Priorización técnica inmediata
 
-2. Corregir errores severos recurrentes:
-- no-explicit-any en modulos de negocio
-- react-hooks/rules-of-hooks
-- eqeqeq
-
-3. Dejar baseline de calidad automatica:
-- pnpm run security:supply-chain
-- pnpm run lint
-- pnpm run type-check
-- pnpm run test:e2e
+1. Corregir los 2 errores de `pnpm type-check` (ver Estado actual arriba)
+2. Rotar secrets expuestos (`docs/SECRET-ROTATION.md`) — vencido
+3. Decidir el destino de `/admin/billing`: implementarlo con un proveedor real, ocultarlo, o marcarlo "Próximamente" — no puede quedar como está si se va a cobrar
+4. Verificar RLS contra una instancia real de Supabase antes de manejar datos de un cliente real
 
 ## Comandos de control de avance
-Ejecutar en /home/luisr/dev/barber-manager-app:
-- pnpm run security:supply-chain
-- pnpm run lint
-- pnpm run type-check
-- pnpm run test:e2e
 
-## Definicion de exito para iniciar pruebas reales
-- Cero errores en flujos criticos.
-- E2E de negocio en verde.
-- Entorno con variables validadas.
-- Plan de soporte y rollback operativo.
+```bash
+pnpm security:supply-chain
+pnpm lint
+pnpm type-check
+pnpm test:e2e
+pnpm validate-env
+```
+
+## Definición de éxito para iniciar pruebas reales
+
+- Cero errores en `pnpm type-check`
+- Secrets rotados y `pnpm validate-env` sin errores
+- E2E de negocio en verde
+- Plan de soporte y rollback operativo
+- `/admin/billing` no es necesario para el piloto cerrado (Fase 1, sin cobro), pero **sí es bloqueante para la Fase 2**
 
 ## Riesgos actuales
-- Deuda de lint/hook en varias paginas administrativas y de cliente.
-- Dependencia de entorno para Supabase en auth/reserva.
-- Riesgo de desviar foco hacia funciones no monetizables antes de estabilizar el core de reserva.
 
-## Decision recomendada
-No abrir pruebas reales masivas aun. Ejecutar Fase 0 y luego lanzar piloto cerrado con objetivo comercial claro.
+- Rotación de secrets vencida — riesgo de seguridad activo, no solo técnico
+- Dependencia de una instancia real de Supabase para producción, no verificada en runtime
+- `/admin/billing` e `/admin/integrations` pueden generar expectativas falsas si se muestran a un cliente sin aclarar que son demostraciones
+- Riesgo de desviar foco hacia funciones no monetizables (ej. completar Integraciones) antes de resolver el bloqueador real de cobro
+
+## Decisión recomendada
+
+No abrir pruebas reales masivas todavía. Ejecutar Fase 0 (con los 2 errores de type-check y la rotación de secrets como bloqueantes concretos, no genéricos), luego lanzar el piloto cerrado de Fase 1 sin expectativa de cobro, y no avanzar a Fase 2 hasta tener un proveedor de pagos real conectado a `/admin/billing`.
