@@ -4,24 +4,23 @@
 
 Lanzar una versión funcional y cobrada del producto con riesgo controlado, pasando por una fase de estabilización técnica y una fase de piloto comercial.
 
-## Estado actual (verificado 2026-06-30)
+## Estado actual (verificado 2026-06-30, actualizado el mismo día tras corregir el type-check)
 
 > Esta sección reemplaza la versión anterior (22-05-2026), que hacía referencia a una ruta de entorno local específica (`/home/luisr/dev/...`) y a un estado de lint que ya no es preciso. Verificado directamente contra el código y los scripts del proyecto en esta fecha.
 
 | Chequeo | Resultado |
 |---|---|
 | `pnpm lint` | ✅ Sin errores — solo warnings (variables sin usar, `<img>` sin optimizar, un `console.log` no permitido) |
-| `pnpm type-check` | 🔴 **2 errores reales** — ver detalle abajo |
+| `pnpm type-check` | ✅ Sin errores (corregido 2026-06-30 — ver nota abajo) |
+| `pnpm build` | ✅ Build de producción completo y verificado, 60 rutas generadas |
 | Seguridad (`SECURITY-REPORT.md`) | 7/10 — rotación de secrets pendiente y vencida (ver `docs/SECRET-ROTATION.md`) |
 | Facturación (`/admin/billing`) | 🔴 Stub sin backend — no se puede cobrar nada con esto |
 | Integraciones (`/admin/integrations`) | 🟡 UI sin conexiones reales a terceros |
 | RLS en Supabase | Definido en 31 scripts SQL; **no verificado en runtime** contra una instancia real |
 
-**Errores de `type-check` pendientes:**
-1. `app/admin/page.tsx:134` — `Property 'catch' does not exist on type 'PromiseLike<void>'`
-2. `components/admin/appointments/appointment-modal.tsx:47` — `Type 'string | undefined' is not assignable to type 'string'`
+> Nota: esta sección se escribió originalmente con 2 errores reales de `pnpm type-check` (`app/admin/page.tsx:134` y `components/admin/appointments/appointment-modal.tsx:47`). Ambos se corrigieron el mismo día — el primero cambiando `.then().catch()` por `.then(onFulfilled, onRejected)` (el query builder de Supabase es `PromiseLike`, no `Promise`, y no tiene `.catch()`); el segundo agregando un non-null assertion (`!`) consistente con el patrón ya usado en `app/admin/page.tsx:84` para `new Date().toISOString().split("T")[0]`. Se deja esta nota como evidencia de que el estado de un documento de auditoría puede quedar desactualizado en minutos — siempre verificar contra el código antes de confiar en una fecha de "última revisión".
 
-**Bloqueador principal actualizado:** ya no es deuda de lint (resuelta), sino: (1) los 2 errores de type-check arriba, (2) la rotación de secrets vencida, y (3) que el sistema de cobro real (`/admin/billing`) no existe — es un requisito para la Fase 2 de este mismo plan (monetización) y hoy es 100% mock.
+**Bloqueador principal actualizado:** ya no son los errores de type-check (resueltos), sino: (1) la rotación de secrets vencida, y (2) que el sistema de cobro real (`/admin/billing`) no existe — es un requisito para la Fase 2 de este mismo plan (monetización) y hoy es 100% mock.
 
 ## Estrategia por fases
 
@@ -30,7 +29,7 @@ Lanzar una versión funcional y cobrada del producto con riesgo controlado, pasa
 Objetivo: eliminar errores que rompen el flujo de negocio.
 
 Checklist de salida:
-- [ ] Corregir los 2 errores de `pnpm type-check` listados arriba
+- [x] `pnpm type-check` sin errores (corregido 2026-06-30)
 - [x] Lint sin errores bloqueantes (verificado 2026-06-30)
 - [ ] Rotar los secrets expuestos (`docs/SECRET-ROTATION.md`) — bloqueante para cualquier despliegue público
 - [ ] Variables de entorno validadas con `pnpm validate-env`
@@ -39,7 +38,7 @@ Checklist de salida:
   - Login cliente
   - Cancelación/reprogramación de cita
 
-Criterio go/no-go: Go solo si los 2 errores de type-check están resueltos, los secrets están rotados, y los 3 flujos E2E pasan.
+Criterio go/no-go: Go solo si los secrets están rotados y los 3 flujos E2E pasan (el type-check ya no es bloqueante).
 
 ### Fase 1 — Piloto cerrado (3-7 días)
 
@@ -78,10 +77,9 @@ KPI mínimos: 3 clientes pagos · churn mensual < 20% · CAC recuperado ≤ 1 me
 
 ## Priorización técnica inmediata
 
-1. Corregir los 2 errores de `pnpm type-check` (ver Estado actual arriba)
-2. Rotar secrets expuestos (`docs/SECRET-ROTATION.md`) — vencido
-3. Decidir el destino de `/admin/billing`: implementarlo con un proveedor real, ocultarlo, o marcarlo "Próximamente" — no puede quedar como está si se va a cobrar
-4. Verificar RLS contra una instancia real de Supabase antes de manejar datos de un cliente real
+1. Rotar secrets expuestos (`docs/SECRET-ROTATION.md`) — vencido
+2. Decidir el destino de `/admin/billing`: implementarlo con un proveedor real, ocultarlo, o marcarlo "Próximamente" — no puede quedar como está si se va a cobrar
+3. Verificar RLS contra una instancia real de Supabase antes de manejar datos de un cliente real
 
 ## Comandos de control de avance
 
@@ -95,7 +93,7 @@ pnpm validate-env
 
 ## Definición de éxito para iniciar pruebas reales
 
-- Cero errores en `pnpm type-check`
+- [x] Cero errores en `pnpm type-check` (cumplido 2026-06-30)
 - Secrets rotados y `pnpm validate-env` sin errores
 - E2E de negocio en verde
 - Plan de soporte y rollback operativo
@@ -110,4 +108,4 @@ pnpm validate-env
 
 ## Decisión recomendada
 
-No abrir pruebas reales masivas todavía. Ejecutar Fase 0 (con los 2 errores de type-check y la rotación de secrets como bloqueantes concretos, no genéricos), luego lanzar el piloto cerrado de Fase 1 sin expectativa de cobro, y no avanzar a Fase 2 hasta tener un proveedor de pagos real conectado a `/admin/billing`.
+No abrir pruebas reales masivas todavía. Ejecutar lo que queda de Fase 0 (rotación de secrets como bloqueante concreto — el type-check ya está resuelto), luego lanzar el piloto cerrado de Fase 1 sin expectativa de cobro, y no avanzar a Fase 2 hasta tener un proveedor de pagos real conectado a `/admin/billing`.

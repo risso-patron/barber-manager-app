@@ -175,9 +175,7 @@
    - Probar las políticas de los 31 scripts SQL contra un proyecto Supabase real
    - Confirmar que un usuario no puede leer/escribir datos de otro tenant/rol indebidamente
 
-3. **Resolver los 2 errores de `pnpm type-check`:**
-   - `app/admin/page.tsx:134`
-   - `components/admin/appointments/appointment-modal.tsx:47`
+3. ~~Resolver los 2 errores de `pnpm type-check`~~ — ✅ resuelto 2026-06-30, mismo día que se documentó (`app/admin/page.tsx:134` y `components/admin/appointments/appointment-modal.tsx:47`)
 
 4. **Mejoras adicionales (no iniciadas):**
    - 2FA opcional
@@ -219,7 +217,7 @@ pnpm dev
 - [ ] Verificar security headers con securityheaders.com
 - [ ] Configurar variables en el proveedor de hosting
 - [ ] Verificar RLS de Supabase contra una instancia real
-- [ ] Resolver los 2 errores de `pnpm type-check`
+- [x] `pnpm type-check` sin errores ✅ (resuelto 2026-06-30)
 - [ ] Hacer penetration testing básico
 - [ ] Revisar logs por comportamiento sospechoso
 

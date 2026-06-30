@@ -44,7 +44,7 @@ export function AppointmentModal({
       employeeName: appointment?.employeeName ?? "",
       serviceId: appointment?.serviceId ?? "",
       serviceName: appointment?.serviceName ?? "",
-      date: appointment?.date ?? new Date().toISOString().split("T")[0],
+      date: appointment?.date ?? new Date().toISOString().split("T")[0]!,
       time: appointment?.time ?? "09:00",
       duration: appointment?.duration ?? 30,
       price: appointment?.price ?? 0,

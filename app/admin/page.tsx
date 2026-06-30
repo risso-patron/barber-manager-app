@@ -123,15 +123,17 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
         `)
         .order("appointment_date", { ascending: false })
         .limit(3)
-        .then(({ data }) => {
-          if (data) {
-            setRecentActivity((data as unknown as RecentApptRow[]).map(a => ({
-              title: activityLabel(a.status),
-              detail: `${a.client?.name ?? "Cliente"} · ${a.service?.name ?? "Servicio"} · ${a.appointment_date}`,
-            })))
-          }
-        })
-        .catch(() => {})
+        .then(
+          ({ data }) => {
+            if (data) {
+              setRecentActivity((data as unknown as RecentApptRow[]).map(a => ({
+                title: activityLabel(a.status),
+                detail: `${a.client?.name ?? "Cliente"} · ${a.service?.name ?? "Servicio"} · ${a.appointment_date}`,
+              })))
+            }
+          },
+          () => {}
+        )
 
       // Low-rating alerts (non-critical)
       fetch("/api/alerts")

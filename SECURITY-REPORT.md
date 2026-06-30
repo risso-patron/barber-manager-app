@@ -248,7 +248,7 @@ Rate limiting, input validation, security headers (incluyendo CSP), pre-commit h
 - [x] Supabase Auth implementado en código ✅
 - [ ] RLS verificada en runtime contra una instancia real — pendiente
 - [ ] Probar restricciones de roles end-to-end contra una instancia real
-- [ ] Resolver los 2 errores de `pnpm type-check` (`app/admin/page.tsx:134`, `components/admin/appointments/appointment-modal.tsx:47`)
+- [x] `pnpm type-check` sin errores ✅ (corregido 2026-06-30 — `app/admin/page.tsx:134` y `components/admin/appointments/appointment-modal.tsx:47`, resueltos el mismo día que se documentaron)
 
 ### Importante (recomendado)
 - [x] Rate limiting implementado ✅
@@ -276,8 +276,8 @@ Ver el runbook detallado en [`docs/SECRET-ROTATION.md`](docs/SECRET-ROTATION.md#
 
 ### Para desarrollo (ahora)
 1. **Rotar los secrets vencidos** — ver `docs/SECRET-ROTATION.md`
-2. Resolver los 2 errores de `pnpm type-check`
-3. No compartir `.env.local` por ningún canal
+2. No compartir `.env.local` por ningún canal
+3. Corregir `scripts/validate-env.js` y `.env.example` (ambos con secrets reales en código funcional — ver advertencia en `docs/SECRET-ROTATION.md`)
 
 ### Para staging / mostrar a clientes
 1. Si se usa modo demo, dejar explícito que no es representativo de la seguridad real (gating client-side, evadible)

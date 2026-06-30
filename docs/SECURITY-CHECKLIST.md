@@ -26,7 +26,7 @@
 
 ### Fase 2: Testing local
 - [ ] **Build y type checking**
-  - [ ] `pnpm type-check` pasa sin errores — 🔴 a la fecha de esta auditoría hay 2 errores reales (`app/admin/page.tsx:134`, `components/admin/appointments/appointment-modal.tsx:47`)
+  - [x] `pnpm type-check` pasa sin errores ✅ (corregido 2026-06-30 — `app/admin/page.tsx:134` y `components/admin/appointments/appointment-modal.tsx:47`, ambos resueltos el mismo día)
   - [x] `pnpm lint` pasa sin errores bloqueantes (solo warnings) ✅ verificado 2026-06-30
   - [ ] `pnpm build` completa exitosamente — no ejecutado en esta auditoría documental
 
@@ -285,7 +285,7 @@
 ---
 
 **Última actualización:** 2026-06-30
-**Próxima revisión recomendada:** al rotar los secrets vencidos y resolver los 2 errores de `pnpm type-check`
+**Próxima revisión recomendada:** al rotar los secrets vencidos (los errores de `pnpm type-check` ya se resolvieron el 2026-06-30)
 **Mantenido por:** equipo de desarrollo
 
 ---
@@ -312,4 +312,4 @@ curl -I https://tudominio.com
 ```
 
 **Score actual (según `SECURITY-REPORT.md`):** 7/10
-**Bloqueadores para subir el score:** rotación de secrets vencida, RLS no verificada en runtime, 2 errores de type-check sin resolver
+**Bloqueadores para subir el score:** rotación de secrets vencida, RLS no verificada en runtime (los 2 errores de type-check que figuraban acá se resolvieron el 2026-06-30)
