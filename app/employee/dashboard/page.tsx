@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment, DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { type Appointment, getAppointmentsByEmployee } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
 import { CheckCircle, Calendar, AlertCircle, XCircle, Clock } from "lucide-react"
 
@@ -25,7 +25,7 @@ export default function EmployeeDashboard() {
 
   const loadAppointments = useCallback(async (employeeId: string, employeeName?: string) => {
     if (!supabase) {
-      setAppointments(DEMO_APPOINTMENTS)
+      setAppointments(getAppointmentsByEmployee(employeeId))
       return
     }
     // Fetch appointments + commission_rate in parallel

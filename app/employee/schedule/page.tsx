@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment } from "@/lib/demo-appointments"
+import { type Appointment, getAppointmentsByEmployee } from "@/lib/demo-appointments"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -100,7 +100,11 @@ export default function EmployeeSchedulePage() {
   const [blockError, setBlockError] = useState("")
 
   useEffect(() => {
-    if (!user || !supabase) return
+    if (!user) return
+    if (!supabase) {
+      setAppointments(getAppointmentsByEmployee(user.id))
+      return
+    }
     supabase
       .from("appointments")
       .select(`id, appointment_date, appointment_time, status, notes, created_at,

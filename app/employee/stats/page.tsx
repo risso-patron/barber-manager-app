@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createBrowserClient } from "@supabase/ssr"
+import { getAppointmentsByEmployee } from "@/lib/demo-appointments"
 import {
   BarChart,
   Bar,
@@ -55,7 +56,25 @@ export default function EmployeeStatsPage() {
 
   useEffect(() => {
     if (!user) return
-    if (!supabase) return
+    if (!supabase) {
+      setAppointments(
+        getAppointmentsByEmployee(user.id).map((apt) => ({
+          id: apt.id,
+          clientId: apt.clientId,
+          clientName: apt.clientName,
+          serviceId: apt.serviceId,
+          serviceName: apt.serviceName,
+          date: apt.date,
+          time: apt.time,
+          duration: apt.duration,
+          price: apt.price,
+          status: apt.status,
+          rating: apt.rating,
+          createdAt: apt.createdAt,
+        }))
+      )
+      return
+    }
     supabase
       .from("appointments")
       .select(`id, appointment_date, appointment_time, status, notes, rating, feedback, created_at,

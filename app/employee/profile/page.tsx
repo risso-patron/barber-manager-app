@@ -40,7 +40,17 @@ export default function EmployeeProfilePage() {
   useEffect(() => {
     if (!user?.id) return
 
-    if (!supabase) { setLoading(false); return }
+    if (!supabase) {
+      setProfile({
+        name: user.profile?.name || "",
+        email: user.email || "",
+        phone: user.profile?.phone || "",
+        role: user.role || "employee",
+        avatar_url: user.profile?.avatar_url || "",
+      })
+      setLoading(false)
+      return
+    }
     const loadProfile = async () => {
       const { data } = await supabase
         .from("users")
@@ -130,6 +140,13 @@ export default function EmployeeProfilePage() {
         </div>
       )}
 
+      {!hasSupabaseConfig && (
+        <div style={{ marginBottom: "16px", padding: "12px 16px", background: "rgba(240,240,240,0.04)", border: "1px solid #2E2E2E", borderRadius: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <AlertCircle style={{ width: 14, height: 14, color: "#8A8A8A", flexShrink: 0 }} />
+          <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", color: "#8A8A8A" }}>Modo demo — vista de solo lectura. Los cambios no se guardan.</span>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Identity card */}
         <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: "8px", padding: "28px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
@@ -155,7 +172,7 @@ export default function EmployeeProfilePage() {
           <div className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name" style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A" }}>Nombre</Label>
-              <Input id="name" value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} placeholder="Tu nombre" className="orno-input" />
+              <Input id="name" value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} placeholder="Tu nombre" className="orno-input" disabled={!hasSupabaseConfig} />
             </div>
 
             <div className="space-y-2">
@@ -170,7 +187,7 @@ export default function EmployeeProfilePage() {
               <Label htmlFor="phone" style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A" }}>Teléfono</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-4 w-4" style={{ color: "#555555" }} />
-                <Input id="phone" value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} className="pl-9 orno-input" placeholder="+54..." />
+                <Input id="phone" value={profile.phone} onChange={(e) => setProfile((prev) => ({ ...prev, phone: e.target.value }))} className="pl-9 orno-input" placeholder="+54..." disabled={!hasSupabaseConfig} />
               </div>
             </div>
 
@@ -178,15 +195,16 @@ export default function EmployeeProfilePage() {
               <Label htmlFor="avatar" style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#8A8A8A" }}>URL de avatar</Label>
               <div className="relative">
                 <Camera className="absolute left-3 top-3 h-4 w-4" style={{ color: "#555555" }} />
-                <Input id="avatar" value={profile.avatar_url} onChange={(e) => setProfile((prev) => ({ ...prev, avatar_url: e.target.value }))} className="pl-9 orno-input" placeholder="https://..." />
+                <Input id="avatar" value={profile.avatar_url} onChange={(e) => setProfile((prev) => ({ ...prev, avatar_url: e.target.value }))} className="pl-9 orno-input" placeholder="https://..." disabled={!hasSupabaseConfig} />
               </div>
             </div>
 
             <button
+              type="button"
               className="orno-btn"
               onClick={handleSave}
-              disabled={saving}
-              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0F0F0", background: saving ? "#2E2E2E" : "#E53935", border: "none", padding: "12px 24px", cursor: saving ? "default" : "pointer", borderRadius: "4px" }}
+              disabled={saving || !hasSupabaseConfig}
+              style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#F0F0F0", background: (saving || !hasSupabaseConfig) ? "#2E2E2E" : "#E53935", border: "none", padding: "12px 24px", cursor: (saving || !hasSupabaseConfig) ? "default" : "pointer", borderRadius: "4px" }}
             >
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>

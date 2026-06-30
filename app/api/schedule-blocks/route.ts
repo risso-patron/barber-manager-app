@@ -13,16 +13,35 @@ const blockSchema = z.object({
   block_type: z.enum(["break", "absence", "personal", "vacation"]).default("break"),
 })
 
+// Almacén en memoria para modo demo (sin persistencia real, se reinicia con el servidor)
+type DemoBlock = {
+  id: string
+  barber_id: string
+  block_date: string
+  start_time: string
+  end_time: string
+  reason: string
+  block_type: "break" | "absence" | "personal" | "vacation"
+}
+const demoBlocks: DemoBlock[] = []
+
 // ---------- GET /api/schedule-blocks?barber_id=&date= ----------------------
 export async function GET(request: NextRequest) {
   return withRateLimit(request, apiLimiter, async () => {
+    const { searchParams } = new URL(request.url)
+
+    if (isDemoMode()) {
+      const barberId = searchParams.get("barber_id") ?? "demo-employee-001"
+      const date = searchParams.get("date")
+      let blocks = demoBlocks.filter(b => b.barber_id === barberId)
+      if (date) blocks = blocks.filter(b => b.block_date === date)
+      return NextResponse.json({ blocks })
+    }
+
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-    if (isDemoMode()) return NextResponse.json({ blocks: [] })
-
-    const { searchParams } = new URL(request.url)
     const barberId = searchParams.get("barber_id") ?? user.id
     const date = searchParams.get("date")
 
@@ -51,10 +70,6 @@ export async function GET(request: NextRequest) {
 // ---------- POST /api/schedule-blocks --------------------------------------
 export async function POST(request: NextRequest) {
   return withRateLimit(request, apiLimiter, async () => {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
     let body: unknown
     try { body = await request.json() } catch {
       return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 })
@@ -65,7 +80,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Datos inválidos" }, { status: 400 })
     }
 
-    if (isDemoMode()) return NextResponse.json({ success: true, id: "demo-block" })
+    if (parsed.data.start_time >= parsed.data.end_time) {
+      return NextResponse.json({ error: "La hora de fin debe ser posterior a la hora de inicio" }, { status: 400 })
+    }
+
+    if (isDemoMode()) {
+      const id = `demo-block-${Date.now()}`
+      demoBlocks.push({
+        id,
+        barber_id:  parsed.data.barber_id ?? "demo-employee-001",
+        block_date: parsed.data.block_date,
+        start_time: parsed.data.start_time,
+        end_time:   parsed.data.end_time,
+        reason:     parsed.data.reason,
+        block_type: parsed.data.block_type,
+      })
+      return NextResponse.json({ success: true, id })
+    }
+
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
     const isPrivileged = ["admin", "manager"].includes(profile?.role ?? "")
@@ -73,10 +108,6 @@ export async function POST(request: NextRequest) {
 
     if (!isPrivileged && barberId !== user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
-    }
-
-    if (parsed.data.start_time >= parsed.data.end_time) {
-      return NextResponse.json({ error: "La hora de fin debe ser posterior a la hora de inicio" }, { status: 400 })
     }
 
     const { data, error } = await supabase
@@ -101,15 +132,19 @@ export async function POST(request: NextRequest) {
 // ---------- DELETE /api/schedule-blocks?id= --------------------------------
 export async function DELETE(request: NextRequest) {
   return withRateLimit(request, apiLimiter, async () => {
-    const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
     const { searchParams } = new URL(request.url)
     const blockId = searchParams.get("id")
     if (!blockId) return NextResponse.json({ error: "id requerido" }, { status: 400 })
 
-    if (isDemoMode()) return NextResponse.json({ success: true })
+    if (isDemoMode()) {
+      const index = demoBlocks.findIndex(b => b.id === blockId)
+      if (index !== -1) demoBlocks.splice(index, 1)
+      return NextResponse.json({ success: true })
+    }
+
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { error } = await supabase
       .from("schedule_blocks")
