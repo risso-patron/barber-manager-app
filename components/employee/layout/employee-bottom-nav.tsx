@@ -16,14 +16,13 @@ export function EmployeeBottomNav() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
   const handleLogout = async () => {
     localStorage.removeItem("currentUser")
-    await supabase.auth.signOut()
+    if (supabase) await supabase.auth.signOut()
     router.push("/")
   }
 

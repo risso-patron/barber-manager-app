@@ -38,10 +38,9 @@ const calculateBreakHours = (session: WorkSession) => {
   return Math.max(0, breakMinutes / 60)
 }
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 export default function TimeTrackingPage() {
   const user = useRequireAuth(["employee", "admin"])
@@ -52,6 +51,7 @@ export default function TimeTrackingPage() {
   const [workHistory, setWorkHistory] = useState<WorkSession[]>([])
 
   const loadHistory = async (employeeId: string) => {
+    if (!supabase) return
     const { data } = await supabase
       .from("time_logs")
       .select("id, date, time_in, time_out, break_start, break_end, total_hours")
@@ -74,7 +74,7 @@ export default function TimeTrackingPage() {
   }
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !supabase) return
 
     // Check DB for active session today (time_in set, time_out null)
     const today = new Date().toISOString().split('T')[0]
@@ -157,7 +157,7 @@ export default function TimeTrackingPage() {
   }
 
   const handleClockIn = async () => {
-    if (!user) return
+    if (!user || !supabase) return
     const now = new Date()
     const dateStr = now.toISOString().substring(0, 10)
     const timeStr = now.toTimeString().split(' ')[0]
@@ -180,8 +180,8 @@ export default function TimeTrackingPage() {
   }
 
   const handleClockOut = async () => {
-    if (!currentSession || !user) return
-    
+    if (!currentSession || !user || !supabase) return
+
     const now = new Date()
     const timeStr = now.toTimeString().split(' ')[0]
     const totalHours = parseFloat(calculateHours({ ...currentSession, clockOut: now.toISOString() }).toFixed(2))
@@ -198,7 +198,7 @@ export default function TimeTrackingPage() {
   }
 
   const handleStartBreak = async () => {
-    if (!currentSession) return
+    if (!currentSession || !supabase) return
     const now = new Date()
     const timeStr = now.toTimeString().split(' ')[0]
 
@@ -212,8 +212,8 @@ export default function TimeTrackingPage() {
   }
 
   const handleEndBreak = async () => {
-    if (!currentSession) return
-    
+    if (!currentSession || !supabase) return
+
     const now = new Date()
     const timeStr = now.toTimeString().split(' ')[0]
 

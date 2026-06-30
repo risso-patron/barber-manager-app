@@ -25,6 +25,15 @@ export const DEMO_USERS = {
     phone: '+1234567891',
     avatar_url: null
   },
+  employee: {
+    id: 'demo-employee-001',
+    email: 'employee@demo.com',
+    password: 'Demo1234',
+    name: 'Sofía Ramírez',
+    role: 'employee' as const,
+    phone: '+1234567895',
+    avatar_url: null
+  },
   client: {
     id: 'demo-client-001',
     email: 'client@demo.com',
@@ -214,6 +223,7 @@ Los datos se guardan localmente y no requieren base de datos.
 Usuarios de prueba:
 • Admin: admin@demo.com / Demo1234
 • Barbero: barber@demo.com / Demo1234
+• Empleado: employee@demo.com / Demo1234
 • Cliente: client@demo.com / Demo1234
 
 Para usar en producción, configura Supabase en .env.local

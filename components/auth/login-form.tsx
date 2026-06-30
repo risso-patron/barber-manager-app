@@ -237,6 +237,7 @@ export function LoginForm() {
               <div className="text-xs text-gray-400 mt-4 space-y-1 border border-dashed border-gray-200 rounded p-2">
                 <p className="font-medium text-gray-500">Demo (solo visible en desarrollo)</p>
                 <p>admin@demo.com / Demo1234</p>
+                <p>employee@demo.com / Demo1234</p>
                 <p>client@demo.com / Demo1234</p>
               </div>
             )}
