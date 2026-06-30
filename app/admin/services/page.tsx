@@ -72,15 +72,23 @@ export default function ServicesPage() {
   }, [services])
 
   const handleCreateService = async (service: Omit<Service, "id">) => {
-    if (!supabase) { setIsCreateModalOpen(false); return }
+    if (!supabase) {
+      setServices(prev => [{ ...service, id: `demo-svc-${Date.now()}` }, ...prev])
+      setIsCreateModalOpen(false)
+      return
+    }
     const { data, error } = await supabase.from("services").insert(service).select().single()
     if (!error && data) setServices([data, ...services])
     setIsCreateModalOpen(false)
   }
 
   const handleUpdateService = async (service: Service | Omit<Service, "id">) => {
-    if (!supabase) { setEditingService(null); return }
     const updatedService = service as Service
+    if (!supabase) {
+      setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s))
+      setEditingService(null)
+      return
+    }
     const { id, ...fields } = updatedService
     const { data, error } = await supabase.from("services").update(fields).eq("id", id).select().single()
     if (!error && data) setServices(services.map(s => s.id === id ? data : s))
@@ -88,7 +96,11 @@ export default function ServicesPage() {
   }
 
   const handleDeleteService = async (id: string) => {
-    if (!supabase) { setDeletingService(null); return }
+    if (!supabase) {
+      setServices(prev => prev.filter(s => s.id !== id))
+      setDeletingService(null)
+      return
+    }
     const { error } = await supabase.from("services").delete().eq("id", id)
     if (!error) setServices(services.filter(s => s.id !== id))
     setDeletingService(null)
@@ -97,7 +109,7 @@ export default function ServicesPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

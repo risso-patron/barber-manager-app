@@ -293,7 +293,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Back */}
       <div>
         <Link href="/admin/clients">

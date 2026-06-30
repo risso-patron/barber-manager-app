@@ -109,7 +109,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Carlos Pérez"
+                placeholder="Ej: Roberto Gómez"
               />
             </div>
 
@@ -122,7 +122,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="carlos@barbershop.com"
+                placeholder="roberto@barbershop.com"
                 autoComplete="email"
               />
             </div>
@@ -136,7 +136,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="555-0101"
+                placeholder="555-0200"
                 autoComplete="tel"
               />
             </div>

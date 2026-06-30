@@ -180,8 +180,8 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
 
   return (
     <div
+      className="p-4 lg:p-8"
       style={{
-        padding: 32,
         fontFamily: "var(--font-dm-sans), sans-serif",
         color: "#F0F0F0",
       }}

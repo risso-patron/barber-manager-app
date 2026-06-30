@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
-import { 
-  Calendar, 
-  Plus, 
-  Search, 
-  Clock, 
-  User, 
+import {
+  Calendar,
+  CalendarDays,
+  List,
+  Plus,
+  Search,
+  Clock,
+  User,
   Scissors,
   MoreVertical,
   Edit,
@@ -22,6 +24,9 @@ import {
   XCircle,
   ArrowLeft,
   ShoppingCart,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import {
   type Appointment,
@@ -57,6 +62,21 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
   no_show:   "No se presentó",
 }
 
+function getWeekDays(date: Date): Date[] {
+  const monday = new Date(date)
+  const day = monday.getDay()
+  monday.setDate(date.getDate() - ((day + 6) % 7))
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d
+  })
+}
+
+function toDateStr(d: Date) { return d.toISOString().split("T")[0]! }
+
+const WEEK_DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
 interface AppointmentRow {
   id: string
   appointment_date: string
@@ -90,6 +110,9 @@ export default function AppointmentsPage() {
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [page, setPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<"list" | "week">("list")
+  const [calendarDate, setCalendarDate] = useState(new Date())
   const PAGE_SIZE = 25
 
   // Load appointments from Supabase (or demo data)
@@ -99,6 +122,7 @@ export default function AppointmentsPage() {
       setServices(DEMO_SERVICES)
       setEmployees(DEMO_EMPLOYEES)
       setClients(DEMO_CLIENTS.map(c => ({ ...c, email: c.email ?? "" })))
+      setIsLoading(false)
       return
     }
 
@@ -141,6 +165,7 @@ export default function AppointmentsPage() {
             }
           }))
         }
+        setIsLoading(false)
       })
     // Cargar servicios, empleados y clientes para los modales
 // Cargar datos del modal vía API (service_role para evitar RLS)
@@ -194,6 +219,16 @@ export default function AppointmentsPage() {
       confirmed: appointments.filter(apt => apt.status === "confirmed").length,
     }
   }, [appointments])
+
+  const weekDays = useMemo(() => getWeekDays(calendarDate), [calendarDate])
+  const weekLabel = useMemo(() => {
+    const first = weekDays[0]!
+    const last = weekDays[6]!
+    const fmt = (d: Date) => d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })
+    return first.getFullYear() === last.getFullYear()
+      ? `${fmt(first)} – ${fmt(last)} ${first.getFullYear()}`
+      : `${fmt(first)} ${first.getFullYear()} – ${fmt(last)} ${last.getFullYear()}`
+  }, [weekDays])
 
   const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
     // Demo mode: crear cita local
@@ -321,17 +356,39 @@ export default function AppointmentsPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6" style={{ padding: 32 }}>
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Citas</h1>
           <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra todas las citas de la barbería</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva Cita
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#2E2E2E" }}>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              title="Vista lista"
+              className="p-2 transition-colors"
+              style={{ background: viewMode === "list" ? "#E53935" : "transparent", color: viewMode === "list" ? "#fff" : "#8A8A8A" }}
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("week")}
+              title="Vista semanal"
+              className="p-2 transition-colors"
+              style={{ background: viewMode === "week" ? "#E53935" : "transparent", color: viewMode === "week" ? "#fff" : "#8A8A8A" }}
+            >
+              <CalendarDays className="h-4 w-4" />
+            </button>
+          </div>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Cita
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -381,6 +438,97 @@ export default function AppointmentsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {viewMode === "week" ? (
+        <>
+          {/* Week navigation */}
+          <div className="flex items-center justify-between rounded-lg px-4 py-3" style={{ background: "#1A1A1A", border: "1px solid #2E2E2E" }}>
+            <button
+              type="button"
+              onClick={() => { const d = new Date(calendarDate); d.setDate(d.getDate() - 7); setCalendarDate(d) }}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: "#8A8A8A" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#F0F0F0" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A" }}
+              aria-label="Semana anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="text-sm font-medium" style={{ color: "#F0F0F0" }}>{weekLabel}</span>
+            <button
+              type="button"
+              onClick={() => { const d = new Date(calendarDate); d.setDate(d.getDate() + 7); setCalendarDate(d) }}
+              className="p-1.5 rounded transition-colors"
+              style={{ color: "#8A8A8A" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#F0F0F0" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A" }}
+              aria-label="Semana siguiente"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Week grid */}
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-2" style={{ minWidth: 700 }}>
+              {weekDays.map((day, idx) => {
+                const dateStr = toDateStr(day)
+                const isToday = dateStr === toDateStr(new Date())
+                const dayApts = appointments
+                  .filter(a => a.date === dateStr)
+                  .sort((a, b) => a.time.localeCompare(b.time))
+                return (
+                  <div
+                    key={dateStr}
+                    className="rounded-lg p-2"
+                    style={{
+                      background: isToday ? "rgba(229,57,53,0.06)" : "#1A1A1A",
+                      border: `1px solid ${isToday ? "#E53935" : "#2E2E2E"}`,
+                      minHeight: 120,
+                    }}
+                  >
+                    <div className="text-center mb-2 pb-1" style={{ borderBottom: "1px solid #252525" }}>
+                      <p className="text-[11px] uppercase tracking-wide" style={{ color: "#555" }}>{WEEK_DAY_LABELS[idx]}</p>
+                      <p className="text-base font-bold leading-tight" style={{ color: isToday ? "#E53935" : "#F0F0F0" }}>
+                        {day.getDate()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      {isLoading ? (
+                        <div className="flex justify-center py-2">
+                          <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#555" }} />
+                        </div>
+                      ) : dayApts.length === 0 ? (
+                        <p className="text-[11px] text-center py-3" style={{ color: "#444" }}>Sin citas</p>
+                      ) : (
+                        dayApts.map(apt => (
+                          <button
+                            key={apt.id}
+                            type="button"
+                            onClick={() => setEditingAppointment(apt)}
+                            className="w-full text-left rounded p-1.5 transition-colors"
+                            style={{ background: "#252525", border: "1px solid #2E2E2E" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#303030" }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }}
+                          >
+                            <p className="text-[11px] font-semibold" style={{ color: "#F0F0F0" }}>{apt.time}</p>
+                            <p className="text-[11px] truncate" style={{ color: "#A0A0A0" }}>{apt.clientName}</p>
+                            <p className="text-[10px] truncate" style={{ color: "#666" }}>{apt.serviceName}</p>
+                            <Badge className={`${STATUS_COLORS[apt.status]} text-[9px] px-1 py-0 mt-0.5 leading-tight`}>
+                              {STATUS_LABELS[apt.status]}
+                            </Badge>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
 
       {/* Filters */}
       <Card>
@@ -439,7 +587,11 @@ export default function AppointmentsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredAppointments.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : filteredAppointments.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No se encontraron citas</p>
@@ -454,16 +606,23 @@ export default function AppointmentsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
                       {/* Header */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge className={STATUS_COLORS[appointment.status]}>
                           {STATUS_LABELS[appointment.status]}
                         </Badge>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 hidden sm:inline">
                           {new Date(appointment.date).toLocaleDateString('es-ES', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
+                          })}
+                        </span>
+                        <span className="text-sm text-gray-600 sm:hidden">
+                          {new Date(appointment.date).toLocaleDateString('es-ES', {
+                            weekday: 'short',
+                            day: 'numeric',
+                            month: 'short',
                           })}
                         </span>
                       </div>
@@ -640,6 +799,9 @@ export default function AppointmentsPage() {
           </div>
         </CardContent>
       </Card>
+
+        </>
+      )}
 
       {/* Modals */}
       {isCreateModalOpen && (

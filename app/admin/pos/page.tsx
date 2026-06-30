@@ -216,6 +216,24 @@ export default function POSPage() {
     setLoading(true)
     setError(null)
 
+    if (!supabase) {
+      await new Promise(resolve => setTimeout(resolve, 600))
+      setSuccess(true)
+      setLoading(false)
+      setTimeout(() => {
+        setCart([])
+        setDiscount("")
+        setTip("")
+        setSelectedClient(null)
+        setClientSearch("")
+        setNotes("")
+        setPayment("cash")
+        setUseRedeemPoints(false)
+        setSuccess(false)
+      }, 2200)
+      return
+    }
+
     try {
       const res = await fetch("/api/pos", {
         method: "POST",

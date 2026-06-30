@@ -73,6 +73,8 @@ export default function InventoryPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 20
 
   useEffect(() => {
     if (!supabase) {
@@ -86,16 +88,21 @@ export default function InventoryPage() {
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      const matchesSearch = 
+      const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter
       const matchesStatus = statusFilter === "all" || item.status === statusFilter
-      
+
       return matchesSearch && matchesCategory && matchesStatus
     })
   }, [items, searchTerm, categoryFilter, statusFilter])
+
+  useEffect(() => { setPage(0) }, [searchTerm, categoryFilter, statusFilter])
+
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE)
+  const pagedItems = filteredItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   const stats = useMemo(() => {
     const totalItems = items.length
@@ -234,7 +241,7 @@ export default function InventoryPage() {
   const router = useRouter()
 
   return (
-    <div style={{ padding: 32 }}>
+    <div className="p-4 lg:p-8">
       {error && (
         <div style={{ marginBottom: 16, padding: "12px 16px", background: "#1F1212", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between" }}>
           <span>{error}</span>
@@ -346,7 +353,14 @@ export default function InventoryPage() {
       {/* Inventory Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Artículos ({filteredItems.length})</CardTitle>
+          <CardTitle>
+            Artículos ({filteredItems.length})
+            {totalPages > 1 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                — página {page + 1} de {totalPages}
+              </span>
+            )}
+          </CardTitle>
           <CardDescription>
             Lista completa de artículos en inventario
           </CardDescription>
@@ -369,7 +383,7 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
+                {pagedItems.map((item) => (
                   <tr key={item.id} className="border-b" style={{ borderColor: "#252525" }} onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "#222222" }} onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent" }}>
                     <td className="py-3 px-4">
                       <div>
@@ -453,6 +467,32 @@ export default function InventoryPage() {
               </div>
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t mt-2">
+              <span className="text-sm text-muted-foreground">
+                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredItems.length)} de {filteredItems.length}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage(p => p - 1)}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

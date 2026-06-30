@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { 
-  Users, 
-  Plus, 
-  Search, 
+  Users,
+  Plus,
+  Search,
   Mail,
   Phone,
   MoreVertical,
@@ -20,7 +20,8 @@ import {
   Calendar,
   ArrowLeft,
   KeyRound,
-  DollarSign
+  DollarSign,
+  Loader2,
 } from "lucide-react"
 import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
 import { createBrowserClient } from "@supabase/ssr"
@@ -53,9 +54,14 @@ export default function EmployeesPage() {
   const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithSpecialty | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   const handleResetPassword = async (employee: Employee) => {
     setActiveDropdown(null)
+    if (!supabase) {
+      setResetPasswordResult({ name: employee.name, password: "demo-1234" })
+      return
+    }
     const res = await fetch("/api/employees", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -72,6 +78,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     if (!supabase) {
       setEmployees(DEMO_EMPLOYEES)
+      setIsLoading(false)
       return
     }
     supabase
@@ -82,8 +89,12 @@ export default function EmployeesPage() {
       .order("name")
       .then(({ data }) => {
         if (data) setEmployees(data.map(u => ({ ...u, avatar: u.avatar_url })))
+        setIsLoading(false)
       })
   }, [])
+
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 12
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
@@ -101,6 +112,11 @@ export default function EmployeesPage() {
     })
   }, [employees, searchTerm, filterRole])
 
+  useEffect(() => { setPage(0) }, [searchTerm, filterRole])
+
+  const totalPages = Math.ceil(filteredEmployees.length / PAGE_SIZE)
+  const pagedEmployees = filteredEmployees.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
   // Statistics
   const stats = useMemo(() => {
     const barbers = employees.filter(isBarber).length
@@ -113,6 +129,24 @@ export default function EmployeesPage() {
 
   const handleCreateEmployee = async (employee: Omit<EmployeeWithSpecialty, "id">) => {
     setApiError(null)
+
+    if (!supabase) {
+      const newEmp: EmployeeWithSpecialty = {
+        id: `demo-emp-${Date.now()}`,
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        role: employee.role,
+        specialty: employee.specialty ?? null,
+        avatar: employee.avatar || undefined,
+        commission_rate: employee.commission_rate ?? null,
+      }
+      setEmployees(prev => [newEmp, ...prev])
+      setNewEmployeePassword({ name: employee.name, password: "demo-1234" })
+      setIsCreateModalOpen(false)
+      return
+    }
+
     const res = await fetch("/api/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -164,6 +198,11 @@ export default function EmployeesPage() {
   }
 
   const handleDeleteEmployee = async (id: string) => {
+    if (!supabase) {
+      setEmployees(prev => prev.filter(emp => emp.id !== id))
+      setDeletingEmployee(null)
+      return
+    }
     const res = await fetch(`/api/employees?id=${id}`, { method: "DELETE" })
     if (res.ok) setEmployees(employees.filter(emp => emp.id !== id))
     setDeletingEmployee(null)
@@ -172,7 +211,7 @@ export default function EmployeesPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6" style={{ padding: 32 }}>
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Error banner */}
       {apiError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
@@ -289,13 +328,17 @@ export default function EmployeesPage() {
 
       {/* Employees Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredEmployees.length === 0 ? (
+        {isLoading ? (
+          <div className="col-span-full flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
+        ) : filteredEmployees.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">No se encontraron empleados</p>
           </div>
         ) : (
-          filteredEmployees.map((employee) => (
+          pagedEmployees.map((employee) => (
             <Card key={employee.id} className="hover:shadow-lg transition-shadow" style={{ border: "1px solid #2E2E2E" }}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -391,6 +434,22 @@ export default function EmployeesPage() {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm text-muted-foreground">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredEmployees.length)} de {filteredEmployees.length}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              Anterior
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {isCreateModalOpen && (

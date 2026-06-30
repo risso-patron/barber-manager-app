@@ -194,7 +194,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Configuración</h1>

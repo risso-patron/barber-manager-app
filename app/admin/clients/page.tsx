@@ -23,6 +23,7 @@ import {
   Eye,
   Gift,
   XCircle,
+  Loader2,
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
 import { DEMO_CLIENTS } from "@/lib/demo-appointments"
@@ -45,6 +46,7 @@ export default function ClientsPage() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [loyaltyClient, setLoyaltyClient] = useState<Client | null>(null)
   const [page, setPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
   const PAGE_SIZE = 25
 
   // Load clients from Supabase (or demo data)
@@ -52,6 +54,7 @@ export default function ClientsPage() {
     if (!user) return
     if (!supabase) {
       setClients(DEMO_CLIENTS.map(c => ({ ...c, email: c.email ?? "", isActive: true })))
+      setIsLoading(false)
       return
     }
     supabase
@@ -71,6 +74,7 @@ export default function ClientsPage() {
           loyalty_points: u.loyalty_points ?? 0,
           no_show_count: u.no_show_count ?? 0,
         })))
+        setIsLoading(false)
       })
   }, [user])
 
@@ -120,6 +124,16 @@ export default function ClientsPage() {
   }, [clients])
 
   const handleCreateClient = async (client: Omit<Client, "id">) => {
+    if (!supabase) {
+      setClients(prev => [{
+        ...client,
+        id: `demo-cli-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      }, ...prev])
+      setIsCreateModalOpen(false)
+      return
+    }
     const res = await fetch("/api/clients", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -155,6 +169,11 @@ export default function ClientsPage() {
   }
 
   const handleDeleteClient = async (id: string) => {
+    if (!supabase) {
+      setClients(prev => prev.filter(c => c.id !== id))
+      setDeletingClient(null)
+      return
+    }
     const res = await fetch(`/api/clients?id=${id}`, { method: "DELETE" })
     if (res.ok) {
       setClients(clients.filter(c => c.id !== id))
@@ -165,7 +184,7 @@ export default function ClientsPage() {
   if (!user) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -261,7 +280,11 @@ export default function ClientsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {filteredClients.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : filteredClients.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No se encontraron clientes</p>
