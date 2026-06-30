@@ -149,7 +149,7 @@ export default function ClientProfilePage() {
               id="profile-email"
               value={email}
               disabled
-              style={{ marginTop: 8, background: "#0A0A0A", border: "1px solid #1A1A1A", color: "#555555", cursor: "not-allowed" }}
+              style={{ marginTop: 8, background: "#0A0A0A", border: "1px solid #1A1A1A", color: "#8A8A8A", cursor: "not-allowed" }}
             />
             <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: 10, color: "#3A3A3A", marginTop: 4 }}>
               El email no se puede cambiar desde aquí.

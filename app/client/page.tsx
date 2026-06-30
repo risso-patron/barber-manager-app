@@ -340,7 +340,7 @@ export default function ClientDashboard() {
                     </p>
                   </div>
                   <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", color: STATUS_DARK[apt.status] ?? "#555555", paddingTop: "3px", textTransform: "uppercase" }}>
-                    {apt.status === "confirmed" ? "Conf." : apt.status === "pending" ? "Pend." : apt.status === "completed" ? "Ok" : "—"}
+                    {{ confirmed: "Confirmada", pending: "Pendiente", completed: "Completada", cancelled: "Cancelada" }[apt.status] ?? apt.status}
                   </span>
                 </div>
               ))}

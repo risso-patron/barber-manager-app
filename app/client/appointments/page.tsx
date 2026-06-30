@@ -30,6 +30,7 @@ interface Appointment {
   time: string
   status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
   duration: number
+  price: number
   notes?: string
 }
 
@@ -79,6 +80,8 @@ export default function ClientAppointmentsPage() {
         time: a.time,
         status: a.status,
         duration: a.duration,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        price: (a as any).price ?? 0,
         notes: a.notes,
       })))
       return
@@ -100,25 +103,24 @@ export default function ClientAppointmentsPage() {
           time: a.appointment_time ?? undefined,
           status: a.status,
           duration: a.service?.duration || 0,
+          price: a.service?.price || 0,
           notes: a.notes || "",
         })))
       })
   }, [user])
 
   const { upcoming, past } = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const upcoming = appointments.filter(apt => {
-      const aptDate = new Date(apt.date)
-      return aptDate >= today && apt.status !== "cancelled" && apt.status !== "completed"
-    }).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
-    
-    const past = appointments.filter(apt => {
-      const aptDate = new Date(apt.date)
-      return aptDate < today || apt.status === "completed" || apt.status === "cancelled"
-    }).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
-    
+    const d = new Date()
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+    const upcoming = appointments.filter(apt =>
+      apt.date >= todayStr && apt.status !== "cancelled" && apt.status !== "completed"
+    ).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+
+    const past = appointments.filter(apt =>
+      apt.date < todayStr || apt.status === "completed" || apt.status === "cancelled"
+    ).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+
     return { upcoming, past }
   }, [appointments])
 
@@ -234,6 +236,11 @@ export default function ClientAppointmentsPage() {
 
   if (!user) return null
 
+  const isWithin24h = (apt: Appointment): boolean => {
+    const aptAt = new Date(`${apt.date}T${apt.time || "23:59"}:00`)
+    return aptAt.getTime() - Date.now() < 24 * 60 * 60 * 1000
+  }
+
   const statusLabel: Record<string, string> = {
     confirmed: "Confirmada",
     pending:   "Pendiente",
@@ -347,10 +354,11 @@ export default function ClientAppointmentsPage() {
                   </span>
                 </div>
                 <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
-                  {new Date(apt.date).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}
+                  {new Date(apt.date + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}
                   {apt.time ? ` · ${apt.time}` : ""}
                   {apt.employeeName ? ` · ${apt.employeeName}` : ""}
                   {apt.duration ? ` · ${apt.duration} min` : ""}
+                  {apt.price > 0 ? ` · $${apt.price}` : ""}
                 </p>
                 {apt.notes && (
                   <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: "#555555", marginTop: "3px", fontStyle: "italic" }}>{apt.notes}</p>
@@ -376,25 +384,33 @@ export default function ClientAppointmentsPage() {
                     >
                       Reagendar
                     </button>
-                    <button
-                      className="orno-btn"
-                      onClick={() => handleCancelClick(apt)}
-                      style={{
-                        fontFamily: "var(--font-dm-sans)",
-                        fontSize: "10px",
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "#E53935",
-                        background: "none",
-                        border: "1px solid rgba(229,57,53,0.3)",
-                        padding: "10px 16px",
-                    minHeight: "44px",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Cancelar
-                    </button>
+                    {(() => {
+                      const tooLate = isWithin24h(apt)
+                      return (
+                        <button
+                          type="button"
+                          className="orno-btn"
+                          onClick={() => !tooLate && handleCancelClick(apt)}
+                          disabled={tooLate}
+                          title={tooLate ? "No se puede cancelar con menos de 24 hs de anticipación" : undefined}
+                          style={{
+                            fontFamily: "var(--font-dm-sans)",
+                            fontSize: "10px",
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: tooLate ? "#3A3A3A" : "#E53935",
+                            background: "none",
+                            border: `1px solid ${tooLate ? "rgba(58,58,58,0.4)" : "rgba(229,57,53,0.3)"}`,
+                            padding: "10px 16px",
+                            minHeight: "44px",
+                            borderRadius: "4px",
+                            cursor: tooLate ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          {tooLate ? "No cancelable" : "Cancelar"}
+                        </button>
+                      )
+                    })()}
                   </div>
                 )}
               </div>

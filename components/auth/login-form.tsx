@@ -110,15 +110,6 @@ export function LoginForm() {
       return
     }
 
-    // Con Supabase: los usuarios demo tienen prioridad (útil para testing)
-    const demoLogin = tryDemoLogin(data)
-    if (demoLogin.ok) {
-      router.push(ROLE_MAP[demoLogin.role ?? ""] || "/auth/login")
-      router.refresh()
-      setIsLoading(false)
-      return
-    }
-
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,

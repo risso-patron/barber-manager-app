@@ -1,7 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
+
+const supabase =
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ? createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+    : null
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -49,6 +58,13 @@ export function RescheduleModal({ appointment, onSuccess }: RescheduleModalProps
 
     if (!newDate || !newTime) {
       setError("La nueva fecha y hora son obligatorias.")
+      return
+    }
+
+    // Demo mode: actualizar localmente sin llamada a la API
+    if (!supabase) {
+      onSuccess(newDate, newTime)
+      handleOpenChange(false)
       return
     }
 

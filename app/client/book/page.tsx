@@ -4,11 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import {
   Calendar,
   Clock,
@@ -40,6 +35,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabase = supabaseUrl && supabaseAnonKey ? createBrowserClient(supabaseUrl, supabaseAnonKey) : null
 
 type BookingStep = "service" | "barber" | "datetime" | "confirm"
+const STEPS: BookingStep[] = ["service", "barber", "datetime", "confirm"]
 
 const DEMO_MODE_SERVICES: Service[] = DEMO_SERVICES.map(s => ({
   id: s.id, name: s.name, description: s.description, price: s.price, duration: s.duration,
@@ -48,6 +44,12 @@ const DEMO_MODE_SERVICES: Service[] = DEMO_SERVICES.map(s => ({
 const DEMO_MODE_EMPLOYEES: Employee[] = DEMO_EMPLOYEES.map(e => ({
   id: e.id, name: e.name, role: e.role,
 }))
+
+const ALL_SLOTS = [
+  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+]
 
 export default function BookAppointmentPage() {
   const router = useRouter()
@@ -68,7 +70,10 @@ export default function BookAppointmentPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [isReschedule, setIsReschedule] = useState(false)
+  const [busySlots, setBusySlots] = useState<string[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
+  // Load services, employees, prefill reschedule data
   useEffect(() => {
     if (!supabase) {
       setServices(DEMO_MODE_SERVICES)
@@ -76,14 +81,14 @@ export default function BookAppointmentPage() {
       setIsDemoMode(true)
       setIsLoading(false)
 
-      // Si es reagendar, prellenar con los datos de la cita
       if (rescheduleId) {
-        // Buscar en DEMO_APPOINTMENTS por id de reagendado
-        const apt = DEMO_APPOINTMENTS.find((a: { id: string }) => a.id === rescheduleId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apt = DEMO_APPOINTMENTS.find((a: any) => a.id === rescheduleId)
         if (apt) {
           setSelectedService(apt.serviceId)
           setSelectedBarber(apt.employeeId)
           setIsReschedule(true)
+          setStep("datetime")
         }
       }
       return
@@ -108,7 +113,6 @@ export default function BookAppointmentPage() {
       setIsLoading(false)
 
       if (rescheduleId) {
-        // Intentar leer la cita desde Supabase
         supabase
           .from("appointments")
           .select("service_id, barber_id")
@@ -119,6 +123,7 @@ export default function BookAppointmentPage() {
               setSelectedService(data.service_id || "")
               setSelectedBarber(data.barber_id || "")
               setIsReschedule(true)
+              setStep("datetime")
             }
           })
       }
@@ -126,12 +131,48 @@ export default function BookAppointmentPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rescheduleId])
 
+  // Fetch busy slots when barber + date are both selected
+  useEffect(() => {
+    if (!selectedDate || !selectedBarber) {
+      setBusySlots([])
+      return
+    }
+
+    setIsLoadingSlots(true)
+
+    if (!supabase) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const busy = DEMO_APPOINTMENTS
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((a: any) => a.date === selectedDate && a.employeeId === selectedBarber && a.status !== "cancelled")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((a: any) => a.time as string)
+      setBusySlots(busy)
+      setIsLoadingSlots(false)
+      return
+    }
+
+    supabase
+      .from("appointments")
+      .select("appointment_time")
+      .eq("appointment_date", selectedDate)
+      .eq("barber_id", selectedBarber)
+      .in("status", ["pending", "confirmed"])
+      .then(({ data }) => {
+        setBusySlots(
+          (data ?? [])
+            .map((a: { appointment_time: string | null }) => a.appointment_time)
+            .filter((t): t is string => t !== null)
+        )
+        setIsLoadingSlots(false)
+      })
+  }, [selectedDate, selectedBarber])
+
   const handleSubmit = async () => {
     if (!user || !service || !barber) return
     setIsSubmitting(true)
     setSubmitError(null)
 
-    // Demo mode: simular reserva
     if (!supabase) {
       await new Promise(res => setTimeout(res, 600))
       setIsSubmitting(false)
@@ -170,7 +211,8 @@ export default function BookAppointmentPage() {
       return
     }
 
-    router.push("/client/appointments")
+    const msg = isReschedule ? "Cita reagendada exitosamente." : "Cita reservada exitosamente."
+    router.push(`/client/appointments?success=${encodeURIComponent(msg)}`)
   }
 
   const canContinue = () => {
@@ -195,320 +237,391 @@ export default function BookAppointmentPage() {
   const service = services.find(s => s.id === selectedService)
   const barber = employees.find(e => e.id === selectedBarber)
   const todayISO = new Date().toISOString().slice(0, 10)
-
-  const timeSlots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  ]
+  const currentIndex = STEPS.indexOf(step)
+  const goNext = () => { const next = STEPS[currentIndex + 1]; if (next) setStep(next) }
+  const goPrev = () => { const prev = STEPS[currentIndex - 1]; if (prev) setStep(prev) }
 
   if (!user) return null
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div style={{ padding: "24px 24px 80px", fontFamily: "var(--font-dm-sans)" }}>
+      <style>{`
+        .orno-slot:hover:not(:disabled) { border-color: #555555 !important; }
+        .orno-card:hover { border-color: #555555 !important; }
+      `}</style>
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
+        <div style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 16, marginBottom: 24 }}>
+          <button
             type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              if (step === "service") {
-                router.push("/client")
-              } else {
-                const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
-                const idx = steps.indexOf(step)
-                const prev = steps[idx - 1]
-                if (idx > 0 && prev) setStep(prev)
-              }
+            onClick={() => step === "service" ? router.push("/client") : goPrev()}
+            aria-label="Volver"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "none", border: "1px solid #2E2E2E",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#8A8A8A", flexShrink: 0,
             }}
           >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+            <ArrowLeft size={16} />
+          </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">
-              {isReschedule ? "Reagendar Cita" : "Reservar Cita"}
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {step === "service"  && "Selecciona el servicio que deseas"}
-              {step === "barber"   && "Elige tu barbero preferido"}
-              {step === "datetime" && "Selecciona fecha y hora"}
-              {step === "confirm"  && "Confirma los detalles de tu cita"}
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "clamp(22px,3vw,30px)", fontWeight: 300, color: "#F0F0F0", letterSpacing: "-0.02em" }}>
+              {isReschedule ? "Reagendar cita" : "Reservar cita"}
+            </p>
+            <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", marginTop: 2 }}>
+              {step === "service"  && "Selecciona el servicio"}
+              {step === "barber"   && "Elige tu barbero"}
+              {step === "datetime" && "Fecha y hora"}
+              {step === "confirm"  && "Confirma los detalles"}
             </p>
           </div>
         </div>
 
         {/* Demo banner */}
         {isDemoMode && (
-          <div className="mb-6 px-4 py-3 rounded-md text-sm" style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", color: "#8A8A8A" }}>
-            Reservas en modo demo. Puedes probar el flujo con servicios de ejemplo.
+          <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: 6, padding: "10px 16px", marginBottom: 24 }}>
+            <p style={{ fontSize: 11, color: "#8A8A8A" }}>
+              Modo demo — los cambios no se guardan en base de datos.
+            </p>
           </div>
         )}
 
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {(["service", "barber", "datetime", "confirm"] as BookingStep[]).map((s, index) => {
-              const stepLabels: Record<BookingStep, string> = {
-                service: "Servicio", barber: "Barbero", datetime: "Fecha/Hora", confirm: "Confirmar",
-              }
-              const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
-              const currentIndex = steps.indexOf(step)
-              const stepIndex = steps.indexOf(s)
-              const isActive = stepIndex === currentIndex
-              const isCompleted = stepIndex < currentIndex
-
-              return (
-                <div key={s} className="flex-1 flex items-center">
-                  <div className="flex items-center gap-1 md:gap-2 flex-1">
-                    <div className={`h-7 w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center font-semibold text-sm ${
-                      isCompleted ? "bg-green-600 text-white" : isActive ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
-                    }`}>
-                      {isCompleted ? <CheckCircle className="h-4 w-4" /> : index + 1}
-                    </div>
-                    <span className={`text-xs md:text-sm font-medium hidden sm:inline ${isActive ? "text-blue-600" : isCompleted ? "text-green-600" : "text-gray-600"}`}>
-                      {stepLabels[s]}
-                    </span>
+        {/* Progress */}
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
+          {STEPS.map((s, i) => {
+            const LABELS: Record<BookingStep, string> = {
+              service: "Servicio", barber: "Barbero", datetime: "Fecha/Hora", confirm: "Confirmar",
+            }
+            const isActive = i === currentIndex
+            const isCompleted = i < currentIndex
+            return (
+              <div key={s} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 12, fontWeight: 600,
+                    background: isCompleted ? "#22C55E" : isActive ? "#E53935" : "#1A1A1A",
+                    color: isCompleted || isActive ? "#fff" : "#555555",
+                    border: isCompleted || isActive ? "none" : "1px solid #2E2E2E",
+                  }}>
+                    {isCompleted ? <CheckCircle size={14} /> : i + 1}
                   </div>
-                  {index < 3 && (
-                    <div className={`h-1 flex-1 mx-1 md:mx-2 ${isCompleted ? "bg-green-600" : "bg-gray-200"}`} />
-                  )}
+                  <span
+                    className="hidden sm:inline"
+                    style={{
+                      fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
+                      color: isActive ? "#F0F0F0" : isCompleted ? "#22C55E" : "#555555",
+                    }}
+                  >
+                    {LABELS[s]}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
+                {i < STEPS.length - 1 && (
+                  <div style={{ flex: 1, height: 1, background: i < currentIndex ? "#22C55E" : "#252525", margin: "0 8px" }} />
+                )}
+              </div>
+            )
+          })}
         </div>
 
-        {/* Step: Service */}
+        {/* ─── Step: Service ─── */}
         {step === "service" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Selecciona un Servicio</h2>
+          <div>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 400, color: "#F0F0F0", marginBottom: 20 }}>
+              Selecciona un servicio
+            </p>
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+                <Loader2 size={28} className="animate-spin" style={{ color: "#E53935" }} />
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {services.map((svc) => (
-                  <Card
-                    key={svc.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedService === svc.id ? "border-blue-600 bg-blue-50" : "hover:border-gray-400"
-                    }`}
-                    onClick={() => setSelectedService(svc.id)}
-                  >
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-2">{svc.name}</h3>
+              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+                {services.map((svc) => {
+                  const selected = selectedService === svc.id
+                  return (
+                    <button
+                      key={svc.id}
+                      type="button"
+                      className={selected ? undefined : "orno-card"}
+                      onClick={() => setSelectedService(svc.id)}
+                      style={{
+                        background: selected ? "#1A1A1A" : "#111",
+                        border: `1px solid ${selected ? "#E53935" : "#2E2E2E"}`,
+                        borderRadius: 8, padding: "20px",
+                        textAlign: "left", cursor: "pointer",
+                        transition: "border-color 0.15s, background 0.15s",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400, color: "#F0F0F0", marginBottom: 6 }}>
+                            {svc.name}
+                          </p>
                           {svc.description && (
-                            <p className="text-sm text-muted-foreground mb-3">{svc.description}</p>
+                            <p style={{ fontSize: 12, color: "#8A8A8A", marginBottom: 12 }}>{svc.description}</p>
                           )}
-                          <div className="flex items-center gap-4 text-sm flex-wrap">
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {svc.duration} min
-                            </Badge>
-                            <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
-                              <DollarSign className="h-3 w-3" />
-                              ${svc.price}
-                            </Badge>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 11, color: "#8A8A8A", background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: 4, padding: "3px 8px", display: "flex", alignItems: "center", gap: 4 }}>
+                              <Clock size={11} /> {svc.duration} min
+                            </span>
+                            <span style={{ fontSize: 11, color: "#22C55E", background: "#0F2A1A", border: "1px solid #1A3A1A", borderRadius: 4, padding: "3px 8px", display: "flex", alignItems: "center", gap: 4 }}>
+                              <DollarSign size={11} /> ${svc.price}
+                            </span>
                           </div>
                         </div>
-                        {selectedService === svc.id && (
-                          <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 ml-2" />
+                        {selected && (
+                          <CheckCircle size={20} style={{ color: "#E53935", flexShrink: 0, marginLeft: 12, marginTop: 2 }} />
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* Step: Barber */}
+        {/* ─── Step: Barber ─── */}
         {step === "barber" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Elige tu Barbero</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {employees.map((emp) => (
-                <Card
-                  key={emp.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedBarber === emp.id ? "border-blue-600 bg-blue-50" : "hover:border-gray-400"
-                  }`}
-                  onClick={() => setSelectedBarber(emp.id)}
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0">
-                          {emp.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{emp.name}</h3>
-                          <p className="text-sm text-muted-foreground capitalize">{emp.role}</p>
-                        </div>
+          <div>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 400, color: "#F0F0F0", marginBottom: 20 }}>
+              Elige tu barbero
+            </p>
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+              {employees.map((emp) => {
+                const selected = selectedBarber === emp.id
+                return (
+                  <button
+                    key={emp.id}
+                    type="button"
+                    className={selected ? undefined : "orno-card"}
+                    onClick={() => setSelectedBarber(emp.id)}
+                    style={{
+                      background: selected ? "#1A1A1A" : "#111",
+                      border: `1px solid ${selected ? "#E53935" : "#2E2E2E"}`,
+                      borderRadius: 8, padding: "20px",
+                      textAlign: "left", cursor: "pointer",
+                      transition: "border-color 0.15s, background 0.15s",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: "50%",
+                        background: "#E53935", color: "#FFF",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400,
+                        flexShrink: 0,
+                      }}>
+                        {emp.name.charAt(0)}
                       </div>
-                      {selectedBarber === emp.id && (
-                        <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0" />
-                      )}
+                      <div>
+                        <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 19, fontWeight: 400, color: "#F0F0F0" }}>
+                          {emp.name}
+                        </p>
+                        <p style={{ fontSize: 11, color: "#555555", textTransform: "capitalize", marginTop: 2 }}>
+                          {emp.role}
+                        </p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    {selected && (
+                      <CheckCircle size={18} style={{ color: "#E53935", flexShrink: 0 }} />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
 
-        {/* Step: Date & Time */}
+        {/* ─── Step: Date & Time ─── */}
         {step === "datetime" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Fecha y Hora</h2>
-            <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 400, color: "#F0F0F0", marginBottom: 24 }}>
+              Fecha y hora
+            </p>
+            <div style={{ display: "grid", gap: 28, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
               <div>
-                <Label htmlFor="date">Selecciona una Fecha</Label>
-                <Input
+                <label htmlFor="date" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", display: "block", marginBottom: 8 }}>
+                  Selecciona una fecha
+                </label>
+                <input
                   id="date"
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => { setSelectedDate(e.target.value); setSelectedTime("") }}
                   min={todayISO}
-                  className="mt-2"
+                  style={{
+                    width: "100%", padding: "10px 12px",
+                    background: "#111", border: "1px solid #2E2E2E",
+                    borderRadius: 6, color: "#F0F0F0", fontSize: 14,
+                    outline: "none", colorScheme: "dark",
+                  }}
                 />
-                {selectedDate && new Date(selectedDate) < new Date(todayISO) && (
-                  <p className="text-xs text-red-600 mt-1">La fecha no puede ser anterior a hoy.</p>
+                {selectedDate && selectedDate < todayISO && (
+                  <p style={{ fontSize: 11, color: "#E53935", marginTop: 6 }}>La fecha no puede ser anterior a hoy.</p>
                 )}
               </div>
+
               <div>
-                <Label>Hora Disponible</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  {timeSlots.map((time) => (
-                    <Button
-                      key={time}
-                      type="button"
-                      variant={selectedTime === time ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedTime(time)}
-                      className="text-sm"
-                      style={{ minHeight: 44 }}
-                    >
-                      {time}
-                    </Button>
-                  ))}
+                <label style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  Hora disponible
+                  {isLoadingSlots && <Loader2 size={11} className="animate-spin" style={{ color: "#555555" }} />}
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                  {ALL_SLOTS.map((time) => {
+                    const isBusy = busySlots.includes(time)
+                    const isSelected = selectedTime === time
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        className={!isBusy && !isSelected ? "orno-slot" : undefined}
+                        disabled={isBusy || isLoadingSlots}
+                        onClick={() => setSelectedTime(time)}
+                        style={{
+                          minHeight: 44, borderRadius: 6, fontSize: 13,
+                          cursor: isBusy ? "not-allowed" : "pointer",
+                          background: isSelected ? "#E53935" : isBusy ? "#0A0A0A" : "#111",
+                          border: `1px solid ${isSelected ? "#E53935" : isBusy ? "#1A1A1A" : "#2E2E2E"}`,
+                          color: isSelected ? "#fff" : isBusy ? "#2E2E2E" : "#F0F0F0",
+                          textDecoration: isBusy ? "line-through" : "none",
+                          opacity: isBusy ? 0.5 : 1,
+                          transition: "background 0.12s, border-color 0.12s",
+                        }}
+                      >
+                        {time}
+                      </button>
+                    )
+                  })}
                 </div>
+                {busySlots.length > 0 && (
+                  <p style={{ fontSize: 10, color: "#555555", marginTop: 8 }}>
+                    Los horarios tachados ya están ocupados para este barbero.
+                  </p>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Step: Confirm */}
+        {/* ─── Step: Confirm ─── */}
         {step === "confirm" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">
-              {isReschedule ? "Confirma el Reagendamiento" : "Confirma tu Cita"}
-            </h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen de la Cita</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Scissors className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Servicio</p>
-                    <p className="text-sm text-muted-foreground">{service?.name}</p>
-                    <div className="flex gap-3 mt-1 text-sm flex-wrap">
-                      <span>{service?.duration} minutos</span>
-                      <span className="text-green-600 font-medium">${service?.price}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Barbero</p>
-                    <p className="text-sm text-muted-foreground">{barber?.name}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Fecha y Hora</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedDate && new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
+          <div>
+            <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 400, color: "#F0F0F0", marginBottom: 24 }}>
+              {isReschedule ? "Confirma el reagendamiento" : "Confirma tu cita"}
+            </p>
+            <div style={{ background: "#111", border: "1px solid #252525", borderRadius: 8, overflow: "hidden", marginBottom: 20 }}>
+              <p style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555", padding: "14px 20px", borderBottom: "1px solid #252525" }}>
+                Resumen
+              </p>
+              {[
+                {
+                  icon: <Scissors size={15} style={{ color: "#E53935" }} />,
+                  label: "Servicio",
+                  value: service?.name ?? "",
+                  sub: service ? `${service.duration} min · $${service.price}` : undefined,
+                },
+                {
+                  icon: <User size={15} style={{ color: "#E53935" }} />,
+                  label: "Barbero",
+                  value: barber?.name ?? "",
+                  sub: undefined,
+                },
+                {
+                  icon: <Calendar size={15} style={{ color: "#E53935" }} />,
+                  label: "Fecha y hora",
+                  value: selectedDate
+                    ? new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
                         weekday: "long", day: "numeric", month: "long", year: "numeric",
-                      })} a las {selectedTime}
-                    </p>
+                      })
+                    : "",
+                  sub: selectedTime ? `a las ${selectedTime}` : undefined,
+                },
+              ].map((row, i) => (
+                <div key={i} style={{ display: "flex", gap: 14, padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ paddingTop: 2 }}>{row.icon}</div>
+                  <div>
+                    <p style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", marginBottom: 4 }}>{row.label}</p>
+                    <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 18, color: "#F0F0F0" }}>{row.value}</p>
+                    {row.sub && <p style={{ fontSize: 11, color: "#8A8A8A", marginTop: 2 }}>{row.sub}</p>}
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="notes">Notas Adicionales (Opcional)</Label>
-                  <textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full mt-2 px-3 py-2 border rounded-md"
-                    rows={3}
-                    placeholder="Ej: Prefiero un corte conservador..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+              <div style={{ padding: "16px 20px" }}>
+                <label htmlFor="notes" style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#555555", display: "block", marginBottom: 8 }}>
+                  Notas adicionales (opcional)
+                </label>
+                <textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  style={{
+                    width: "100%", padding: "10px 12px",
+                    background: "#0A0A0A", border: "1px solid #2E2E2E",
+                    borderRadius: 6, color: "#F0F0F0", fontSize: 13,
+                    resize: "none", outline: "none",
+                    fontFamily: "var(--font-dm-sans)",
+                  }}
+                  rows={3}
+                  placeholder="Ej: Prefiero un corte conservador..."
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Navigation */}
-        <div className="flex flex-col gap-2 mt-8">
-          <div className="flex gap-3">
+        <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", gap: 12 }}>
             {step !== "service" && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                style={{ minHeight: 44 }}
-                onClick={() => {
-                  const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
-                  const idx = steps.indexOf(step)
-                  const prev = steps[idx - 1]
-                  if (idx > 0 && prev) setStep(prev)
+                onClick={goPrev}
+                style={{
+                  minHeight: 44, padding: "0 20px",
+                  background: "none", border: "1px solid #2E2E2E",
+                  borderRadius: 6, color: "#8A8A8A", cursor: "pointer",
+                  fontSize: 12, letterSpacing: "0.06em",
+                  fontFamily: "var(--font-dm-sans)",
                 }}
               >
                 Anterior
-              </Button>
+              </button>
             )}
-            <Button
+            <button
               type="button"
-              onClick={() => {
-                if (step === "confirm") {
-                  handleSubmit()
-                } else {
-                  const steps: BookingStep[] = ["service", "barber", "datetime", "confirm"]
-                  const idx = steps.indexOf(step)
-                  const next = steps[idx + 1]
-                  if (idx < steps.length - 1 && next) setStep(next)
-                }
-              }}
+              onClick={() => step === "confirm" ? handleSubmit() : goNext()}
               disabled={!canContinue() || isSubmitting}
-              className="flex-1"
-              style={{ minHeight: 44 }}
+              style={{
+                flex: 1, minHeight: 44,
+                background: (!canContinue() || isSubmitting) ? "#1A1A1A" : "#E53935",
+                border: "none", borderRadius: 6,
+                color: (!canContinue() || isSubmitting) ? "#3A3A3A" : "#fff",
+                cursor: (!canContinue() || isSubmitting) ? "not-allowed" : "pointer",
+                fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase",
+                fontFamily: "var(--font-dm-sans)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                transition: "background 0.15s",
+              }}
             >
               {isSubmitting ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</>
+                <><Loader2 size={15} className="animate-spin" /> Guardando...</>
               ) : (
                 step === "confirm"
-                  ? (isReschedule ? "Confirmar Reagendamiento" : "Confirmar Reserva")
+                  ? (isReschedule ? "Confirmar reagendamiento" : "Confirmar reserva")
                   : "Continuar"
               )}
-            </Button>
+            </button>
           </div>
           {!canContinue() && stepHint() && (
-            <p className="text-xs text-muted-foreground text-center">{stepHint()}</p>
+            <p style={{ fontSize: 11, color: "#555555", textAlign: "center" }}>{stepHint()}</p>
           )}
           {submitError && (
-            <p className="text-sm text-red-600 text-center">{submitError}</p>
+            <p style={{ fontSize: 12, color: "#E53935", textAlign: "center" }}>{submitError}</p>
           )}
         </div>
 
