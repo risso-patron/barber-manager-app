@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { TimeSlot } from "@/components/booking/TimeSlot"
 
 interface Service {
   id: string
@@ -45,11 +46,6 @@ const DEMO_MODE_EMPLOYEES: Employee[] = DEMO_EMPLOYEES.map(e => ({
   id: e.id, name: e.name, role: e.role,
 }))
 
-const ALL_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-]
 
 export default function BookAppointmentPage() {
   const router = useRouter()
@@ -70,8 +66,9 @@ export default function BookAppointmentPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [isReschedule, setIsReschedule] = useState(false)
-  const [busySlots, setBusySlots] = useState<string[]>([])
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null)
 
   // Load services, employees, prefill reschedule data
   useEffect(() => {
@@ -131,42 +128,37 @@ export default function BookAppointmentPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rescheduleId])
 
-  // Fetch busy slots when barber + date are both selected
+  // Fetch available slots when service + barber + date are all selected
   useEffect(() => {
-    if (!selectedDate || !selectedBarber) {
-      setBusySlots([])
+    if (!selectedService || !selectedBarber || !selectedDate) {
+      setAvailableSlots([])
+      setAvailabilityError(null)
       return
     }
 
-    setIsLoadingSlots(true)
+    setIsLoadingAvailability(true)
+    setAvailabilityError(null)
+    setSelectedTime("")
 
-    if (!supabase) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const busy = DEMO_APPOINTMENTS
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((a: any) => a.date === selectedDate && a.employeeId === selectedBarber && a.status !== "cancelled")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((a: any) => a.time as string)
-      setBusySlots(busy)
-      setIsLoadingSlots(false)
-      return
-    }
+    const params = new URLSearchParams({
+      barberId: selectedBarber,
+      serviceId: selectedService,
+      date: selectedDate,
+    })
 
-    supabase
-      .from("appointments")
-      .select("appointment_time")
-      .eq("appointment_date", selectedDate)
-      .eq("barber_id", selectedBarber)
-      .in("status", ["pending", "confirmed"])
-      .then(({ data }) => {
-        setBusySlots(
-          (data ?? [])
-            .map((a: { appointment_time: string | null }) => a.appointment_time)
-            .filter((t): t is string => t !== null)
-        )
-        setIsLoadingSlots(false)
+    fetch(`/api/availability?${params}`)
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)))
+      .then(data => {
+        setAvailableSlots(Array.isArray(data.slots) ? data.slots : [])
       })
-  }, [selectedDate, selectedBarber])
+      .catch(() => {
+        setAvailabilityError("No pudimos cargar los horarios. Intenta nuevamente.")
+        setAvailableSlots([])
+      })
+      .finally(() => {
+        setIsLoadingAvailability(false)
+      })
+  }, [selectedService, selectedBarber, selectedDate])
 
   const handleSubmit = async () => {
     if (!user || !service || !barber) return
@@ -469,39 +461,34 @@ export default function BookAppointmentPage() {
               <div>
                 <label style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8A8A8A", display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                   Hora disponible
-                  {isLoadingSlots && <Loader2 size={11} className="animate-spin" style={{ color: "#555555" }} />}
+                  {isLoadingAvailability && <Loader2 size={11} className="animate-spin" style={{ color: "#555555" }} />}
                 </label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                  {ALL_SLOTS.map((time) => {
-                    const isBusy = busySlots.includes(time)
-                    const isSelected = selectedTime === time
-                    return (
-                      <button
-                        key={time}
-                        type="button"
-                        className={!isBusy && !isSelected ? "orno-slot" : undefined}
-                        disabled={isBusy || isLoadingSlots}
-                        onClick={() => setSelectedTime(time)}
-                        style={{
-                          minHeight: 44, borderRadius: 6, fontSize: 13,
-                          cursor: isBusy ? "not-allowed" : "pointer",
-                          background: isSelected ? "#E53935" : isBusy ? "#0A0A0A" : "#111",
-                          border: `1px solid ${isSelected ? "#E53935" : isBusy ? "#1A1A1A" : "#2E2E2E"}`,
-                          color: isSelected ? "#fff" : isBusy ? "#2E2E2E" : "#F0F0F0",
-                          textDecoration: isBusy ? "line-through" : "none",
-                          opacity: isBusy ? 0.5 : 1,
-                          transition: "background 0.12s, border-color 0.12s",
-                        }}
-                      >
-                        {time}
-                      </button>
-                    )
-                  })}
-                </div>
-                {busySlots.length > 0 && (
-                  <p style={{ fontSize: 10, color: "#555555", marginTop: 8 }}>
-                    Los horarios tachados ya están ocupados para este barbero.
+
+                {(!selectedService || !selectedBarber || !selectedDate) ? (
+                  <p style={{ fontSize: 12, color: "#555555" }}>
+                    Selecciona un servicio, barbero y fecha para ver horarios disponibles.
                   </p>
+                ) : isLoadingAvailability ? (
+                  <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
+                    <Loader2 size={22} className="animate-spin" style={{ color: "#E53935" }} />
+                  </div>
+                ) : availabilityError ? (
+                  <p style={{ fontSize: 12, color: "#E53935" }}>{availabilityError}</p>
+                ) : availableSlots.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "#555555" }}>
+                    No hay horarios disponibles para esta fecha.
+                  </p>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                    {availableSlots.map((time) => (
+                      <TimeSlot
+                        key={time}
+                        time={time}
+                        selected={selectedTime === time}
+                        onClick={() => setSelectedTime(time)}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
