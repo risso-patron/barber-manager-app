@@ -26,6 +26,11 @@ export function CancelAppointmentModal({
   const [reason, setReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const handleClose = () => {
+    setReason("")
+    onClose()
+  }
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose() }
@@ -45,11 +50,6 @@ export function CancelAppointmentModal({
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleClose = () => {
-    setReason("")
-    onClose()
   }
 
   return (

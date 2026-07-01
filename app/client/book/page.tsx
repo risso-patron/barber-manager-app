@@ -372,8 +372,9 @@ export default function BookAppointmentPage() {
                     Selecciona un servicio, barbero y fecha para ver horarios disponibles.
                   </p>
                 ) : isLoadingAvailability ? (
-                  <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
-                    <Loader2 size={22} className="animate-spin" style={{ color: "#E53935" }} />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 120 }}>
+                    <Loader2 size={24} className="animate-spin" style={{ color: "#E53935" }} />
+                    <p style={{ fontSize: 12, color: "#8A8A8A" }}>Cargando horarios disponibles…</p>
                   </div>
                 ) : availabilityError ? (
                   <p style={{ fontSize: 12, color: "#E53935" }}>{availabilityError}</p>

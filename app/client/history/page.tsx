@@ -303,7 +303,12 @@ export default function ClientHistoryPage() {
                   </div>
                 </div>
                 <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
-                  {new Date(apt.date).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
+                  {(() => {
+                    const d = new Date(apt.date + "T12:00:00")
+                    return isNaN(d.getTime())
+                      ? apt.date
+                      : new Intl.DateTimeFormat("es-PA", { day: "2-digit", month: "short", year: "numeric" }).format(d)
+                  })()}
                   {apt.time ? ` · ${apt.time}` : ""}
                   {apt.employeeName ? ` · ${apt.employeeName}` : ""}
                 </p>
