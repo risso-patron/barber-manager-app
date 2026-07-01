@@ -12,6 +12,35 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TermsModal } from "@/components/auth/terms-modal"
 import { Loader2, AlertCircle } from "lucide-react"
 
+function mapAuthError(error: { message: string; status?: number; code?: string }): string {
+  const code = (error as { code?: string }).code ?? ""
+  const msg = error.message ?? ""
+
+  if (code === "user_already_exists" || code === "email_exists" || msg.includes("already registered") || msg.includes("already been registered")) {
+    return "Este email ya está registrado. Iniciá sesión o recuperá tu contraseña."
+  }
+  if (code === "weak_password" || msg.includes("weak") || msg.includes("password")) {
+    return "La contraseña no cumple los requisitos mínimos del servidor. Usá al menos 8 caracteres con mayúsculas, minúsculas y números."
+  }
+  if (code === "signup_disabled" || msg.includes("signup") || msg.includes("Signups")) {
+    return "El registro de nuevos usuarios está deshabilitado temporalmente."
+  }
+  if (code === "email_provider_disabled" || msg.includes("email provider")) {
+    return "El inicio de sesión por email no está disponible en este momento."
+  }
+  if (code === "over_request_rate_limit" || code === "over_email_send_rate_limit" || msg.includes("rate limit") || error.status === 429) {
+    return "Demasiados intentos. Esperá unos minutos antes de volver a intentar."
+  }
+  if (code === "invalid_redirect_url" || msg.includes("redirect")) {
+    return "Error de configuración del servidor. Contactá al administrador."
+  }
+  if (code === "email_not_authorized" || msg.includes("not authorized")) {
+    return "Este email no está autorizado para registrarse."
+  }
+  // Fallback — incluye el mensaje real para que sea investigable
+  return `No se pudo crear la cuenta. ${msg || "Intentá nuevamente."}`
+}
+
 interface RegisterFormData {
   name: string
   email: string
@@ -91,24 +120,35 @@ export function RegisterForm() {
       })
 
       if (authError) {
-        setError("No se pudo crear la cuenta. Verificá que el email no esté ya registrado.")
+        if (process.env.NODE_ENV === "development") {
+          console.error("[register] authError:", authError.message, "| status:", authError.status, "| code:", (authError as { code?: string }).code)
+        }
+        setError(mapAuthError(authError))
         return
       }
 
-      if (authData.user) {
-        try {
-          await supabase.from("users").insert({
-            id: authData.user.id,
-            name: data.name,
-            email: data.email,
-            role: "client",
-            phone: data.phone || null,
-          })
-        } catch {
-          // El trigger de Supabase puede haber creado el perfil antes — ignorar
-        }
-        router.push("/auth/login?message=Registro exitoso. Revisa tu email para confirmar tu cuenta.")
+      if (!authData.user) {
+        // Email confirmation habilitada + email ya registrado: Supabase no retorna error,
+        // pero tampoco retorna el user. Se envía un email silencioso al usuario existente.
+        setError("Si el email es válido, recibirás un correo de confirmación. Si ya tenés cuenta, iniciá sesión.")
+        return
       }
+
+      try {
+        await supabase.from("users").insert({
+          id: authData.user.id,
+          name: data.name,
+          email: data.email,
+          role: "client",
+          phone: data.phone || null,
+        })
+      } catch (insertErr) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[register] public.users insert error:", insertErr)
+        }
+        // El trigger handle_new_user puede haber insertado el perfil primero — continuar igual
+      }
+      router.push("/auth/login?message=Registro exitoso. Revisá tu email para confirmar tu cuenta.")
     } catch {
       setError("Error de conexión. Verificá tu conexión a internet e intentá nuevamente.")
     } finally {
