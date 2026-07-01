@@ -202,7 +202,7 @@ function validateEnv(env) {
     const { execSync } = require('child_process');
     const trackedFiles = execSync('git ls-files', { encoding: 'utf-8' });
     
-    if (trackedFiles.includes('.env.local')) {
+    if (trackedFiles.split('\n').some(f => f.trim() === '.env.local')) {
       log(colors.red, '🚨', '.env.local está siendo tracked por Git - ¡REMOVER INMEDIATAMENTE!');
       console.log('\n' + colors.yellow + 'Para arreglarlo:' + colors.reset);
       console.log('  git rm --cached .env.local');
