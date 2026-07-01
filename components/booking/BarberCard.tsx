@@ -29,9 +29,9 @@ export interface BarberCardProps
   avatarUrl: string;
   name: string;
   specialty: string;
-  rating: number;
-  reviewCount: number;
-  availability: string;
+  rating?: number;
+  reviewCount?: number;
+  availability?: string;
 }
 
 const BarberCard = React.forwardRef<HTMLButtonElement, BarberCardProps>(
@@ -70,18 +70,24 @@ const BarberCard = React.forwardRef<HTMLButtonElement, BarberCardProps>(
             <h3 className="text-lg font-medium text-foreground mb-1">{name}</h3>
             <p className="text-sm text-muted-foreground mb-3">{specialty}</p>
 
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <Star className="w-4 h-4 fill-primary text-primary" />
-              <span className="text-sm font-medium text-foreground">{rating.toFixed(1)}</span>
-              <span className="text-sm text-muted-foreground ml-1">
-                ({reviewCount.toLocaleString()} reseñas)
-              </span>
-            </div>
+            {rating !== undefined && rating > 0 && (
+              <div className="flex items-center justify-center gap-1 mb-2">
+                <Star className="w-4 h-4 fill-primary text-primary" />
+                <span className="text-sm font-medium text-foreground">{rating.toFixed(1)}</span>
+                {reviewCount !== undefined && (
+                  <span className="text-sm text-muted-foreground ml-1">
+                    ({reviewCount.toLocaleString()} reseñas)
+                  </span>
+                )}
+              </div>
+            )}
 
-            <div className="flex items-center justify-center gap-2 text-sm text-primary font-semibold">
-              <Calendar className="w-4 h-4" />
-              <span>{availability}</span>
-            </div>
+            {availability && (
+              <div className="flex items-center justify-center gap-2 text-sm text-primary font-semibold">
+                <Calendar className="w-4 h-4" />
+                <span>{availability}</span>
+              </div>
+            )}
           </div>
         </div>
       </button>

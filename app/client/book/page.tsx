@@ -4,18 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import {
-  Calendar,
-  Clock,
-  User,
-  DollarSign,
-  CheckCircle,
-  ArrowLeft,
-  Scissors,
-  Loader2,
-} from "lucide-react"
+import { Calendar, User, ArrowLeft, Scissors, Loader2 } from "lucide-react"
 import { DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
 import { TimeSlot } from "@/components/booking/TimeSlot"
+import { ServiceCard } from "@/components/booking/ServiceCard"
+import { BarberCard } from "@/components/booking/BarberCard"
+import { Stepper } from "@/components/booking/Stepper"
 
 interface Service {
   id: string
@@ -237,10 +231,6 @@ export default function BookAppointmentPage() {
 
   return (
     <div style={{ padding: "24px 24px 80px", fontFamily: "var(--font-dm-sans)" }}>
-      <style>{`
-        .orno-slot:hover:not(:disabled) { border-color: #555555 !important; }
-        .orno-card:hover { border-color: #555555 !important; }
-      `}</style>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
         {/* Header */}
@@ -281,43 +271,16 @@ export default function BookAppointmentPage() {
         )}
 
         {/* Progress */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 36 }}>
-          {STEPS.map((s, i) => {
-            const LABELS: Record<BookingStep, string> = {
-              service: "Servicio", barber: "Barbero", datetime: "Fecha/Hora", confirm: "Confirmar",
-            }
-            const isActive = i === currentIndex
-            const isCompleted = i < currentIndex
-            return (
-              <div key={s} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12, fontWeight: 600,
-                    background: isCompleted ? "#22C55E" : isActive ? "#E53935" : "#1A1A1A",
-                    color: isCompleted || isActive ? "#fff" : "#555555",
-                    border: isCompleted || isActive ? "none" : "1px solid #2E2E2E",
-                  }}>
-                    {isCompleted ? <CheckCircle size={14} /> : i + 1}
-                  </div>
-                  <span
-                    className="hidden sm:inline"
-                    style={{
-                      fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
-                      color: isActive ? "#F0F0F0" : isCompleted ? "#22C55E" : "#555555",
-                    }}
-                  >
-                    {LABELS[s]}
-                  </span>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div style={{ flex: 1, height: 1, background: i < currentIndex ? "#22C55E" : "#252525", margin: "0 8px" }} />
-                )}
-              </div>
-            )
-          })}
-        </div>
+        <Stepper
+          steps={[
+            { id: "service",  label: "Servicio" },
+            { id: "barber",   label: "Barbero" },
+            { id: "datetime", label: "Fecha/Hora" },
+            { id: "confirm",  label: "Confirmar" },
+          ]}
+          currentStep={currentIndex}
+          className="mb-9"
+        />
 
         {/* ─── Step: Service ─── */}
         {step === "service" && (
@@ -331,46 +294,18 @@ export default function BookAppointmentPage() {
               </div>
             ) : (
               <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-                {services.map((svc) => {
-                  const selected = selectedService === svc.id
-                  return (
-                    <button
-                      key={svc.id}
-                      type="button"
-                      className={selected ? undefined : "orno-card"}
-                      onClick={() => setSelectedService(svc.id)}
-                      style={{
-                        background: selected ? "#1A1A1A" : "#111",
-                        border: `1px solid ${selected ? "#E53935" : "#2E2E2E"}`,
-                        borderRadius: 8, padding: "20px",
-                        textAlign: "left", cursor: "pointer",
-                        transition: "border-color 0.15s, background 0.15s",
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400, color: "#F0F0F0", marginBottom: 6 }}>
-                            {svc.name}
-                          </p>
-                          {svc.description && (
-                            <p style={{ fontSize: 12, color: "#8A8A8A", marginBottom: 12 }}>{svc.description}</p>
-                          )}
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 11, color: "#8A8A8A", background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: 4, padding: "3px 8px", display: "flex", alignItems: "center", gap: 4 }}>
-                              <Clock size={11} /> {svc.duration} min
-                            </span>
-                            <span style={{ fontSize: 11, color: "#22C55E", background: "#0F2A1A", border: "1px solid #1A3A1A", borderRadius: 4, padding: "3px 8px", display: "flex", alignItems: "center", gap: 4 }}>
-                              <DollarSign size={11} /> ${svc.price}
-                            </span>
-                          </div>
-                        </div>
-                        {selected && (
-                          <CheckCircle size={20} style={{ color: "#E53935", flexShrink: 0, marginLeft: 12, marginTop: 2 }} />
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
+                {services.map((svc) => (
+                  <ServiceCard
+                    key={svc.id}
+                    icon={<Scissors size={20} />}
+                    name={svc.name}
+                    description={svc.description ?? ""}
+                    duration={`${svc.duration}`}
+                    price={svc.price.toFixed(2)}
+                    selected={selectedService === svc.id}
+                    onClick={() => setSelectedService(svc.id)}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -382,49 +317,17 @@ export default function BookAppointmentPage() {
             <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 22, fontWeight: 400, color: "#F0F0F0", marginBottom: 20 }}>
               Elige tu barbero
             </p>
-            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
-              {employees.map((emp) => {
-                const selected = selectedBarber === emp.id
-                return (
-                  <button
-                    key={emp.id}
-                    type="button"
-                    className={selected ? undefined : "orno-card"}
-                    onClick={() => setSelectedBarber(emp.id)}
-                    style={{
-                      background: selected ? "#1A1A1A" : "#111",
-                      border: `1px solid ${selected ? "#E53935" : "#2E2E2E"}`,
-                      borderRadius: 8, padding: "20px",
-                      textAlign: "left", cursor: "pointer",
-                      transition: "border-color 0.15s, background 0.15s",
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: "50%",
-                        background: "#E53935", color: "#FFF",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontFamily: "var(--font-cormorant)", fontSize: 20, fontWeight: 400,
-                        flexShrink: 0,
-                      }}>
-                        {emp.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p style={{ fontFamily: "var(--font-cormorant)", fontSize: 19, fontWeight: 400, color: "#F0F0F0" }}>
-                          {emp.name}
-                        </p>
-                        <p style={{ fontSize: 11, color: "#555555", textTransform: "capitalize", marginTop: 2 }}>
-                          {emp.role}
-                        </p>
-                      </div>
-                    </div>
-                    {selected && (
-                      <CheckCircle size={18} style={{ color: "#E53935", flexShrink: 0 }} />
-                    )}
-                  </button>
-                )
-              })}
+            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+              {employees.map((emp) => (
+                <BarberCard
+                  key={emp.id}
+                  avatarUrl=""
+                  name={emp.name}
+                  specialty={emp.role ?? "Barbero"}
+                  selected={selectedBarber === emp.id}
+                  onClick={() => setSelectedBarber(emp.id)}
+                />
+              ))}
             </div>
           </div>
         )}
