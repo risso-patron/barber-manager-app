@@ -66,6 +66,8 @@ function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?
         },
       }),
     )
+    document.cookie = `demo-role=${demoUser.role}; path=/; max-age=86400`
+    document.cookie = `demo-role=${demoUser.role}; Path=/; Max-Age=86400; SameSite=Lax`
   }
 
   return { ok: true, role: demoUser.role, userName: demoUser.name }
@@ -105,6 +107,7 @@ export function LoginForm() {
         setIsLoading(false)
         return
       }
+
       setError("Credenciales inválidas para modo demo.")
       setIsLoading(false)
       return

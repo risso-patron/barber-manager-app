@@ -12,6 +12,18 @@ const DASHBOARD_MAP: Record<string, string> = {
   client: "/client",
 }
 
+function isPlaceholder(value: string | undefined): boolean {
+  if (!value) return true
+  const lower = value.toLowerCase()
+  return (
+    lower.includes("tu_") ||
+    lower.includes("pega_aqui") ||
+    lower.includes("aqui_") ||
+    lower.includes("your-") ||
+    lower.includes("your_")
+  )
+}
+
 export function useRequireAuth(allowedRoles?: string[]) {
   const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,9 +32,11 @@ export function useRequireAuth(allowedRoles?: string[]) {
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
+    const hasSupabaseConfig = !isDemoMode && !isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey)
 
     // --- DEMO MODE (sin Supabase) ---
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!hasSupabaseConfig) {
       const currentUserStr = localStorage.getItem("currentUser")
       if (!currentUserStr) {
         router.replace("/auth/login")
