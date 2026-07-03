@@ -16,6 +16,8 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProps) {
+  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -131,6 +133,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="ej. Juan Pérez"
+                className={fieldClassName}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name}</p>
@@ -148,6 +151,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="ej. juan@example.com"
+                className={fieldClassName}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email}</p>
@@ -165,6 +169,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="ej. 1234567890"
+                className={fieldClassName}
               />
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone}</p>
@@ -179,7 +184,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#E53935] bg-[#1A1A1A] border-[#2E2E2E] rounded focus:ring-[#E53935]"
                 />
                 <Label htmlFor="isActive" className="cursor-pointer">
                   Cliente activo

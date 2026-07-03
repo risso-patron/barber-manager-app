@@ -15,6 +15,9 @@ interface InventoryModalProps {
 }
 
 export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryModalProps) {
+  const fieldStyle = { background: "#1A1A1A", color: "#F0F0F0", border: "1px solid #2E2E2E" }
+  const errorFieldStyle = { ...fieldStyle, border: "1px solid #E53935" }
+
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
     name: "", category: "producto", quantity: 0, minStock: 0,
     price: 0, salePrice: null, sku: "", supplier: ""
@@ -89,7 +92,7 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ej: Shampoo Profesional"
-                style={{ background: "#111", borderColor: errors.name ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
+                style={errors.name ? errorFieldStyle : fieldStyle}
               />
               {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
@@ -99,7 +102,7 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                 value={formData.sku ?? ""}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                 placeholder="Ej: SH-001"
-                style={{ background: "#111", borderColor: "#2E2E2E", color: "#F0F0F0" }}
+                style={fieldStyle}
               />
             </div>
           </div>
@@ -109,7 +112,15 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value as InventoryItem["category"] })}
-              style={{ background: "#111", borderColor: errors.category ? "#E53935" : "#2E2E2E", color: "#F0F0F0", width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid", fontSize: 14 }}
+              style={{
+                background: "#1A1A1A",
+                color: "#F0F0F0",
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: errors.category ? "1px solid #E53935" : "1px solid #2E2E2E",
+                fontSize: 14,
+              }}
             >
               <option value="producto">Producto</option>
               <option value="herramienta">Herramienta</option>
@@ -124,7 +135,7 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                 type="number" min="0"
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                style={{ background: "#111", borderColor: errors.quantity ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
+                style={errors.quantity ? errorFieldStyle : fieldStyle}
               />
               {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
             </div>
@@ -134,7 +145,7 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                 type="number" min="1"
                 value={formData.minStock}
                 onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
-                style={{ background: "#111", borderColor: errors.minStock ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
+                style={errors.minStock ? errorFieldStyle : fieldStyle}
               />
               {errors.minStock && <p className="text-red-500 text-xs mt-1">{errors.minStock}</p>}
             </div>
@@ -151,7 +162,12 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                     type="number" min="0" step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    style={{ background: "#161616", borderColor: errors.price ? "#E53935" : "#2E2E2E", color: "#F0F0F0", paddingLeft: 24 }}
+                    style={{
+                      background: "#1A1A1A",
+                      color: "#F0F0F0",
+                      border: errors.price ? "1px solid #E53935" : "1px solid #2E2E2E",
+                      paddingLeft: 24,
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -165,7 +181,12 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
                     type="number" min="0" step="0.01"
                     value={formData.salePrice ?? ""}
                     onChange={(e) => setFormData({ ...formData, salePrice: e.target.value ? parseFloat(e.target.value) : null })}
-                    style={{ background: "#161616", borderColor: errors.salePrice ? "#E53935" : "#2E2E2E", color: "#F0F0F0", paddingLeft: 24 }}
+                    style={{
+                      background: "#1A1A1A",
+                      color: "#F0F0F0",
+                      border: errors.salePrice ? "1px solid #E53935" : "1px solid #2E2E2E",
+                      paddingLeft: 24,
+                    }}
                     placeholder="0.00"
                   />
                 </div>
@@ -190,7 +211,7 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
               value={formData.supplier}
               onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
               placeholder="Ej: Beauty Supply Co."
-              style={{ background: "#111", borderColor: "#2E2E2E", color: "#F0F0F0" }}
+              style={fieldStyle}
             />
           </div>
 

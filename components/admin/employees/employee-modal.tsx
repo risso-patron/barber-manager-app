@@ -46,6 +46,8 @@ const PRESET_AVATARS = [
 ]
 
 export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
+  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
+
   const defaultSpecialty = (employee as { specialty?: string } | undefined)?.specialty || "barbero"
   const defaultRole = SPECIALTIES.find(s => s.value === defaultSpecialty)?.role || "employee"
 
@@ -110,6 +112,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ej: Roberto Gómez"
+                className={fieldClassName}
               />
             </div>
 
@@ -124,6 +127,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="roberto@barbershop.com"
                 autoComplete="email"
+                className={fieldClassName}
               />
             </div>
 
@@ -138,6 +142,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="555-0200"
                 autoComplete="tel"
+                className={fieldClassName}
               />
             </div>
 
@@ -150,7 +155,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                 required
                 value={formData.specialty}
                 onChange={(e) => handleSpecialtyChange(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
               >
                 {SPECIALTIES.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -178,7 +183,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
                   onChange={(e) =>
                     setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })
                   }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm"
+                  className={`flex h-10 w-full rounded-md px-3 py-2 pr-8 text-sm ${fieldClassName}`}
                   placeholder="0"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>

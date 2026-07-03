@@ -26,6 +26,8 @@ export function AppointmentModal({
   employees,
   clients,
 }: AppointmentModalProps) {
+  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -208,6 +210,7 @@ export function AppointmentModal({
                   placeholder="Nombre completo *"
                   value={newClientName}
                   onChange={(e) => setNewClientName(e.target.value)}
+                  className={fieldClassName}
                 />
                 {formErrors.newClientName && <p className="text-xs text-red-500">{formErrors.newClientName}</p>}
                 <Input
@@ -215,6 +218,7 @@ export function AppointmentModal({
                   type="tel"
                   value={newClientPhone}
                   onChange={(e) => setNewClientPhone(e.target.value)}
+                  className={fieldClassName}
                 />
               </div>
             ) : (
@@ -224,7 +228,7 @@ export function AppointmentModal({
                   aria-label="Cliente"
                   value={formData.clientId}
                   onChange={(e) => handleClientChange(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
                 >
                   <option value="">Seleccionar cliente</option>
                   {clients.map(client => (
@@ -246,7 +250,7 @@ export function AppointmentModal({
               aria-label="Servicio"
               value={formData.serviceId}
               onChange={(e) => handleServiceChange(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
             >
               <option value="">Seleccionar servicio</option>
               {services.map(service => (
@@ -266,7 +270,7 @@ export function AppointmentModal({
               aria-label="Barbero"
               value={formData.employeeId}
               onChange={(e) => handleEmployeeChange(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
             >
               <option value="">Seleccionar barbero</option>
               {employees.map(employee => (
@@ -288,6 +292,7 @@ export function AppointmentModal({
                 min={appointment ? undefined : todayISO}
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className={fieldClassName}
               />
               {formErrors.date && <p className="text-xs text-red-500">{formErrors.date}</p>}
             </div>
@@ -299,6 +304,7 @@ export function AppointmentModal({
                 type="time"
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                className={fieldClassName}
               />
               {formErrors.time && <p className="text-xs text-red-500">{formErrors.time}</p>}
             </div>
@@ -313,7 +319,7 @@ export function AppointmentModal({
                 type="number"
                 value={formData.duration}
                 readOnly
-                className="bg-gray-50"
+                className={fieldClassName}
               />
             </div>
 
@@ -324,7 +330,7 @@ export function AppointmentModal({
                 type="number"
                 value={formData.price}
                 readOnly
-                className="bg-gray-50"
+                className={fieldClassName}
               />
             </div>
           </div>
@@ -338,7 +344,7 @@ export function AppointmentModal({
                 aria-label="Estado de la cita"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
               >
                 <option value="pending">Pendiente</option>
                 <option value="confirmed">Confirmada</option>
@@ -355,7 +361,7 @@ export function AppointmentModal({
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className={`flex min-h-[80px] w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
               placeholder="Preferencias del cliente, observaciones especiales..."
             />
           </div>

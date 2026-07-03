@@ -16,6 +16,8 @@ interface ServiceModalProps {
 }
 
 export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalProps) {
+  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -125,6 +127,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="ej. Corte Clásico"
+                className={fieldClassName}
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name}</p>
@@ -139,6 +142,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="ej. Corte tradicional con máquina y tijera"
+                className={fieldClassName}
               />
             </div>
 
@@ -154,6 +158,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 placeholder="ej. 150"
+                className={fieldClassName}
               />
               {errors.price && (
                 <p className="text-sm text-red-500">{errors.price}</p>
@@ -171,6 +176,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                 placeholder="ej. 30"
+                className={fieldClassName}
               />
               {errors.duration && (
                 <p className="text-sm text-red-500">{errors.duration}</p>

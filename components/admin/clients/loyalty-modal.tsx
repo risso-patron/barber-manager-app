@@ -21,6 +21,8 @@ interface Props {
 }
 
 export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
+  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
+
   const current = client.loyalty_points ?? 0
   const [mode, setMode] = useState<"add" | "subtract">("add")
   const [amount, setAmount] = useState("")
@@ -123,6 +125,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
               placeholder="Ej. 50"
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setError(null) }}
+              className={fieldClassName}
               required
             />
           </div>
@@ -136,6 +139,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}
+              className={fieldClassName}
             />
           </div>
 
