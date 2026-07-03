@@ -102,9 +102,9 @@ export function LoginForm() {
     if (isDemoMode || !supabase) {
       const demoLogin = tryDemoLogin(data)
       if (demoLogin.ok) {
+        document.cookie = `demo-role=${demoLogin.role}; path=/; max-age=86400`
+        await new Promise(resolve => setTimeout(resolve, 100))
         router.push(ROLE_MAP[demoLogin.role ?? ""] || "/auth/login")
-        router.refresh()
-        setIsLoading(false)
         return
       }
 

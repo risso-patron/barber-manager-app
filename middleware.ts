@@ -3,13 +3,9 @@ import { NextResponse, type NextRequest } from "next/server"
 export async function middleware(request: NextRequest) {
   // DEMO MODE BYPASS — solo en desarrollo
   if (process.env.NODE_ENV === "development") {
-    const path = request.nextUrl.pathname
-    const protectedRoutes = ["/dashboard", "/admin", "/employee", "/barber", "/client"]
-    const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route))
-
     const demoRole = request.cookies.get("demo-role")?.value
     if (demoRole) {
-      // Verificar que el rol demo tiene acceso a la ruta
+      const path = request.nextUrl.pathname
       if (path.startsWith("/admin") && demoRole !== "admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
@@ -19,11 +15,6 @@ export async function middleware(request: NextRequest) {
       if (path.startsWith("/employee") && demoRole !== "employee" && demoRole !== "admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
-      return NextResponse.next({ request })
-    }
-
-    // Fallback para QA/demo en desarrollo cuando no hay cookie de rol.
-    if (isProtectedRoute) {
       return NextResponse.next({ request })
     }
   }
