@@ -2,28 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { withRateLimit, apiLimiter } from "@/lib/rate-limit"
 import { isDemoMode } from "@/lib/demo-config"
+import { demoBlocksStore } from "@/lib/demo-blocks-store"
 import { z } from "zod"
 
 const blockSchema = z.object({
-  barber_id: z.string().uuid().optional(), // admin/manager puede indicar otro barbero
+  barber_id: z.string().uuid().optional(), // admin puede indicar otro barbero
   block_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
   start_time: z.string().regex(/^\d{2}:\d{2}$/, "Hora de inicio inválida"),
   end_time:   z.string().regex(/^\d{2}:\d{2}$/, "Hora de fin inválida"),
   reason:     z.string().min(1).max(200).default("Bloqueo"),
   block_type: z.enum(["break", "absence", "personal", "vacation"]).default("break"),
 })
-
-// Almacén en memoria para modo demo (sin persistencia real, se reinicia con el servidor)
-type DemoBlock = {
-  id: string
-  barber_id: string
-  block_date: string
-  start_time: string
-  end_time: string
-  reason: string
-  block_type: "break" | "absence" | "personal" | "vacation"
-}
-const demoBlocks: DemoBlock[] = []
 
 // ---------- GET /api/schedule-blocks?barber_id=&date= ----------------------
 export async function GET(request: NextRequest) {
@@ -33,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (isDemoMode()) {
       const barberId = searchParams.get("barber_id") ?? "demo-employee-001"
       const date = searchParams.get("date")
-      let blocks = demoBlocks.filter(b => b.barber_id === barberId)
+      let blocks = demoBlocksStore.filter(b => b.barber_id === barberId)
       if (date) blocks = blocks.filter(b => b.block_date === date)
       return NextResponse.json({ blocks })
     }
@@ -86,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     if (isDemoMode()) {
       const id = `demo-block-${Date.now()}`
-      demoBlocks.push({
+      demoBlocksStore.push({
         id,
         barber_id:  parsed.data.barber_id ?? "demo-employee-001",
         block_date: parsed.data.block_date,
@@ -137,8 +126,8 @@ export async function DELETE(request: NextRequest) {
     if (!blockId) return NextResponse.json({ error: "id requerido" }, { status: 400 })
 
     if (isDemoMode()) {
-      const index = demoBlocks.findIndex(b => b.id === blockId)
-      if (index !== -1) demoBlocks.splice(index, 1)
+      const index = demoBlocksStore.findIndex(b => b.id === blockId)
+      if (index !== -1) demoBlocksStore.splice(index, 1)
       return NextResponse.json({ success: true })
     }
 

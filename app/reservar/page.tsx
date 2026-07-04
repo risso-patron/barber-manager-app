@@ -69,6 +69,8 @@ export default function ReservarPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState({ services: true, employees: true })
   const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -136,12 +138,20 @@ export default function ReservarPage() {
     fetchInitialData()
   }, [])
 
-  // Generate available time slots
-  const timeSlots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
-  ]
+  const totalDuration = booking.services.reduce((s, x) => s + x.duration, 0)
+
+  useEffect(() => {
+    if (!booking.date || !booking.barber?.id) {
+      setAvailableSlots([])
+      return
+    }
+    setSlotsLoading(true)
+    fetch(`/api/availability?barber_id=${booking.barber.id}&date=${booking.date}&duration=${totalDuration}`)
+      .then(r => r.json())
+      .then((data: { available?: string[] }) => setAvailableSlots(data.available ?? []))
+      .catch(() => setAvailableSlots([]))
+      .finally(() => setSlotsLoading(false))
+  }, [booking.date, booking.barber?.id, totalDuration])
 
   const handleDateTimeSelect = (date: string, time: string) => {
     setBooking(prev => ({ ...prev, date, time }))
@@ -425,7 +435,7 @@ export default function ReservarPage() {
                       <Button
                         key={dateStr}
                         variant={booking.date === dateStr ? "default" : "outline"}
-                        onClick={() => setBooking(prev => ({ ...prev, date: dateStr }))}
+                        onClick={() => setBooking(prev => ({ ...prev, date: dateStr, time: undefined }))}
                         className="flex flex-col h-auto py-3"
                       >
                         <span className="text-xs">{formatDate(dateStr).split(',')[0]}</span>
@@ -439,19 +449,27 @@ export default function ReservarPage() {
                 {booking.date && (
                   <div>
                     <Label className="mb-2 block">Selecciona una hora</Label>
-                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                      {timeSlots.map((time) => (
-                        <Button
-                          key={time}
-                          variant={booking.time === time ? "default" : "outline"}
-                          onClick={() => handleDateTimeSelect(booking.date!, time)}
-                          className="gap-2"
-                        >
-                          <Clock className="h-3 w-3" />
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
+                    {slotsLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                      </div>
+                    ) : availableSlots.length === 0 ? (
+                      <p className="text-sm text-gray-500 py-4">Sin horarios disponibles para esta fecha.</p>
+                    ) : (
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                        {availableSlots.map((time) => (
+                          <Button
+                            key={time}
+                            variant={booking.time === time ? "default" : "outline"}
+                            onClick={() => handleDateTimeSelect(booking.date!, time)}
+                            className="gap-2"
+                          >
+                            <Clock className="h-3 w-3" />
+                            {time}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
