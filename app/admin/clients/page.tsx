@@ -7,14 +7,10 @@ import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import {
   Users,
   Plus,
   Search,
-  Mail,
-  Phone,
-  Calendar,
   MoreVertical,
   Edit,
   Trash2,
@@ -22,7 +18,6 @@ import {
   TrendingUp,
   Eye,
   Gift,
-  XCircle,
   Loader2,
 } from "lucide-react"
 import type { Client } from "@/lib/demo-appointments"
@@ -30,6 +25,7 @@ import { DEMO_CLIENTS } from "@/lib/demo-appointments"
 import { ClientModal } from "@/components/admin/clients/client-modal"
 import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
 import { LoyaltyModal } from "@/components/admin/clients/loyalty-modal"
+import { ClientIdentity } from "@/components/admin/clients/client-identity"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -294,56 +290,18 @@ export default function ClientsPage() {
                 {pagedClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-white"
+                    className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:shadow-md transition-shadow"
                   >
-                    {/* Client Info */}
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {client.name.charAt(0).toUpperCase()}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{client.name}</h3>
-                          {client.isActive !== false ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              Activo
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Inactivo</Badge>
-                          )}
-                          {/* Loyalty points badge */}
-                          {(client as Client & { loyalty_points?: number }).loyalty_points !== null && (client as Client & { loyalty_points?: number }).loyalty_points !== undefined && (
-                            <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                              <Gift className="h-3 w-3" />
-                              <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
-                            </div>
-                          )}
-                          {/* No-show badge */}
-                          {(client as Client & { no_show_count?: number }).no_show_count !== null && (client as Client & { no_show_count?: number }).no_show_count !== undefined &&
-                            (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
-                                <XCircle className="h-3 w-3" />
-                                <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
-                              </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          <span>{client.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          <span>{client.phone}</span>
-                        </div>
-                        {client.createdAt && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Cliente desde {new Date(client.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <ClientIdentity
+                      name={client.name}
+                      email={client.email}
+                      phone={client.phone}
+                      createdAt={client.createdAt}
+                      isActive={client.isActive !== false}
+                      loyaltyPoints={(client as Client & { loyalty_points?: number }).loyalty_points}
+                      noShowCount={(client as Client & { no_show_count?: number }).no_show_count}
+                      className="flex-1"
+                    />
 
                     {/* Actions Dropdown */}
                     <div className="relative">

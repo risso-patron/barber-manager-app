@@ -25,6 +25,7 @@ import {
 import Link from "next/link"
 import type { Service, InventoryItem } from "@/lib/demo-appointments"
 import { DEMO_SERVICES, DEMO_INVENTORY } from "@/lib/demo-appointments"
+import { ClientAvatar } from "@/components/admin/clients/client-identity"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -420,13 +421,11 @@ export default function POSPage() {
             <CardContent>
               {selectedClient ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-bold text-sm">
-                      {selectedClient.name.charAt(0)}
-                    </div>
+                  <div className="flex items-center gap-3 p-3 bg-muted border border-border rounded-lg">
+                    <ClientAvatar name={selectedClient.name} size="sm" className="h-8 w-8 text-sm" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{selectedClient.name}</p>
-                      <p className="text-xs text-amber-700 flex items-center gap-1">
+                      <p className="text-sm font-medium text-foreground">{selectedClient.name}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Gift className="h-3 w-3" />
                         {selectedClient.loyalty_points} pts actuales
                         {cart.length > 0 && !useRedeemPoints && ` → +${loyaltyEarned} pts`}

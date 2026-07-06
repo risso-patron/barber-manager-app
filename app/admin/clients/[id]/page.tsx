@@ -11,10 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { ClientIdentity } from "@/components/admin/clients/client-identity"
 import {
-  ArrowLeft, Mail, Phone, Calendar, Scissors,
+  ArrowLeft, Scissors,
   DollarSign, TrendingUp, Save, Loader2, MessageSquare,
-  Clock, Send, Gift, CheckCircle2, Sparkles, XCircle,
+  Clock, Send, Gift, CheckCircle2, Sparkles,
 } from "lucide-react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -86,6 +87,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [messages, setMessages] = useState<ClientMessage[]>([])
   const [gifts, setGifts] = useState<ClientGift[]>([])
+  const [posTotal, setPosTotal] = useState(0)
   const [notes, setNotes] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -139,6 +141,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         { data: appts },
         { data: msgs },
         { data: gfs },
+        { data: sales },
       ] = await Promise.all([
         supabase
           .from("users")
@@ -165,6 +168,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           .eq("to_client_id", id)
           .order("created_at", { ascending: false })
           .limit(20),
+        supabase
+          .from("pos_sales")
+          .select("total")
+          .eq("client_id", id),
       ])
 
       if (profile) {
@@ -174,6 +181,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       if (appts) setAppointments(appts as unknown as Appointment[])
       if (msgs)  setMessages(msgs as ClientMessage[])
       if (gfs)   setGifts(gfs as ClientGift[])
+      if (sales) setPosTotal(sales.reduce((sum, s) => sum + Number(s.total ?? 0), 0))
       setIsLoading(false)
     }
 
@@ -259,8 +267,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   }
 
   // Stats
+  // NOTE: appointments arrives ordered by appointment_date desc (query in loadProfile above).
   const completedAppts = appointments.filter(a => a.status === "completed")
-  const totalSpent = completedAppts.reduce((sum, a) => sum + (a.service?.price ?? 0), 0)
+  const apptSpent = completedAppts.reduce((sum, a) => sum + (a.service?.price ?? 0), 0)
+  // Real CLV: completed appointments + POS purchases (register sales), not appointments alone.
+  const totalSpent = apptSpent + posTotal
   const upcomingAppts = appointments.filter(
     a => a.status === "pending" || a.status === "confirmed"
   )
@@ -270,6 +281,12 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     return acc
   }, {})
   const favoriteService = Object.entries(serviceCount).sort((a, b) => b[1] - a[1])[0]
+  // completedAppts preserves the desc order from the query, so the first entry is the most recent.
+  const lastVisit = completedAppts[0]?.appointment_date ?? null
+  // upcomingAppts also inherits desc order — sort ascending to find the soonest one.
+  const nextAppointment = [...upcomingAppts].sort(
+    (a, b) => a.appointment_date.localeCompare(b.appointment_date)
+  )[0]?.appointment_date ?? null
 
   if (!adminUser) return null
 
@@ -305,42 +322,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Header */}
-      <div className="flex items-start gap-6">
-        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shrink-0">
-          {client.name.charAt(0).toUpperCase()}
-        </div>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
-          {client.no_show_count > 0 && (
-            <div className="mt-1">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300">
-                <XCircle className="h-3 w-3" />
-                {client.no_show_count} no-show{client.no_show_count > 1 ? "s" : ""}
-              </span>
-            </div>
-          )}
-          <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
-            <span className="flex items-center gap-1">
-              <Mail className="h-4 w-4" />
-              {client.email.endsWith("@guest.barber") ? (
-                <span className="text-gray-400 italic">Sin email registrado</span>
-              ) : client.email}
-            </span>
-            {client.phone && (
-              <span className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                {adminUser?.role === "manager" ? maskPhone(client.phone) : client.phone}
-              </span>
-            )}
-            <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              Cliente desde {new Date(client.created_at).toLocaleDateString("es-ES", {
-                day: "numeric", month: "long", year: "numeric"
-              })}
-            </span>
-          </div>
-        </div>
-      </div>
+      <ClientIdentity
+        size="lg"
+        name={client.name}
+        email={client.email.endsWith("@guest.barber") ? null : client.email}
+        phone={client.phone ? (adminUser?.role === "manager" ? maskPhone(client.phone) : client.phone) : null}
+        createdAt={client.created_at}
+        noShowCount={client.no_show_count}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -387,6 +376,36 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 </p>
               </div>
               <TrendingUp className="h-7 w-7 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Última visita</p>
+                <p className="text-sm font-bold leading-tight mt-1">
+                  {lastVisit
+                    ? new Date(lastVisit + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
+                    : "—"}
+                </p>
+              </div>
+              <Clock className="h-7 w-7 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Próxima cita</p>
+                <p className="text-sm font-bold leading-tight mt-1">
+                  {nextAppointment
+                    ? new Date(nextAppointment + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
+                    : "—"}
+                </p>
+              </div>
+              <Scissors className="h-7 w-7 text-blue-400" />
             </div>
           </CardContent>
         </Card>
