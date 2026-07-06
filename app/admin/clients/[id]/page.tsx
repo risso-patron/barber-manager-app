@@ -15,10 +15,12 @@ import { ClientIdentity } from "@/components/admin/clients/client-identity"
 import { ClientPreferencesCard } from "@/components/admin/clients/client-preferences-card"
 import { ClientMembershipsCard } from "@/components/admin/clients/client-memberships-card"
 import { ClientAttachmentsCard } from "@/components/admin/clients/client-attachments-card"
+import { ClientTimelineCard } from "@/components/admin/clients/client-timeline-card"
+import { ClientAIInsightsCard } from "@/components/admin/clients/client-ai-insights-card"
 import {
   ArrowLeft, Scissors,
   DollarSign, TrendingUp, Save, Loader2, MessageSquare,
-  Clock, Send, Gift, CheckCircle2, Sparkles,
+  Clock, Send, Gift, CheckCircle2, Sparkles, Repeat,
 } from "lucide-react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -47,6 +49,13 @@ interface Appointment {
   status: string
   service: { name: string; price: number; duration: number } | null
   barber: { name: string } | null
+}
+
+interface PosSale {
+  id: string
+  total: number
+  payment_method: string
+  created_at: string
 }
 
 interface ClientMessage {
@@ -95,6 +104,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const [messages, setMessages] = useState<ClientMessage[]>([])
   const [gifts, setGifts] = useState<ClientGift[]>([])
   const [posTotal, setPosTotal] = useState(0)
+  const [posSales, setPosSales] = useState<PosSale[]>([])
   const [notes, setNotes] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -181,8 +191,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           .limit(20),
         supabase
           .from("pos_sales")
-          .select("total")
-          .eq("client_id", id),
+          .select("id, total, payment_method, created_at")
+          .eq("client_id", id)
+          .order("created_at", { ascending: false })
+          .limit(20),
       ])
 
       if (profile) {
@@ -192,7 +204,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       if (appts) setAppointments(appts as unknown as Appointment[])
       if (msgs)  setMessages(msgs as ClientMessage[])
       if (gfs)   setGifts(gfs as ClientGift[])
-      if (sales) setPosTotal(sales.reduce((sum, s) => sum + Number(s.total ?? 0), 0))
+      if (sales) {
+        setPosSales(sales as PosSale[])
+        setPosTotal(sales.reduce((sum, s) => sum + Number(s.total ?? 0), 0))
+      }
       setIsLoading(false)
     }
 
@@ -298,6 +313,16 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const nextAppointment = [...upcomingAppts].sort(
     (a, b) => a.appointment_date.localeCompare(b.appointment_date)
   )[0]?.appointment_date ?? null
+  // Visit frequency: average days between the client's first and most recent completed
+  // appointment, spread across the number of visits in between. Needs at least 2 to mean anything.
+  const visitFrequencyDays = (() => {
+    if (completedAppts.length < 2) return null
+    const datesAsc = [...completedAppts].map(a => a.appointment_date).sort()
+    const first = new Date(datesAsc[0] + "T12:00:00")
+    const last = new Date(datesAsc[datesAsc.length - 1] + "T12:00:00")
+    const spanDays = (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24)
+    return Math.round(spanDays / (datesAsc.length - 1))
+  })()
 
   if (!adminUser) return null
 
@@ -417,6 +442,19 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 </p>
               </div>
               <Scissors className="h-7 w-7 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Frecuencia de visita</p>
+                <p className="text-sm font-bold leading-tight mt-1">
+                  {visitFrequencyDays !== null ? `Cada ${visitFrequencyDays} días` : "—"}
+                </p>
+              </div>
+              <Repeat className="h-7 w-7 text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -677,6 +715,19 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         />
         <ClientMembershipsCard clientId={client.id} adminUserId={adminUser?.id} />
         <ClientAttachmentsCard clientId={client.id} uploadedBy={adminUser?.id} />
+      </div>
+
+      {/* ── CRM Fase C: timeline unificado + AI Insights (placeholder) ── */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <ClientTimelineCard
+            appointments={appointments}
+            messages={messages}
+            gifts={gifts}
+            posSales={posSales}
+          />
+        </div>
+        <ClientAIInsightsCard />
       </div>
     </div>
   )
