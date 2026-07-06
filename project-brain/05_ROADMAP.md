@@ -116,7 +116,9 @@ Full analysis and duplication findings: [07_TECH_DEBT.md](07_TECH_DEBT.md). Sequ
 
 **Phase B — shipped 2026-07-06** ([ADR-018](04_DECISIONS.md)): SQL migrations authored (not yet run against any live instance) — `scripts/32-add-client-profile-fields.sql` (birthday, allergies, preferred_employee_id, marketing_consent on `users`), `scripts/33-add-memberships.sql` (`memberships` table), `scripts/34-add-client-attachments.sql` (`client_attachments` table + first-ever use of Supabase Storage in this codebase, private `client-attachments` bucket). UI: `ClientPreferencesCard`, `ClientMembershipsCard`, `ClientAttachmentsCard` wired into the client profile page. Follow-ups tracked in [07_TECH_DEBT.md](07_TECH_DEBT.md): no edit/cancel UI for memberships yet (create + list only), no delete UI for attachments, someone with real Supabase access still needs to actually run scripts 32-34 before this is usable outside demo mode.
 
-Phase C (timeline/AI placeholder) remains not started.
+**Phase C — shipped 2026-07-06** ([ADR-019](04_DECISIONS.md)): `ClientTimelineCard` merging appointments/messages/gifts/POS sales into one chronological feed (client-side, no new queries beyond widening the existing `pos_sales` select); a "Frecuencia de visita" stat tile; `ClientAIInsightsCard`, a deliberate static placeholder linking to [02_TARGET_ARCHITECTURE.md §14](02_TARGET_ARCHITECTURE.md) rather than fabricating output. This closes the M5 CRM scope as originally requested, with one caveat: **WhatsApp actions** remain integration-level only (`app/admin/integrations`, still a stub per [01_CURRENT_STATE.md §9](01_CURRENT_STATE.md)) — no per-client "message via WhatsApp" button exists, since that depends on Integrations shipping, not on CRM work. Follow-ups tracked in [07_TECH_DEBT.md](07_TECH_DEBT.md): timeline caps at 30 events with no pagination or type filtering.
+
+M5 CRM (Phases A-C) is now feature-complete. Scripts 32-34 have been run against the live Supabase instance (per user confirmation, 2026-07-06) — pending items are only the open follow-ups listed in [07_TECH_DEBT.md](07_TECH_DEBT.md).
 
 ---
 

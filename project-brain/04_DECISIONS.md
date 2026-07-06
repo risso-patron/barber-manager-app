@@ -223,7 +223,22 @@
 
 **Consequences**: The client profile page (`app/admin/clients/[id]/page.tsx`) now has 7 cards total. `client_attachments` upload/list only functions with real Supabase configured — demo mode shows an explicit "requires Supabase" message rather than fabricating fake files. Memberships have no edit/cancel UI yet (create + list only) — tracked as a Phase B follow-up in [07_TECH_DEBT.md](07_TECH_DEBT.md). No data migration or backfill was needed since the project is pre-production ([01_CURRENT_STATE.md §1](01_CURRENT_STATE.md)).
 
-**Status**: Implemented (2026-07-06) — schema authored, not yet run against any live database; UI implemented and validated (`type-check`/`lint`/`build` all pass).
+**Status**: Implemented (2026-07-06) — schema authored and, per user confirmation, run against the live Supabase instance (not independently verified from this session); UI implemented and validated (`type-check`/`lint`/`build` all pass).
+
+---
+
+### ADR-019 — CRM Phase C implementation (unified timeline, visit frequency, AI Insights placeholder)
+
+**Context**: Following Phase A ([ADR-017](04_DECISIONS.md)) and Phase B ([ADR-018](04_DECISIONS.md)), Phase C — the last item in the M5 CRM scope from [05_ROADMAP.md](05_ROADMAP.md) — was implemented on 2026-07-06: a unified chronological timeline, a visit-frequency metric, and an AI Insights slot.
+
+**Decision**:
+1. `ClientTimelineCard` (`components/admin/clients/client-timeline-card.tsx`) merges appointments, `client_messages`, `client_gifts`, and `pos_sales` — all data already fetched by the profile page for other cards — into one client-side sorted feed. No new queries beyond widening the existing `pos_sales` select from `total` only to full rows (`id, total, payment_method, created_at`).
+2. Visit frequency is computed as the average number of days between the client's first and most recent **completed** appointment, divided across the visit count in between — requires at least 2 completed appointments to display; otherwise shows "—" rather than a misleading number.
+3. `ClientAIInsightsCard` (`components/admin/clients/client-ai-insights-card.tsx`) is a **deliberate, static placeholder** — no data fetching, no fabricated output. [02_TARGET_ARCHITECTURE.md §14](02_TARGET_ARCHITECTURE.md) marks AI Architecture as `Planned (Future)` with no scope defined; this card exists only to reserve the layout slot and links back to that section, per [06_CLAUDE_RULES.md](06_CLAUDE_RULES.md)'s "never present Planned as Implemented."
+
+**Consequences**: The client profile page (`app/admin/clients/[id]/page.tsx`) now has 9 cards total across Phases A-C. This closes the M5 CRM scope as originally requested (Customer Profile, Appointment/Services History, Products Purchased, Loyalty, Memberships, Notes, Photos, Documents, Allergies, Preferred Barber, Birthday, WhatsApp actions*, Marketing permissions, Timeline, CLV, Visit Frequency, Last/Next Visit, AI Insights placeholder) — *WhatsApp actions remain partially covered at the integration level only (`app/admin/integrations`), no per-client "message via WhatsApp" button was added, since that depends on the Integrations module moving off its current stub status ([01_CURRENT_STATE.md §9](01_CURRENT_STATE.md)), not on CRM Phase C.
+
+**Status**: Implemented (2026-07-06) — `type-check`/`lint`/`build` all pass. Schema for this phase (none — Phase C is UI/aggregation only, no new tables) required no scripts.
 
 ---
 

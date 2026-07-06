@@ -4,11 +4,18 @@
 
 ---
 
+## CRM Phase C follow-ups (added 2026-07-06)
+
+| Issue | Evidence |
+|---|---|
+| **`ClientTimelineCard` caps at 30 merged events with no pagination and no type filter** (can't view "only messages" or "only purchases", and older history beyond 30 events is invisible). | `components/admin/clients/client-timeline-card.tsx` |
+| **WhatsApp actions on the client profile are not implemented** — the CRM scope requested a per-client "message via WhatsApp" action; this depends on `app/admin/integrations` (still a stub, [01_CURRENT_STATE.md §9](01_CURRENT_STATE.md)) rather than anything CRM-specific, so it was deliberately left out of Phase C rather than half-built against a non-existent integration. | `app/admin/integrations/page.tsx` |
+
 ## CRM Phase B follow-ups (added 2026-07-06)
 
 | Issue | Evidence |
 |---|---|
-| **Scripts 32-34 have not been run against any live Supabase instance.** They were authored following the project's existing manual-execution convention, but no developer has applied them yet — the new `users` columns, `memberships`, and `client_attachments` tables/bucket don't exist in any real database until someone runs them in order via the Supabase SQL Editor. | `scripts/32-add-client-profile-fields.sql`, `scripts/33-add-memberships.sql`, `scripts/34-add-client-attachments.sql` |
+| ~~Scripts 32-34 had not been run against any live Supabase instance.~~ **Resolved 2026-07-06** — per user confirmation, scripts 32-34 were run against the live instance, in order. Not independently verified from this session (no Supabase credentials/access) — if Phase B/C features misbehave against real data, confirming the migration applied cleanly is the first thing to check. | `scripts/32-add-client-profile-fields.sql`, `scripts/33-add-memberships.sql`, `scripts/34-add-client-attachments.sql` |
 | **Memberships have no edit/cancel UI** — `ClientMembershipsCard` only supports creating and listing; changing `status` (e.g. pausing or cancelling a plan) requires a direct DB edit today. | `components/admin/clients/client-memberships-card.tsx` |
 | **Attachments have no delete UI** — once uploaded, a photo/document can't be removed from the client profile without going directly to Supabase Storage + the `client_attachments` table. | `components/admin/clients/client-attachments-card.tsx` |
 | **`client_attachments` upload/list only works with real Supabase configured** — demo mode shows an explicit "requires Supabase" message rather than fabricating fake files, unlike most other demo-mode surfaces in this app which simulate data. This is a deliberate honesty choice, not an oversight, but it means this specific CRM feature can't be demoed without a real backend. | `components/admin/clients/client-attachments-card.tsx` |
