@@ -137,6 +137,8 @@ The most recent work on this path (`FASE 5 D1`, commit `5b3085a`) connected dyna
 
 RLS is enabled per table with policies keyed on `auth.uid()` compared against `client_id`/`barber_id`/`employee_id`, plus an admin/manager check via a `get_my_role()` helper (introduced in `scripts/27-add-manager-role.sql`). **No `tenant_id`/`business_id` column exists anywhere** — confirming the single-tenant conclusion in §1.
 
+**2026-07-06 update**: three additional scripts exist (`32-add-client-profile-fields.sql`, `33-add-memberships.sql`, `34-add-client-attachments.sql`, part of CRM Phase B — [ADR-018](04_DECISIONS.md)) that have been **authored but not yet run** against any live Supabase instance. Script 34 also declares this project's first Supabase Storage bucket (`client-attachments`, private). Until a developer runs scripts 32-34 in the SQL Editor, the corresponding `users` columns/tables/bucket do not exist in any real database — only in demo-mode UI, which degrades gracefully (see [07_TECH_DEBT.md](07_TECH_DEBT.md)).
+
 **Needs Validation**: `docs/manuales/manual-sistema.md` §12 documents scripts 27–29 under filenames that don't match what's actually on disk (manual describes `27-add-multiservice-cart.sql` / `28-add-pos-tip-points.sql` / `29-appointment-no-show-status.sql`; the real files are `27-add-manager-role.sql` / `28-add-tip-to-pos.sql` / `29-no-show-badge.sql`). The manual needs a correction pass — see [07_TECH_DEBT.md](07_TECH_DEBT.md).
 
 ---

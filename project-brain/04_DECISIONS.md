@@ -210,4 +210,21 @@
 
 ---
 
+### ADR-018 — CRM Phase B implementation (profile fields, memberships, Storage-backed attachments)
+
+**Context**: Following [ADR-016](04_DECISIONS.md)'s resolution and Phase A ([ADR-017](04_DECISIONS.md)), CRM Phase B was implemented on 2026-07-06: `birthday`, `allergies`, `preferred_employee_id`, `marketing_consent` on `users`; a `memberships` table; and a `client_attachments` table backed by Supabase Storage — all additive, authored as `scripts/32-add-client-profile-fields.sql`, `scripts/33-add-memberships.sql`, `scripts/34-add-client-attachments.sql`, following the project's existing "numbered SQL script run manually in the Supabase SQL Editor" convention (see `README.md`). These scripts were **authored, not executed** against any live instance — no Supabase credentials were available or used in this session, consistent with treating schema changes as high-stakes ([06_CLAUDE_RULES.md §4](06_CLAUDE_RULES.md)).
+
+**Decision**:
+1. New `users` columns need no new RLS policies — the existing row-level "own profile" policies (scripts 01/04/10/11/27) already cover them, the same way `admin_notes` (script 12) is covered.
+2. `memberships` and `client_attachments` follow the `get_my_role()` RLS pattern established in script 27, with admin+manager write access. `memberships` allows clients to read their own rows (mirroring `client_messages`/`client_gifts`, script 16); `client_attachments` does **not** — photos/documents are admin/manager-only with no client self-service access, a deliberately more restrictive default than the messages/gifts precedent.
+3. `client_attachments` is backed by a new **private** Supabase Storage bucket (`client-attachments`) — the first real use of Supabase Storage in this codebase (`avatar_url` on `users`, script 01, never actually wired to Storage). RLS on `storage.objects` mirrors the metadata table's role gating.
+4. Both new tables carry a dormant, unused `tenant_id` column per the Phase A/B sequencing ruling in [ADR-016](04_DECISIONS.md).
+5. New UI (`ClientPreferencesCard`, `ClientMembershipsCard`, `ClientAttachmentsCard`, all in `components/admin/clients/`) talks to Supabase directly from the client, matching the existing direct-browser-client pattern already used for `admin_notes`/`client_messages`/`client_gifts` on the same profile page — not a new pattern, and not routed through `app/api/clients/route.ts` (which itself lacks `GET`/`[id]`, per [07_TECH_DEBT.md](07_TECH_DEBT.md)).
+
+**Consequences**: The client profile page (`app/admin/clients/[id]/page.tsx`) now has 7 cards total. `client_attachments` upload/list only functions with real Supabase configured — demo mode shows an explicit "requires Supabase" message rather than fabricating fake files. Memberships have no edit/cancel UI yet (create + list only) — tracked as a Phase B follow-up in [07_TECH_DEBT.md](07_TECH_DEBT.md). No data migration or backfill was needed since the project is pre-production ([01_CURRENT_STATE.md §1](01_CURRENT_STATE.md)).
+
+**Status**: Implemented (2026-07-06) — schema authored, not yet run against any live database; UI implemented and validated (`type-check`/`lint`/`build` all pass).
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)
