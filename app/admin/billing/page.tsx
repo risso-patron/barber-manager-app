@@ -1,20 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createBrowserClient } from "@supabase/ssr"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import {
   CreditCard,
-  AlertTriangle,
-  AlertCircle,
+  Info,
   Check,
   Download,
-  Plus,
-  Edit,
-  Trash2,
+  Loader2,
 } from "lucide-react"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 // ─── Design tokens (matches existing Ornō system) ───────────────────────────
 const T = {
-  bg:      "#161616",
   card:    "#1A1A1A",
   border:  "#252525",
   text:    "#F0F0F0",
@@ -24,82 +27,77 @@ const T = {
   font:    "var(--font-dm-sans), 'DM Sans', sans-serif",
 }
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
-const INVOICES = [
-  { date: "15 Jun 2026", id: "INV-2026-015", amount: "$49", status: "Pagada" },
-  { date: "15 May 2026", id: "INV-2026-014", amount: "$49", status: "Pagada" },
-  { date: "15 Abr 2026", id: "INV-2026-013", amount: "$49", status: "Pagada" },
-  { date: "15 Mar 2026", id: "INV-2026-012", amount: "$49", status: "Pagada" },
-  { date: "15 Feb 2026", id: "INV-2026-011", amount: "$49", status: "Pagada" },
-]
-
+// ─── Product pricing tiers — informational only, no real checkout yet ──────
 const PLANS = [
   {
     name: "Starter", price: "$19", features: [
       "100 reservas/mes", "500 clientes", "Reportes básicos", "Soporte por email",
-    ], current: false,
+    ],
   },
   {
     name: "Pro", price: "$49", features: [
       "Reservas ilimitadas", "Clientes ilimitados", "Reportes avanzados",
       "Integraciones", "Soporte prioritario",
-    ], current: true,
+    ],
   },
   {
     name: "Enterprise", price: "$99", features: [
       "Todo en Pro", "Múltiples ubicaciones", "API personalizada",
       "Gestor de cuenta dedicado", "SLA garantizado",
-    ], current: false,
+    ],
   },
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, badge }: {
-  label: string; value: string; sub?: string; badge?: string
-}) {
-  return (
-    <div style={{
-      background: T.card, border: `1px solid ${T.border}`,
-      borderRadius: 12, padding: "20px 24px",
-    }}>
-      <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: T.text }}>{value}</div>
-      {sub && <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{sub}</div>}
-      {badge && (
-        <span style={{
-          display: "inline-block", marginTop: 6,
-          background: `${T.teal}22`, color: T.teal,
-          fontSize: 11, fontWeight: 600, borderRadius: 20, padding: "2px 10px",
-        }}>
-          {badge}
-        </span>
-      )}
-    </div>
-  )
+interface Subscription {
+  id: string
+  plan_name: string
+  status: string
+  price: number
+  billing_cycle: string
+  current_period_end: string | null
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+interface Invoice {
+  id: string
+  invoice_number: string
+  amount: number
+  currency: string
+  status: string
+  issued_at: string
+}
+
 export default function BillingPage() {
-  const [cards, setCards] = useState([
-    { id: "visa",   brand: "Visa",       last4: "4587", primary: true  },
-    { id: "mc",     brand: "Mastercard", last4: "9182", primary: false },
-  ])
+  useRequireAuth(["admin", "manager"])
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const setPrimary = (id: string) =>
-    setCards((prev) => prev.map((c) => ({ ...c, primary: c.id === id })))
-
-  const removeCard = (id: string) =>
-    setCards((prev) => prev.filter((c) => c.id !== id))
+  useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false)
+      return
+    }
+    Promise.all([
+      supabase
+        .from("subscriptions")
+        .select("id, plan_name, status, price, billing_cycle, current_period_end")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("invoices")
+        .select("id, invoice_number, amount, currency, status, issued_at")
+        .order("issued_at", { ascending: false })
+        .limit(10),
+    ]).then(([{ data: sub }, { data: inv }]) => {
+      if (sub) setSubscription(sub as Subscription)
+      if (inv) setInvoices(inv as Invoice[])
+      setIsLoading(false)
+    })
+  }, [])
 
   return (
-    <div style={{
-      padding: "32px 40px",
-      color: T.text,
-      fontFamily: T.font,
-      maxWidth: 980,
-    }}>
+    <div style={{ padding: "32px 40px", color: T.text, fontFamily: T.font, maxWidth: 980 }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>Facturación</h1>
@@ -108,222 +106,167 @@ export default function BillingPage() {
         </p>
       </div>
 
-      {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 20 }}>
-        <StatCard label="Plan Actual"       value="PRO"             sub="$49/mes"   badge="Activa" />
-        <StatCard label="Próximo cobro"     value="15 Julio"        sub="2026" />
-        <StatCard label="Método de pago"    value="Visa terminada"  sub="en 4587" />
-        <StatCard label="Facturas emitidas" value="24" />
-      </div>
-
-      {/* Alert Banners */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+      {!supabase && (
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
-          background: "rgba(255,180,0,0.08)", border: "1px solid rgba(255,180,0,0.25)",
-          borderRadius: 10, padding: "12px 16px",
+          background: `${T.muted}11`, border: `1px solid ${T.border}`,
+          borderRadius: 10, padding: "12px 16px", marginBottom: 24,
         }}>
-          <AlertTriangle size={15} color="#FFB400" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: "#FFB400" }}>
-            Pago próximo a vencer el 15 de Julio 2026
+          <Info size={15} color={T.muted} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: T.muted }}>
+            Modo demo — no hay datos de facturación reales para mostrar.
           </span>
         </div>
+      )}
+
+      {supabase && !isLoading && (
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
-          background: "rgba(229,57,53,0.08)", border: `1px solid rgba(229,57,53,0.25)`,
-          borderRadius: 10, padding: "12px 16px",
+          background: "rgba(0,200,150,0.06)", border: `1px solid rgba(0,200,150,0.2)`,
+          borderRadius: 10, padding: "12px 16px", marginBottom: 24,
         }}>
-          <AlertCircle size={15} color={T.red} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 13, color: T.red }}>
-            Tarjeta Mastercard ****9182 expira en 30 días
+          <Info size={15} color={T.teal} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: T.muted }}>
+            Todavía no hay un proveedor de pagos conectado. Esta sección refleja datos reales
+            (probablemente vacíos) — no hay facturas ni tarjetas de fantasía.
           </span>
         </div>
-      </div>
+      )}
 
-      {/* Plan Info + Payment Methods */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-
-        {/* Plan Info */}
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>Plan Pro</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: T.teal, marginTop: 4 }}>
-                $49<span style={{ fontSize: 14, color: T.muted, fontWeight: 400 }}>/mes</span>
-              </div>
-            </div>
-            <button style={{
-              background: T.teal, color: "#000", fontWeight: 700, fontSize: 13,
-              border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer",
-            }}>
-              Cambiar plan
-            </button>
-          </div>
-          <div style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>Incluye:</div>
-          {["Reservas ilimitadas", "Clientes ilimitados", "Reportes avanzados", "Integraciones", "Soporte prioritario"].map((f) => (
-            <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <div style={{
-                width: 18, height: 18, borderRadius: "50%",
-                background: T.teal, flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Check size={10} color="#000" strokeWidth={3} />
-              </div>
-              <span style={{ fontSize: 13 }}>{f}</span>
-            </div>
-          ))}
+      {isLoading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+          <Loader2 className="animate-spin" size={24} color={T.muted} />
         </div>
-
-        {/* Payment Methods */}
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Métodos de Pago</div>
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              style={{
-                border: `1px solid ${card.primary ? T.teal : T.border}`,
-                borderRadius: 10, padding: "12px 16px", marginBottom: 10,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <CreditCard size={18} color={card.primary ? T.teal : T.muted} />
+      ) : (
+        <>
+          {/* Current subscription */}
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Suscripción actual</div>
+            {subscription ? (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{card.brand}</div>
-                  <div style={{ fontSize: 12, color: T.muted }}>****{card.last4}</div>
-                  {card.primary && (
-                    <div style={{ fontSize: 11, color: T.teal, marginTop: 2 }}>Predeterminada</div>
-                  )}
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{subscription.plan_name}</div>
+                  <div style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
+                    ${subscription.price}/{subscription.billing_cycle === "monthly" ? "mes" : "año"} · {subscription.status}
+                    {subscription.current_period_end && ` · próximo cobro ${new Date(subscription.current_period_end).toLocaleDateString("es-ES")}`}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {!card.primary && (
+            ) : (
+              <p style={{ fontSize: 13, color: T.muted }}>
+                Sin plan configurado todavía. Contactá a soporte para activar una suscripción.
+              </p>
+            )}
+          </div>
+
+          {/* Payment methods — no real provider yet, no fake cards */}
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <CreditCard size={17} color={T.muted} />
+              Métodos de pago
+            </div>
+            <p style={{ fontSize: 13, color: T.muted }}>
+              La gestión de tarjetas estará disponible cuando se integre un proveedor de pagos real
+              (Stripe o Mercado Pago — ver roadmap del proyecto).
+            </p>
+          </div>
+
+          {/* Plan Comparator — informational only, no working checkout */}
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Planes disponibles</div>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>
+              Referencia de precios — cambiar de plan todavía no está conectado a un proveedor de pagos real.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {PLANS.map((plan) => (
+                <div key={plan.name} style={{ border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{plan.name}</div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: T.text, marginBottom: 16 }}>
+                    {plan.price}<span style={{ fontSize: 13, color: T.muted, fontWeight: 400 }}>/mes</span>
+                  </div>
+                  {plan.features.map((f) => (
+                    <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                      <Check size={13} color={T.teal} style={{ marginTop: 1, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: T.muted }}>{f}</span>
+                    </div>
+                  ))}
                   <button
-                    onClick={() => setPrimary(card.id)}
-                    title="Hacer predeterminada"
-                    style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}
+                    disabled
+                    title="Próximamente — requiere un proveedor de pagos conectado"
+                    style={{
+                      width: "100%", marginTop: 16, padding: "10px",
+                      background: "transparent", border: `1px solid ${T.border}`,
+                      borderRadius: 8, color: T.muted, fontSize: 13, fontWeight: 600,
+                      cursor: "not-allowed",
+                    }}
                   >
-                    <Edit size={14} />
+                    Próximamente
                   </button>
-                )}
-                <button
-                  onClick={() => removeCard(card.id)}
-                  title="Eliminar"
-                  style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-          <button style={{
-            width: "100%", background: "none",
-            border: `1px dashed ${T.border}`, borderRadius: 10,
-            padding: "10px", color: T.muted, fontSize: 13,
-            cursor: "pointer", display: "flex", alignItems: "center",
-            justifyContent: "center", gap: 6,
-          }}>
-            <Plus size={14} /> Agregar método
-          </button>
-        </div>
-      </div>
-
-      {/* Plan Comparator */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginBottom: 20 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 20 }}>Comparador de Planes</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              style={{
-                border: `1px solid ${plan.current ? T.teal : T.border}`,
-                borderRadius: 12, padding: 20, position: "relative",
-                background: plan.current ? `${T.teal}08` : "transparent",
-              }}
-            >
-              {plan.current && (
-                <div style={{
-                  position: "absolute", top: -12, left: "50%",
-                  transform: "translateX(-50%)",
-                  background: T.teal, color: "#000",
-                  fontSize: 11, fontWeight: 700, borderRadius: 20,
-                  padding: "2px 12px", whiteSpace: "nowrap",
-                }}>
-                  Plan Actual
-                </div>
-              )}
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{plan.name}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: plan.current ? T.teal : T.text, marginBottom: 16 }}>
-                {plan.price}<span style={{ fontSize: 13, color: T.muted, fontWeight: 400 }}>/mes</span>
-              </div>
-              {plan.features.map((f) => (
-                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                  <Check size={13} color={T.teal} style={{ marginTop: 1, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: T.muted }}>{f}</span>
                 </div>
               ))}
-              <button style={{
-                width: "100%", marginTop: 16, padding: "10px",
-                background: plan.current ? "transparent" : T.border,
-                border: plan.current ? `1px solid ${T.border}` : "none",
-                borderRadius: 8,
-                color: plan.current ? T.muted : T.text,
-                fontSize: 13, fontWeight: 600,
-                cursor: plan.current ? "default" : "pointer",
-              }}>
-                {plan.current ? "Plan actual" : "Seleccionar"}
-              </button>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Invoice History */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 20 }}>Historial de Facturación</div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              {["Fecha", "Factura", "Monto", "Estado", "Acción"].map((h) => (
-                <th key={h} style={{
-                  textAlign: "left", fontSize: 11, color: T.muted,
-                  textTransform: "uppercase", letterSpacing: "0.08em",
-                  paddingBottom: 12, fontWeight: 500,
-                }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {INVOICES.map((inv, i) => (
-              <tr key={i} style={{ borderTop: `1px solid ${T.border}` }}>
-                <td style={{ padding: "14px 0", fontSize: 13, color: T.muted }}>{inv.date}</td>
-                <td style={{ padding: "14px 0", fontSize: 13, color: T.text }}>{inv.id}</td>
-                <td style={{ padding: "14px 0", fontSize: 13, fontWeight: 600 }}>{inv.amount}</td>
-                <td style={{ padding: "14px 0" }}>
-                  <span style={{
-                    background: `${T.teal}22`, color: T.teal,
-                    fontSize: 11, fontWeight: 600,
-                    borderRadius: 20, padding: "3px 10px",
-                  }}>
-                    {inv.status}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 0" }}>
-                  <button style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    background: "none", border: "none",
-                    color: T.muted, fontSize: 12, cursor: "pointer",
-                  }}>
-                    <Download size={13} /> Descargar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          {/* Invoice History */}
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 20 }}>Historial de Facturación</div>
+            {invoices.length === 0 ? (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: "center", padding: "24px 0" }}>
+                Sin facturas emitidas todavía.
+              </p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    {["Fecha", "Factura", "Monto", "Estado", "Acción"].map((h) => (
+                      <th key={h} style={{
+                        textAlign: "left", fontSize: 11, color: T.muted,
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                        paddingBottom: 12, fontWeight: 500,
+                      }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => (
+                    <tr key={inv.id} style={{ borderTop: `1px solid ${T.border}` }}>
+                      <td style={{ padding: "14px 0", fontSize: 13, color: T.muted }}>
+                        {new Date(inv.issued_at).toLocaleDateString("es-ES")}
+                      </td>
+                      <td style={{ padding: "14px 0", fontSize: 13, color: T.text }}>{inv.invoice_number}</td>
+                      <td style={{ padding: "14px 0", fontSize: 13, fontWeight: 600 }}>
+                        {inv.currency} ${inv.amount}
+                      </td>
+                      <td style={{ padding: "14px 0" }}>
+                        <span style={{
+                          background: `${T.teal}22`, color: T.teal,
+                          fontSize: 11, fontWeight: 600,
+                          borderRadius: 20, padding: "3px 10px",
+                        }}>
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "14px 0" }}>
+                        {inv.status === "paid" && (
+                          <button style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            background: "none", border: "none",
+                            color: T.muted, fontSize: 12, cursor: "pointer",
+                          }}>
+                            <Download size={13} /> Descargar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
