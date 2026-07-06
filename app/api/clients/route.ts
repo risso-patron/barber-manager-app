@@ -18,7 +18,7 @@ async function getCallerRole() {
 
 export async function POST(request: Request) {
   const role = await getCallerRole()
-  if (!role || !["admin", "manager"].includes(role))
+  if (role !== "admin")
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
 
   const { name, phone, email } = await request.json()

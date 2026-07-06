@@ -23,9 +23,7 @@ export default function DashboardPage() {
         const role = user.profile?.role || user.role
         const destinations: Record<string, string> = {
           admin: "/admin",
-          manager: "/admin",
           employee: "/employee/dashboard",
-          barber: "/employee/dashboard",
           client: "/client",
         }
         router.replace(destinations[role] || "/auth/login")

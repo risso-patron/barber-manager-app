@@ -6,9 +6,7 @@ import { createBrowserClient } from "@supabase/ssr"
 
 const DASHBOARD_MAP: Record<string, string> = {
   admin: "/admin",
-  manager: "/admin",
   employee: "/employee/dashboard",
-  barber: "/barber",
   client: "/client",
 }
 

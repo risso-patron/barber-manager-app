@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { maskPhone } from "@/lib/utils"
 import { DEMO_APPOINTMENTS, getClientById } from "@/lib/demo-appointments"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -98,7 +97,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 export default function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const adminUser = useRequireAuth(["admin", "manager"])
+  const adminUser = useRequireAuth(["admin"])
   const [client, setClient] = useState<ClientProfile | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [messages, setMessages] = useState<ClientMessage[]>([])
@@ -362,7 +361,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         size="lg"
         name={client.name}
         email={client.email.endsWith("@guest.barber") ? null : client.email}
-        phone={client.phone ? (adminUser?.role === "manager" ? maskPhone(client.phone) : client.phone) : null}
+        phone={client.phone}
         createdAt={client.created_at}
         noShowCount={client.no_show_count}
       />

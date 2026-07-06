@@ -68,7 +68,7 @@ const PAYMENT_ICONS: Record<PaymentMethod, React.ReactNode> = {
 // ---------- Page ------------------------------------------------------------
 
 export default function POSPage() {
-  const user = useRequireAuth(["admin", "manager"])
+  const user = useRequireAuth(["admin"])
 
   // Catalog
   const [services, setServices] = useState<Service[]>([])

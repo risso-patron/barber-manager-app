@@ -108,7 +108,7 @@ function IntegrationCard({ item }: { item: Integration }) {
 }
 
 export default function IntegrationsPage() {
-  useRequireAuth(["admin", "manager"])
+  useRequireAuth(["admin"])
   const [whatsappConfigured, setWhatsappConfigured] = useState(false)
   const [logs, setLogs] = useState<NotificationLogEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)

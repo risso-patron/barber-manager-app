@@ -37,8 +37,9 @@ const hasSupabaseConfig =
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 const ROLE_MAP: Record<string, string> = {
-  admin: "/admin", manager: "/admin",
-  employee: "/employee/dashboard", barber: "/barber", client: "/client",
+  admin: "/admin",
+  employee: "/employee/dashboard",
+  client: "/client",
 }
 
 function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?: string } {

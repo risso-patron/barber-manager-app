@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
     const from = searchParams.get("from")
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const { items, discount, redeem_points, tip, ...saleData } = parsed.data
 

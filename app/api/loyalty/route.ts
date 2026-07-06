@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const targetId = url.searchParams.get("user_id") ?? user.id
 
     // Non-admin clients can only read their own data
-    if (!(["admin", "manager"].includes(caller?.role ?? "")) && targetId !== user.id) {
+    if (caller?.role !== "admin" && targetId !== user.id) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (!["admin", "manager"].includes(caller?.role ?? "")) {
+    if (caller?.role !== "admin") {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 

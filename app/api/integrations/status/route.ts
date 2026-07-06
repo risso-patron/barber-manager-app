@@ -13,7 +13,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
 
   const { data: caller } = await supabase.from("users").select("role").eq("id", user.id).single()
-  if (!caller || !["admin", "manager"].includes(caller.role)) {
+  if (!caller || caller.role !== "admin") {
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
   }
 

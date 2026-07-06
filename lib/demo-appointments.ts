@@ -33,7 +33,7 @@ export interface Employee {
   name: string
   email: string
   phone: string
-  role: "barber" | "employee"
+  role: "employee"
   avatar?: string
 }
 
@@ -76,9 +76,9 @@ export const DEMO_SERVICES: Service[] = [
 
 // Demo Employees
 export const DEMO_EMPLOYEES: Employee[] = [
-  { id: "e1", name: "Carlos Pérez", email: "carlos@barbershop.com", phone: "555-0101", role: "barber" },
-  { id: "e2", name: "María García", email: "maria@barbershop.com", phone: "555-0102", role: "barber" },
-  { id: "e3", name: "Juan López", email: "juan@barbershop.com", phone: "555-0103", role: "barber" },
+  { id: "e1", name: "Carlos Pérez", email: "carlos@barbershop.com", phone: "555-0101", role: "employee" },
+  { id: "e2", name: "María García", email: "maria@barbershop.com", phone: "555-0102", role: "employee" },
+  { id: "e3", name: "Juan López", email: "juan@barbershop.com", phone: "555-0103", role: "employee" },
   { id: "demo-employee-001", name: "Sofía Ramírez", email: "employee@demo.com", phone: "+1234567895", role: "employee" },
 ]
 

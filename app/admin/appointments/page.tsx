@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { maskPhone } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -91,7 +90,7 @@ interface AppointmentRow {
 
 export default function AppointmentsPage() {
   const router = useRouter()
-  const user = useRequireAuth(["admin", "manager"])
+  const user = useRequireAuth(["admin"])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -665,7 +664,7 @@ export default function AppointmentsPage() {
                           <div>
                             <p className="text-sm font-medium">{appointment.clientName}</p>
                             <p className="text-xs text-gray-600">
-                              {user?.role === "manager" ? maskPhone(appointment.clientPhone) : appointment.clientPhone}
+                              {appointment.clientPhone}
                             </p>
                           </div>
                         </div>

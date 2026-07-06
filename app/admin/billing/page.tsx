@@ -67,7 +67,7 @@ interface Invoice {
 }
 
 export default function BillingPage() {
-  useRequireAuth(["admin", "manager"])
+  useRequireAuth(["admin"])
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoading, setIsLoading] = useState(true)

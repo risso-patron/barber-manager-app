@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const protectedRoutes = ["/dashboard", "/admin", "/employee", "/barber", "/client"]
+  const protectedRoutes = ["/dashboard", "/admin", "/employee", "/client"]
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -72,27 +72,13 @@ export async function middleware(request: NextRequest) {
 
     const userRole = userData?.role
 
-    if (request.nextUrl.pathname.startsWith("/admin")) {
-      if (userRole === "admin") {
-        // acceso total
-      } else if (userRole === "manager") {
-        const managerBlockedPaths = ["/admin/settings", "/admin/reports", "/admin/employees"]
-        const isBlocked = managerBlockedPaths.some((p) =>
-          request.nextUrl.pathname.startsWith(p)
-        )
-        if (isBlocked) {
-          return NextResponse.redirect(new URL("/dashboard", request.url))
-        }
-      } else {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
-      }
+    if (request.nextUrl.pathname.startsWith("/admin") && userRole !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
     }
 
     if (
-      (request.nextUrl.pathname.startsWith("/employee") ||
-        request.nextUrl.pathname.startsWith("/barber")) &&
+      request.nextUrl.pathname.startsWith("/employee") &&
       userRole !== "employee" &&
-      userRole !== "barber" &&
       userRole !== "admin"
     ) {
       return NextResponse.redirect(new URL("/dashboard", request.url))
@@ -114,7 +100,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/admin/:path*",
-    "/barber/:path*",
     "/employee/:path*",
     "/client/:path*",
   ],

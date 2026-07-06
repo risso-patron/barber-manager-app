@@ -21,7 +21,7 @@ export const DEMO_USERS = {
     email: 'barber@demo.com',
     password: 'Demo1234',
     name: 'Carlos Martínez',
-    role: 'barber' as const,
+    role: 'employee' as const,
     phone: '+1234567891',
     avatar_url: null
   },
@@ -103,13 +103,14 @@ export const DEMO_SERVICES = [
   }
 ];
 
-// Empleados/Barberos
+// Empleados (todos con role 'employee' — el modelo oficial no tiene rol 'barber',
+// la especialidad de barbero se captura en el campo `specialties`)
 export const DEMO_EMPLOYEES = [
   {
     id: 'emp-001',
     name: 'Carlos Martínez',
     email: 'barber@demo.com',
-    role: 'barber' as const,
+    role: 'employee' as const,
     phone: '+1234567891',
     specialties: ['Cortes clásicos', 'Barbería tradicional'],
     rating: 4.9,
@@ -119,7 +120,7 @@ export const DEMO_EMPLOYEES = [
     id: 'emp-002',
     name: 'María García',
     email: 'maria@barberia.com',
-    role: 'barber' as const,
+    role: 'employee' as const,
     phone: '+1234567893',
     specialties: ['Cortes modernos', 'Diseños'],
     rating: 4.8,
@@ -129,7 +130,7 @@ export const DEMO_EMPLOYEES = [
     id: 'emp-003',
     name: 'Pedro López',
     email: 'pedro@barberia.com',
-    role: 'barber' as const,
+    role: 'employee' as const,
     phone: '+1234567894',
     specialties: ['Barbería clásica', 'Afeitado'],
     rating: 4.7,
@@ -222,8 +223,7 @@ Los datos se guardan localmente y no requieren base de datos.
 
 Usuarios de prueba:
 • Admin: admin@demo.com / Demo1234
-• Barbero: barber@demo.com / Demo1234
-• Empleado: employee@demo.com / Demo1234
+• Empleado: employee@demo.com / Demo1234 (también barber@demo.com)
 • Cliente: client@demo.com / Demo1234
 
 Para usar en producción, configura Supabase en .env.local

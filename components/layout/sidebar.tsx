@@ -8,7 +8,7 @@ import { Calendar, Users, Package, BarChart3, Settings, LogOut, Menu, Clock, Sci
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
-  userRole: "client" | "employee" | "admin" | "manager"
+  userRole: "client" | "employee" | "admin"
   userName?: string
 }
 
@@ -54,14 +54,6 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           { href: "/admin/reports", label: "Reportes", icon: BarChart3 },
           { href: "/admin/share", label: "Compartir", icon: Share2 },
           { href: "/admin/settings", label: "Configuración", icon: Settings },
-        ]
-      case "manager":
-        return [
-          ...baseItems,
-          { href: "/admin/appointments", label: "Citas", icon: Calendar },
-          { href: "/admin/inventory", label: "Inventario", icon: Package },
-          { href: "/admin/clients", label: "Clientes", icon: Users },
-          { href: "/admin/pos", label: "Punto de Venta", icon: ShoppingCart },
         ]
       default:
         return baseItems

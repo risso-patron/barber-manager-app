@@ -99,7 +99,7 @@ export async function PATCH(
         .eq("id", user.id)
         .single()
 
-      const isAdmin = ["admin", "manager"].includes(userProfile?.role ?? "")
+      const isAdmin = userProfile?.role === "admin"
       const isOwner = appointment.client_id === user.id
 
       if (!isAdmin && !isOwner) {

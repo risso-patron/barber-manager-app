@@ -36,7 +36,7 @@ const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseA
 const BARBER_SPECIALTIES = ["barbero"]
 
 function isBarber(emp: EmployeeWithSpecialty): boolean {
-  return BARBER_SPECIALTIES.includes(emp.specialty || "") || emp.role === "barber"
+  return BARBER_SPECIALTIES.includes(emp.specialty || "")
 }
 
 type EmployeeWithSpecialty = Employee & { specialty?: string | null; commission_rate?: number | null }

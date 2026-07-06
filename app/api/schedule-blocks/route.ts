@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Employees can only query their own blocks
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    const isPrivileged = ["admin", "manager"].includes(profile?.role ?? "")
+    const isPrivileged = profile?.role === "admin"
     if (!isPrivileged && barberId !== user.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 })
     }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    const isPrivileged = ["admin", "manager"].includes(profile?.role ?? "")
+    const isPrivileged = profile?.role === "admin"
     const barberId = parsed.data.barber_id ?? user.id
 
     if (!isPrivileged && barberId !== user.id) {
