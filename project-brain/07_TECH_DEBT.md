@@ -4,6 +4,20 @@
 
 ---
 
+## Fixed — sidebar logout unreachable on short viewports (2026-07-06)
+
+| Issue | Evidence |
+|---|---|
+| ~~**The `<nav>` inside `AdminSidebar`/`EmployeeSidebar`/`ClientSidebar` had no `overflow-y`, and each `<aside>` is `position: fixed` stretched to full viewport height.**~~ On a browser window shorter than the sidebar's total content (logo + nav items + Configuración + Cerrar sesión), the footer — including the "Cerrar sesión" button — rendered below the visible area with no scrollbar to reach it. The button existed in code all along; it just wasn't reachable. Found via a user screenshot at `localhost:3000/admin` where the sidebar visibly cut off right after "Configuración". | `components/admin/layout/admin-sidebar.tsx`, `components/employee/layout/employee-sidebar.tsx`, `components/client/layout/client-sidebar.tsx` — **Fixed 2026-07-06**: added `minHeight: 0` + `overflowY: "auto"` to each sidebar's `<nav>`, so only the nav item list scrolls internally while the logo header and the Configuración/Cerrar sesión footer stay pinned and always visible. Verified with a throwaway Playwright script against the dev server at a 650px-tall viewport — confirmed the logout button is visible with zero console errors. |
+| **Same duplicated-layout root cause as the missing Application Shell** ([02_TARGET_ARCHITECTURE.md §4](02_TARGET_ARCHITECTURE.md)): this exact bug had to be fixed identically in 3 independently-implemented sidebar components. A shared shell would have meant fixing it once. | Not itself a new debt item — cross-referencing the existing gap this incident is evidence for. |
+
+## Fixed — logout label inconsistency across the app (2026-07-06)
+
+| Issue | Evidence |
+|---|---|
+| ~~**The logout action was labeled inconsistently across 5 independent implementations**~~ — `components/employee/layout/employee-bottom-nav.tsx` (mobile) said "Salir" while the desktop `EmployeeSidebar` said "Cerrar sesión"; `components/layout/sidebar.tsx` (generic `/dashboard` shell) and the orphaned `app/barber/page.tsx` both said "Cerrar Sesión" (capital S). Found via user report while testing the admin panel. | **Fixed 2026-07-06** — unified to "Cerrar sesión" (matching the majority convention already used in `AdminSidebar`, the fixed `EmployeeSidebar`/`ClientSidebar`, and `app/client/profile/page.tsx`) in `employee-bottom-nav.tsx`, `components/layout/sidebar.tsx`, and `app/barber/page.tsx`. |
+| **Logout is still independently reimplemented in at least 7 places** (`AdminSidebar`, `EmployeeSidebar`, `EmployeeBottomNav`, `ClientSidebar`, `client/profile/page.tsx`, generic `components/layout/sidebar.tsx`, `app/barber/page.tsx`) — each with its own `handleLogout` calling `localStorage.removeItem` + `supabase.auth.signOut()` + redirect. Two more dead, never-rendered copies exist in `app/client/page.tsx:193` and `app/employee/dashboard/page.tsx:280` (unused `handleLogout`, flagged by ESLint `no-unused-vars`). This label fix treats the symptom; the underlying duplication is the same Application Shell gap noted above and isn't resolved by this fix. | `hooks/useAuth.tsx` already centralizes auth state — a shared `useLogout()` hook belongs there instead of being re-derived per component. |
+
 ## CRM Phase C follow-ups (added 2026-07-06)
 
 | Issue | Evidence |
