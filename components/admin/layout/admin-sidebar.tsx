@@ -168,8 +168,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       {/* Divider */}
       <div style={{ height: 1, background: "#252525", margin: "0 0 12px" }} />
 
-      {/* Nav items */}
-      <nav style={{ flex: 1, padding: "0 12px" }} aria-label="Módulos">
+      {/* Nav items — scrolls internally so the footer (Configuración / Cerrar sesión) stays reachable on short viewports */}
+      <nav style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 12px" }} aria-label="Módulos">
         {navItems.map((item) => {
           const active = isActive(item.href, item.exact)
           const Icon = item.icon

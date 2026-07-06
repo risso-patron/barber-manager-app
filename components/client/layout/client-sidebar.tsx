@@ -98,8 +98,8 @@ export function ClientSidebar() {
       {/* Divider */}
       <div style={{ height: 1, background: "#252525", margin: "0 0 12px" }} />
 
-      {/* Nav */}
-      <nav aria-label="Navegación principal desktop" style={{ flex: 1, padding: "0 12px" }}>
+      {/* Nav — scrolls internally so the footer (logout) stays reachable on short viewports */}
+      <nav aria-label="Navegación principal desktop" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 12px" }}>
         {navItems.map((item) => {
           const active = isActive(item.href, item.exact)
           const Icon = item.icon

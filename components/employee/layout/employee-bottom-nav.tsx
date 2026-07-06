@@ -98,7 +98,7 @@ export function EmployeeBottomNav() {
         }}
       >
         <LogOut size={20} />
-        <span>Salir</span>
+        <span>Cerrar sesión</span>
       </button>
     </nav>
   )

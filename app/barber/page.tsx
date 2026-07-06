@@ -210,7 +210,7 @@ export default function BarberDashboard() {
                   className="bg-white text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Cerrar Sesión
+                  Cerrar sesión
                 </Button>
               </div>
             </div>

@@ -143,7 +143,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           )}
         >
           <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">Cerrar Sesión</span>}
+          {!isCollapsed && <span className="ml-3">Cerrar sesión</span>}
         </Button>
       </div>
     </div>
