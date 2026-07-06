@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ClientIdentity } from "@/components/admin/clients/client-identity"
+import { ClientPreferencesCard } from "@/components/admin/clients/client-preferences-card"
+import { ClientMembershipsCard } from "@/components/admin/clients/client-memberships-card"
+import { ClientAttachmentsCard } from "@/components/admin/clients/client-attachments-card"
 import {
   ArrowLeft, Scissors,
   DollarSign, TrendingUp, Save, Loader2, MessageSquare,
@@ -31,6 +34,10 @@ interface ClientProfile {
   created_at: string
   admin_notes: string | null
   no_show_count: number
+  birthday: string | null
+  allergies: string | null
+  marketing_consent: boolean
+  preferred_employee_id: string | null
 }
 
 interface Appointment {
@@ -121,6 +128,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
         created_at: demoClient.createdAt ?? new Date().toISOString(),
         admin_notes: null,
         no_show_count: 0,
+        birthday: null,
+        allergies: null,
+        marketing_consent: false,
+        preferred_employee_id: null,
       })
       const clientAppts = DEMO_APPOINTMENTS.filter(a => a.clientId === id).map(a => ({
         id: a.id,
@@ -145,7 +156,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       ] = await Promise.all([
         supabase
           .from("users")
-          .select("id, name, email, phone, created_at, admin_notes, no_show_count")
+          .select("id, name, email, phone, created_at, admin_notes, no_show_count, birthday, allergies, marketing_consent, preferred_employee_id")
           .eq("id", id)
           .single(),
         supabase
@@ -651,6 +662,21 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* ── CRM Fase B: preferencias, membresías, adjuntos ── */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <ClientPreferencesCard
+          clientId={client.id}
+          initial={{
+            birthday: client.birthday,
+            allergies: client.allergies,
+            marketingConsent: client.marketing_consent,
+            preferredEmployeeId: client.preferred_employee_id,
+          }}
+        />
+        <ClientMembershipsCard clientId={client.id} adminUserId={adminUser?.id} />
+        <ClientAttachmentsCard clientId={client.id} uploadedBy={adminUser?.id} />
       </div>
     </div>
   )

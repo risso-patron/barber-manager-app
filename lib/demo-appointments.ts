@@ -45,6 +45,10 @@ export interface Client {
   avatar?: string
   createdAt?: string
   isActive?: boolean
+  birthday?: string | null
+  allergies?: string | null
+  marketingConsent?: boolean
+  preferredEmployeeId?: string | null
 }
 
 export interface InventoryItem {
