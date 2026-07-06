@@ -242,4 +242,18 @@
 
 ---
 
+### ADR-020 — Billing/Integrations Phase A: stop fabricating data before building real providers
+
+**Context**: `app/admin/billing/page.tsx` and `app/admin/integrations/page.tsx` were confirmed, by reading both files in full, to render **100% invented data** — hardcoded fake invoices (`INV-2026-015`), fake credit cards (Visa/Mastercard with fantasy numbers), a fake "Stripe: Conectado" status with zero Stripe code anywhere, and fake event logs ("Pago recibido hace 45 min"). This is materially different from the CRM's "thin CRUD" gap — it's actively misleading UI, and Billing additionally touches real money, which this project has never processed.
+
+**Decision** (user-approved 2026-07-06, mirroring the CRM Phase A pattern):
+1. **Billing**: replace fabricated invoices/cards/plan-status with real (likely-empty) queries against new `subscriptions`/`invoices` tables (`scripts/35-add-billing-schema.sql`, admin-only RLS — not even manager, matching `employee_commissions`' precedent). No payment provider is chosen or integrated in this phase — that decision (Stripe vs Mercado Pago) remains open, per [02_TARGET_ARCHITECTURE.md §13](02_TARGET_ARCHITECTURE.md). The plan comparator (Starter/Pro/Enterprise) stays as informational pricing, with its CTA disabled and labeled "Próximamente" rather than pretending to process a plan change.
+2. **Integrations**: of the 11 listed integrations, only WhatsApp (via Twilio) has real backend infrastructure (`notification_queue`, script 31; Twilio calls in `app/api/appointments/[id]/cancel/route.ts` and the `process-notification-queue` Edge Function). A new server-only route, `app/api/integrations/status/route.ts`, reports whether `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_WHATSAPP_FROM` are set (booleans only, never the secret values) so the WhatsApp card shows real "Configurado"/"No configurado" status. WhatsApp has no "Conectar" button — it's an env-var-based integration, not a clickable OAuth flow, so a button implying an in-app action would itself be dishonest. The other 10 integrations are marked "Próximamente" with disabled buttons — no fake "Conectar" action. The fake event log was replaced with a real query against `notification_queue` (entries with a non-null `recipient_phone`, as a proxy for WhatsApp/SMS-channel sends — the table has no explicit channel column).
+
+**Consequences**: Both pages now show mostly-empty states in a fresh database — this is the correct, honest behavior, not a regression. A user configuring Twilio env vars will see the WhatsApp card and its logs light up with real data immediately, with no code change needed. Choosing a payment provider and building a real subscription/checkout flow remains fully open — this ADR deliberately stops short of that decision.
+
+**Status**: Implemented (2026-07-06) — schema authored, not run against any live instance in this session (unlike CRM Phase B, no confirmation yet that scripts 35 has been applied — see [07_TECH_DEBT.md](07_TECH_DEBT.md)). `type-check`/`lint`/`build` all pass.
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)

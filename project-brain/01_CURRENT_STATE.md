@@ -154,8 +154,8 @@ RLS is enabled per table with policies keyed on `auth.uid()` compared against `c
 | POS | `app/admin/pos` | ✅ Functional | Backed by `pos_sales`/`pos_sale_items` |
 | Reportes | `app/admin/reports` | ✅ Functional | Direct Supabase calls (1209-line page; spec in `openspec/specs/reportes-dashboard.md` is much thinner than the implementation — see [07_TECH_DEBT.md](07_TECH_DEBT.md)) |
 | Fidelización / Loyalty | `app/api/loyalty` | ✅ Functional | `loyalty_transactions` table |
-| **Facturación / Billing** | `app/admin/billing` | 🔴 **Stub** | Zero `supabase.`/`fetch(` calls in the page — UI only, no persistence |
-| **Integraciones** | `app/admin/integrations` | 🟡 **Stub** | Zero `supabase.`/`fetch(` calls — interactive UI, no real third-party connections |
+| **Facturación / Billing** | `app/admin/billing` | 🟡 **Honest empty state** (2026-07-06, [ADR-020](04_DECISIONS.md)) | No fabricated invoices/cards anymore — queries real `subscriptions`/`invoices` tables (`scripts/35-add-billing-schema.sql`), shows "sin plan configurado" until one exists. Still no payment provider integrated — provider choice remains open. |
+| **Integraciones** | `app/admin/integrations`, `app/api/integrations/status` | 🟡 **1 of 11 real** (2026-07-06, [ADR-020](04_DECISIONS.md)) | WhatsApp reflects real Twilio env-var status via a server-only status check; the other 10 are explicitly labeled "Próximamente" instead of fake "Conectado". Event log now reads real `notification_queue` rows instead of fabricated ones. |
 
 ---
 

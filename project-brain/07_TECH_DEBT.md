@@ -4,6 +4,16 @@
 
 ---
 
+## Billing/Integrations Phase A follow-ups (added 2026-07-06)
+
+| Issue | Evidence |
+|---|---|
+| **`scripts/35-add-billing-schema.sql` has not been confirmed run against any live instance** — unlike CRM Phase B/C, no user confirmation was given in this session. Until it's run, `/admin/billing` will show its honest "sin plan configurado" / "sin facturas" empty states against a live Supabase instance too (not just demo mode), since the tables won't exist yet in a fresh database, though the queries themselves are written not to error on a missing table's *absence of rows* — they will error if the tables don't exist at all. | `scripts/35-add-billing-schema.sql` |
+| **No payment provider is integrated.** Billing shows real (empty) data but cannot process a real subscription, upgrade, or payment — the plan comparator's CTA is deliberately disabled. Provider choice (Stripe vs Mercado Pago) is still an open product decision, not a technical one this session could resolve unilaterally. | `app/admin/billing/page.tsx` |
+| **10 of 11 listed integrations have zero backend work started** (Google Calendar, Stripe, Mercado Pago, OpenAI, Zapier, Mailchimp, Google Analytics, Slack, Instagram Business, HubSpot) — they are now honestly labeled "Próximamente" instead of fake-connected, but that's the extent of Phase A's scope for them. | `app/admin/integrations/page.tsx` |
+| **A 4th independent demo-mode check exists**: `lib/env.ts` has its own `isDemoMode()` (`!NEXT_PUBLIC_SUPABASE_URL \|\| !NEXT_PUBLIC_SUPABASE_ANON_KEY`), found while researching Twilio env vars for this phase — in addition to the 3 already logged in [01_CURRENT_STATE.md §5](01_CURRENT_STATE.md). Not used by the Billing/Integrations pages (they use the same `hasSupabaseConfig` inline pattern as other admin pages), but it's live, exported code that could be picked up by future work. | `lib/env.ts:64-66` |
+| **`notification_queue` has no explicit channel column** — the Integrations page's "real logs" query approximates "WhatsApp/SMS" by filtering on `recipient_phone IS NOT NULL`, since the table stores email and phone fields on the same row rather than a `channel` enum. If a future notification type sends both email and SMS on one row, this filter would still count it as a WhatsApp-relevant event. | `scripts/31-notification-queue.sql`; `app/admin/integrations/page.tsx` |
+
 ## Fixed — sidebar logout unreachable on short viewports (2026-07-06)
 
 | Issue | Evidence |

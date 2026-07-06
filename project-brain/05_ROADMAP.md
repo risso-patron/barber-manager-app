@@ -58,8 +58,8 @@ Named in the original planning ask but not yet scoped against the codebase or `a
 | **POS** | ✅ Functional (`app/admin/pos`, `pos_sales`/`pos_sale_items`). | Planned work here is *enhancement*, not new build — e.g. deeper reporting integration. |
 | **Inventory** | ✅ Functional, but `ai/context/current-state.md`-adjacent risk notes flag stock-movement traceability as not fully end-to-end. | Harden traceability, formalize multi-tenant isolation once M1 lands. |
 | **Reports** | ✅ Functional (`app/admin/reports`, 1209 lines) but the corresponding spec (`openspec/specs/reportes-dashboard.md`) is far thinner than the implementation. | Bring spec in line with implementation; extend analytics depth. |
-| **Billing** | 🔴 Stub, no payment provider integrated. | Real Billing Engine — see [ADR entry / target architecture §13](02_TARGET_ARCHITECTURE.md). |
-| **Integrations** | 🟡 Stub UI, no real third-party connections. | Real integrations — WhatsApp, Google Calendar, Email, per `ai/context/roadmap.md` "Fase 2." |
+| **Billing** | 🟡 Phase A shipped 2026-07-06 ([ADR-020](04_DECISIONS.md)) — real (empty) schema, no fabricated data, no payment provider yet. | Real Billing Engine once a provider is chosen — see [target architecture §13](02_TARGET_ARCHITECTURE.md). |
+| **Integrations** | 🟡 Phase A shipped 2026-07-06 ([ADR-020](04_DECISIONS.md)) — WhatsApp reflects real status, other 10 explicitly "Próximamente." | Real integrations beyond WhatsApp — Google Calendar, Stripe/Mercado Pago, Email, per `ai/context/roadmap.md` "Fase 2." |
 | **AI** | Not implemented. | Future, scope undefined — see [02_TARGET_ARCHITECTURE.md §14](02_TARGET_ARCHITECTURE.md). |
 | **Marketing** | Not implemented, no prior art in `ai/context/` docs. | New capability — scope **Needs Validation**. |
 | **White Label** | Not implemented. | See [ADR-011](04_DECISIONS.md), [ADR-012](04_DECISIONS.md); depends on BrandProvider + TenantProvider. |
@@ -119,6 +119,17 @@ Full analysis and duplication findings: [07_TECH_DEBT.md](07_TECH_DEBT.md). Sequ
 **Phase C — shipped 2026-07-06** ([ADR-019](04_DECISIONS.md)): `ClientTimelineCard` merging appointments/messages/gifts/POS sales into one chronological feed (client-side, no new queries beyond widening the existing `pos_sales` select); a "Frecuencia de visita" stat tile; `ClientAIInsightsCard`, a deliberate static placeholder linking to [02_TARGET_ARCHITECTURE.md §14](02_TARGET_ARCHITECTURE.md) rather than fabricating output. This closes the M5 CRM scope as originally requested, with one caveat: **WhatsApp actions** remain integration-level only (`app/admin/integrations`, still a stub per [01_CURRENT_STATE.md §9](01_CURRENT_STATE.md)) — no per-client "message via WhatsApp" button exists, since that depends on Integrations shipping, not on CRM work. Follow-ups tracked in [07_TECH_DEBT.md](07_TECH_DEBT.md): timeline caps at 30 events with no pagination or type filtering.
 
 M5 CRM (Phases A-C) is now feature-complete. Scripts 32-34 have been run against the live Supabase instance (per user confirmation, 2026-07-06) — pending items are only the open follow-ups listed in [07_TECH_DEBT.md](07_TECH_DEBT.md).
+
+---
+
+## Billing / Integrations — Phase A (shipped 2026-07-06)
+
+Full detail: [ADR-020](04_DECISIONS.md). Both pages were confirmed, by reading the full source, to render 100% fabricated data (fake invoices, fake credit cards, a fake "Stripe: Conectado" status, fake event logs) — worse than a stub, actively misleading. Phase A stops there without picking a payment provider or building real third-party OAuth flows:
+
+- **Billing**: `scripts/35-add-billing-schema.sql` (`subscriptions`, `invoices`, admin-only RLS). Page now queries real data and shows honest empty states. Payment provider choice (Stripe vs Mercado Pago) remains open — no provider was chosen in this phase.
+- **Integrations**: `app/api/integrations/status` reports real Twilio/WhatsApp configuration status (env vars present or not, never the values). WhatsApp is the only one of 11 integrations with real backend work done; the rest are labeled "Próximamente," not fake-connected. The event log now reads real `notification_queue` rows.
+
+**Not started**: choosing and integrating a payment provider; any of the other 10 integrations; subscription checkout/upgrade flow.
 
 ---
 
