@@ -38,7 +38,7 @@ Real phase taxonomy, as it exists in git history (full detail in [08_CHANGELOG.m
 
 | Milestone | Scope | Depends on |
 |---|---|---|
-| **M0** | Stabilization: rotate overdue secrets, verify RLS on a live instance, resolve `manager`/`barber` role debt | — |
+| **M0** | Stabilization: rotate overdue secrets, verify RLS on a live instance, ~~resolve `manager`/`barber` role debt~~ (done 2026-07-06, [ADR-003](04_DECISIONS.md)) | — |
 | **M1** | Tenant schema migration (`tenant_id` across all tables, tenant-aware RLS) | M0 |
 | **M2** | Design Constitution, Semantic Design Tokens completion, BrandProvider | M0 |
 | **M3** | Application Shell unification (replacing 4 independent layouts) | M2 |
@@ -138,9 +138,9 @@ Full detail: [ADR-020](04_DECISIONS.md). Both pages were confirmed, by reading t
 These come directly from [01_CURRENT_STATE.md §10](01_CURRENT_STATE.md#10-current-priorities-in-order-per-readme--docsgo-live-planmd--manual-15) and are effectively M0's real content:
 
 1. Rotate overdue secrets (critical).
-2. Resolve `manager`/`barber` role debt.
+2. ~~Resolve `manager`/`barber` role debt.~~ Done 2026-07-06 — [ADR-003](04_DECISIONS.md).
 3. Verify RLS against a live Supabase instance.
-4. Decide the fate of `/admin/billing` and `/admin/integrations`.
+4. ~~Decide the fate of `/admin/billing` and `/admin/integrations`.~~ Phase A shipped 2026-07-06 — [ADR-020](04_DECISIONS.md); payment provider choice still open.
 5. Unify the two divergent demo data catalogs.
 
 ---

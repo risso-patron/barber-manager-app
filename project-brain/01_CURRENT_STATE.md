@@ -45,7 +45,6 @@ Route segments and their nature (Server vs Client Component, verified via `"use 
 | `app/employee/*` | Employee dashboard — appointments, history, profile, schedule, stats, time-tracking | Client (all pages + layout) |
 | `app/client/*` | Client self-service portal — appointments, book, history, profile | Client (all pages + layout) |
 | `app/auth/*` | Login, register, forgot/reset password | Mostly Client; `app/auth/register/page.tsx` is a thin Server wrapper |
-| `app/barber/*` | Legacy employee dashboard | Client — **orphaned**, see §7 |
 | `app/reservar/page.tsx` | Public booking, no account required | Client, reads demo fixtures directly |
 | `app/book/[slug]/page.tsx` | Public per-shop booking link | Client |
 | `app/dashboard/*` | Role dispatcher | Client |
@@ -93,16 +92,17 @@ Organization is domain-first (admin/employee/client/auth/booking), which is a re
 
 - **`lib/types.ts`**: canonical `UserRole = "client" | "employee" | "admin"` — the **official 3-role model**.
 - **`lib/auth.ts`**: server-side helpers (`getCurrentUser`, `requireAuth`, `requireRole`) — always go through the real Supabase server client, no demo branch here.
-- **`lib/demo-config.ts`**: demo fixtures — `DEMO_USERS` (5 fixed accounts), `DEMO_SERVICES`, `DEMO_EMPLOYEES` (role hardcoded to `'barber'`), `DEMO_BUSINESS_SETTINGS`, and `isDemoMode()`.
+- **`lib/demo-config.ts`**: demo fixtures — `DEMO_USERS` (5 fixed accounts), `DEMO_SERVICES`, `DEMO_EMPLOYEES`, `DEMO_BUSINESS_SETTINGS`, and `isDemoMode()`. As of 2026-07-06 ([ADR-003](04_DECISIONS.md)), all fixture employees/users are typed `role: 'employee'` — the `barber@demo.com` login still works, it just resolves to the real `employee` role instead of a fictional `barber` one.
 - **`lib/demo-appointments.ts`** and **`lib/demo-blocks-store.ts`**: a **second, independent** set of demo fixtures (employees, services, clients, appointments) with different IDs, names, and prices than `demo-config.ts`. Both files are actively imported across 44+ files. See [07_TECH_DEBT.md](07_TECH_DEBT.md) for the exact divergence.
-- **Demo-mode detection is not centralized.** Three different implementations coexist:
+- **Demo-mode detection is not centralized.** Four different implementations coexist:
   1. `isDemoMode()` in `lib/demo-config.ts:211-214`
   2. Inline env-var checks, e.g. `app/dashboard/layout.tsx:30-33`, `app/api/bookings/public/route.ts:55-57` (also checks `SUPABASE_SERVICE_ROLE_KEY`)
   3. `hooks/useRequireAuth.ts:35-36` — a third variant using `NEXT_PUBLIC_DEMO_MODE === "true"` or placeholder-value detection
-- **`hooks/useAuth.tsx`**: Context-based auth (`AuthProvider`). Its `AuthUser.profile.role` type is `"client" | "employee" | "admin" | "manager"` — **a 4th role not present in `lib/types.ts`**. Exposes `isAdmin`, `isManager`, `isEmployee`, `isClient`.
-- **`hooks/useRequireAuth.ts`**: client-side route guard (dual demo/Supabase mode). Its `DASHBOARD_MAP` covers **5 roles**: `admin→/admin`, `manager→/admin`, `employee→/employee/dashboard`, `barber→/barber`, `client→/client`.
+  4. `lib/env.ts`'s own `isDemoMode()` (`!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY`) — found 2026-07-06, unused by any admin page but live, exported code
+- **`hooks/useAuth.tsx`**: Context-based auth (`AuthProvider`). Its `AuthUser.profile.role` type is now `"client" | "employee" | "admin"` — matches `lib/types.ts` exactly as of the 2026-07-06 role cleanup ([ADR-003](04_DECISIONS.md)). Exposes `isAdmin`, `isEmployee`, `isClient` (`isManager` removed — it had zero real callers).
+- **`hooks/useRequireAuth.ts`**: client-side route guard (dual demo/Supabase mode). Its `DASHBOARD_MAP` now covers exactly the 3 official roles: `admin→/admin`, `employee→/employee/dashboard`, `client→/client`.
 
-**Net state**: the type system declares 3 roles; live authorization code (`middleware.ts`, `useAuth`, `useRequireAuth`) actually handles 5 (`client`, `employee`, `admin`, `manager`, `barber`). This is real, live inconsistency — not a documentation gap. See [07_TECH_DEBT.md](07_TECH_DEBT.md).
+**Net state (updated 2026-07-06)**: the type system and live authorization code (`middleware.ts`, `useAuth`, `useRequireAuth`) now agree on exactly 3 roles. `manager` remains a real Postgres enum value with RLS policies (`scripts/27-add-manager-role.sql`) that no application code path exercises anymore — an inert DB-level artifact, not a live inconsistency. See [ADR-003](04_DECISIONS.md) and [07_TECH_DEBT.md](07_TECH_DEBT.md).
 
 ---
 
@@ -110,8 +110,8 @@ Organization is domain-first (admin/employee/client/auth/booking), which is a re
 
 - **Demo bypass** (lines 4-20): if `NODE_ENV === "development"` **and** a `demo-role` cookie is present, middleware short-circuits on simple `/admin`, `/client`, `/employee` prefix checks and skips the Supabase session logic entirely. This bypass is scoped to `development` only — in `production` the Supabase path always runs.
 - **Production path** (lines 22-111): dynamically imports `createServerClient`; if Supabase env vars are missing, **fails open** (passes the request through unauthenticated) and logs an error.
-- **Protected routes**: `/dashboard`, `/admin`, `/employee`, `/barber`, `/client`. Unauthenticated users are redirected to `/auth/login`.
-- **Role gating**: role is fetched from the `users` table by id; on query error, non-`/dashboard` paths redirect to `/dashboard`. `admin` has full `/admin` access; `manager` is blocked from `/admin/settings`, `/admin/reports`, `/admin/employees` but allowed elsewhere under `/admin`; `/employee`/`/barber` allow `employee`, `barber`, or `admin`; `/client` allows `client` or `admin`.
+- **Protected routes**: `/dashboard`, `/admin`, `/employee`, `/client`. Unauthenticated users are redirected to `/auth/login`. (`/barber` was deleted 2026-07-06 — orphaned legacy route, see [ADR-003](04_DECISIONS.md).)
+- **Role gating** (simplified 2026-07-06, [ADR-003](04_DECISIONS.md)): role is fetched from the `users` table by id; on query error, non-`/dashboard` paths redirect to `/dashboard`. `/admin` requires `admin` exactly (no more `manager` partial-access branch); `/employee` allows `employee` or `admin`; `/client` allows `client` or `admin`.
 
 There is no formal, documented **Design Constitution** and no **RLS verified in a live Supabase instance** today. A partial semantic-token layer does exist for color (see §3 correction above), but spacing, radii, and typography are still set ad hoc per component, and the 2026-05 rebrand commits (`1cea13b`, `7a09427`) introduced a *third* palette (`#161412` / `#cc2222` / `#f0ebe3`) directly in JSX for the landing page, client dashboard, and employee dashboard — independent of both the `orno-admin` CSS-variable palette and the plain-language palette documented in `ai/context/design-system.md` (`#0A0A0A` / `#E53935`). **Needs Validation**: which of these three palettes is canonical is not resolved in code today — see [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) and [07_TECH_DEBT.md](07_TECH_DEBT.md). RLS policies exist only as SQL scripts whose effective behavior against real data has not been confirmed (`docs/manuales/manual-sistema.md` explicitly caveats this).
 
@@ -133,7 +133,7 @@ The most recent work on this path (`FASE 5 D1`, commit `5b3085a`) connected dyna
 
 ## 8. Data model (Supabase / Postgres)
 
-31 sequential SQL scripts in `scripts/`, applied in numeric order (`00-reset-database.sql` through `31-notification-queue.sql`). Core tables: `users` (extends `auth.users`), `services`, `appointments`, `inventory`, `inventory_movements`, `time_logs`, `business_settings`, plus later additions — `attendance_logs`, `employee_commissions`, `loyalty_transactions`, `pos_sales`/`pos_sale_items`, `low_rating_alerts`, `schedule_blocks`, `notification_queue`.
+36 sequential SQL scripts in `scripts/`, applied in numeric order (`00-reset-database.sql` through `35-add-billing-schema.sql`). Core tables: `users` (extends `auth.users`), `services`, `appointments`, `inventory`, `inventory_movements`, `time_logs`, `business_settings`, plus later additions — `attendance_logs`, `employee_commissions`, `loyalty_transactions`, `pos_sales`/`pos_sale_items`, `low_rating_alerts`, `schedule_blocks`, `notification_queue`, `memberships`, `client_attachments`, `subscriptions`, `invoices` (CRM Phases B/C and Billing Phase A, [ADR-018](04_DECISIONS.md)/[ADR-020](04_DECISIONS.md)).
 
 RLS is enabled per table with policies keyed on `auth.uid()` compared against `client_id`/`barber_id`/`employee_id`, plus an admin/manager check via a `get_my_role()` helper (introduced in `scripts/27-add-manager-role.sql`). **No `tenant_id`/`business_id` column exists anywhere** — confirming the single-tenant conclusion in §1.
 
@@ -162,9 +162,9 @@ RLS is enabled per table with policies keyed on `auth.uid()` compared against `c
 ## 10. Current priorities (in order, per README + `docs/GO-LIVE-PLAN.md` + manual §15)
 
 1. **Rotate overdue secrets** — critical, overdue since 2026-02-27, plaintext values still committed in `scripts/validate-env.js` (see [07_TECH_DEBT.md](07_TECH_DEBT.md)).
-2. Resolve the `manager`/`barber` role inconsistency (formalize or remove from live authorization code).
+2. ~~Resolve the `manager`/`barber` role inconsistency~~ — **done 2026-07-06**, see [ADR-003](04_DECISIONS.md).
 3. Verify RLS policies against a real, live Supabase instance.
-4. Decide the fate of `/admin/billing` and `/admin/integrations` (complete, hide, or mark "coming soon").
+4. ~~Decide the fate of `/admin/billing` and `/admin/integrations`~~ — Phase A shipped 2026-07-06 (real schema, no fabricated data); choosing a payment provider and building the rest remains open, see [ADR-020](04_DECISIONS.md).
 5. Unify the two desynchronized demo data catalogs.
 6. Online payments and push notifications — not started, scope gap not a bug.
 
@@ -173,7 +173,6 @@ RLS is enabled per table with policies keyed on `auth.uid()` compared against `c
 - Secret rotation overdue with real values still in plaintext in a tracked file — **critical**.
 - RLS never verified live — **critical if used with real customer data**.
 - Demo-mode access control is 100% client-side and trivially bypassable — **high if a demo deployment is mistaken for production**.
-- `manager`/`barber` roles live in authorization code but outside the typed role model — **medium, latent bug surface**.
 - Two divergent demo data catalogs — **low, data-integrity/confusion risk**.
 
 ---

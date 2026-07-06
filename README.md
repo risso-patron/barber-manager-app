@@ -18,8 +18,8 @@ Sistema de gestión para barberías: citas, empleados, clientes, inventario y pu
 | Modo demo (sin backend) | ✅ Funcional — datos hardcodeados, sin persistencia real |
 | Modo producción (Supabase) | 🟡 Implementado en código, **no verificado en una instancia real** durante esta auditoría |
 | Citas, empleados, clientes, inventario, POS, fidelidad, alertas | ✅ Funcionales |
-| Facturación (`/admin/billing`) | 🔴 Stub — UI completa, sin persistencia ni cobro real |
-| Integraciones (`/admin/integrations`) | 🟡 Parcial — UI interactiva, sin conexiones reales a terceros |
+| Facturación (`/admin/billing`) | 🟡 Schema real, sin datos inventados — sin proveedor de pagos conectado todavía |
+| Integraciones (`/admin/integrations`) | 🟡 WhatsApp refleja estado real — el resto marcadas "Próximamente", sin conexiones reales todavía |
 | Seguridad | 7/10 según `SECURITY-REPORT.md` — **rotación de secrets pendiente y vencida** |
 
 No asumas que "está en el código" significa "está verificado en producción". Ver [Limitaciones conocidas](#limitaciones-conocidas) abajo.
@@ -119,8 +119,7 @@ pnpm predeploy                 # Checklist completo pre-deploy (env + security +
 ```
 app/                    # Next.js App Router
 ├── admin/               # Rutas exclusivas de administrador
-├── employee/            # Rutas de empleado (módulo actual)
-├── barber/               # Dashboard de empleado legacy (huérfano, ver limitaciones)
+├── employee/            # Rutas de empleado
 ├── client/               # Rutas de cliente autenticado
 ├── auth/                 # Login, registro, recuperación de contraseña
 ├── reservar/, book/      # Reserva pública sin cuenta
@@ -130,7 +129,7 @@ components/               # Componentes React por dominio (admin, employee, clie
 lib/                      # Lógica de negocio: supabase/, auth.ts, demo-config.ts, types.ts, rate-limit.ts
 hooks/                    # useAuth, useRequireAuth
 middleware.ts             # Control de acceso por rol (solo activo con Supabase configurado)
-scripts/                  # 31 scripts SQL versionados + scripts de seguridad/CI
+scripts/                  # 35 scripts SQL versionados + scripts de seguridad/CI
 docs/                     # Documentación (manuales, seguridad)
 e2e/, tests/              # Playwright y Vitest
 ```
@@ -147,7 +146,7 @@ El modelo oficial son **3 roles**: `client`, `employee`, `admin` (definidos en `
 | **Empleado** | Agenda diaria, control de jornada laboral, estadísticas, comisiones |
 | **Administrador** | Todo lo anterior + gestión de empleados/clientes, inventario, POS, reportes, alertas |
 
-⚠️ El código de rutas (`middleware.ts`, `useRequireAuth.ts`) todavía referencia dos roles adicionales fuera de este modelo (`manager`, `barber`) que son deuda técnica heredada, no funcionalidades soportadas activamente. Detalle completo en [docs/manuales/manual-sistema.md §6](docs/manuales/manual-sistema.md#6-autenticación-y-roles).
+✅ **(2026-07-06)** Los roles `manager` y `barber` fueron removidos del código de aplicación (`middleware.ts`, hooks, guards de página, rutas API) — ver `project-brain/04_DECISIONS.md` ADR-003. `manager` sigue existiendo como valor del enum `user_role` en Postgres con políticas RLS propias (`scripts/27-add-manager-role.sql`), pero no hay ningún camino de la UI para crear un usuario con ese rol; esas políticas quedan inertes hasta que se decida formalizarlo o eliminarlo también a nivel de base de datos.
 
 ## Credenciales demo
 
@@ -157,11 +156,9 @@ Solo válidas en modo demo (sin Supabase configurado). Todas usan password `Demo
 |---|---|---|
 | `admin@demo.com` | admin | Admin Demo |
 | `employee@demo.com` | employee | Sofía Ramírez |
-| `barber@demo.com` | barber* | Carlos Martínez |
+| `barber@demo.com` | employee | Carlos Martínez |
 | `client@demo.com` | client | Juan Pérez |
 | `vincent@ornodemo.com` | client | Vincent |
-
-\* `barber` no es un rol oficial del sistema (ver sección anterior) pero es una cuenta demo real y funcional.
 
 ## Rutas principales
 
@@ -172,9 +169,8 @@ Solo válidas en modo demo (sin Supabase configurado). Todas usan password `Demo
 | `/auth/login`, `/auth/register` | Pública | Autenticación |
 | `/dashboard` | Cualquier sesión | Dispatcher, redirige según rol |
 | `/admin/*` | admin | Panel de administración |
-| `/employee/*` | employee, admin | Panel de empleado (módulo vigente) |
+| `/employee/*` | employee, admin | Panel de empleado |
 | `/client/*` | client | Panel de cliente |
-| `/barber` | employee, admin | Dashboard de empleado legacy — accesible pero fuera del flujo de navegación principal |
 
 ## Estado de funcionalidades
 
@@ -191,30 +187,27 @@ Solo válidas en modo demo (sin Supabase configurado). Todas usan password `Demo
 | Alertas de calificación baja | ✅ |
 | Reportes y exportación (PDF/Excel) | ✅ |
 | Recuperación de contraseña | ✅ |
-| Facturación (`/admin/billing`) | 🔴 Stub — sin persistencia real |
-| Integraciones con terceros (`/admin/integrations`) | 🟡 UI sin conexiones reales |
+| Facturación (`/admin/billing`) | 🟡 Schema real, sin proveedor de pagos conectado |
+| Integraciones con terceros (`/admin/integrations`) | 🟡 WhatsApp real, resto "Próximamente" |
 | Pagos online | 🔴 No implementado |
 
 ## Limitaciones conocidas
 
 - **Rotación de secrets vencida** — ver `docs/SECRET-ROTATION.md`. Esto es lo más urgente del proyecto en este momento.
-- **Roles `manager` y `barber`** siguen referenciados en código de rutas pese a que el modelo oficial es de 3 roles — ver `docs/manuales/manual-sistema.md §6`.
-- **`/barber` es una ruta huérfana**: funcional pero sin entrada en el flujo de navegación real (el dispatcher nunca redirige ahí).
 - **Middleware bypaseado en modo demo**: sin Supabase configurado, el control de acceso por rol es 100% client-side y evadible editando `localStorage`. No confundir demo con producción.
 - **RLS no verificado en runtime**: las políticas existen como scripts SQL; su aplicación efectiva en una instancia real no fue confirmada en esta auditoría documental.
 - **Dos catálogos de datos demo desincronizados** (`lib/demo-config.ts` vs `lib/demo-appointments.ts`).
-- **Facturación e integraciones** aparentan estar terminadas en la UI pero no lo están.
+- **Facturación** ya no muestra datos inventados (Fase A, ver `project-brain/`), pero todavía no tiene un proveedor de pagos real conectado. **Integraciones** solo refleja el estado real de WhatsApp; el resto están marcadas explícitamente como "Próximamente".
 
 Detalle técnico completo en [docs/manuales/manual-sistema.md §15](docs/manuales/manual-sistema.md#15-limitaciones-técnicas-y-roadmap-recomendado).
 
 ## Próximos pasos
 
 1. Rotar los secrets pendientes (urgente).
-2. Resolver los roles `manager`/`barber` (formalizar o eliminar).
-3. Verificar RLS contra una instancia real de Supabase.
-4. Decidir el destino de `/admin/billing` e `/admin/integrations` (completar, ocultar o marcar como "próximamente" en la UI).
-5. Unificar los catálogos de datos demo.
-6. Implementar pagos online y notificaciones push (no iniciado).
+2. Verificar RLS contra una instancia real de Supabase.
+3. Elegir proveedor de pagos (Stripe / Mercado Pago) para completar Facturación.
+4. Unificar los catálogos de datos demo.
+5. Implementar pagos online y notificaciones push (no iniciado).
 
 ## Documentación interna
 
