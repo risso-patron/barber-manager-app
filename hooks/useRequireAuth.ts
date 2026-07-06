@@ -62,7 +62,9 @@ export function useRequireAuth(allowedRoles?: string[]) {
     }
 
     // --- SUPABASE MODE ---
-    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+    // hasSupabaseConfig (above) already guarantees these are defined at runtime;
+    // the assertion is needed because isPlaceholder() isn't a type guard TS can follow.
+    const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!)
 
     const checkSession = async () => {
       const { data: { user: authUser }, error } = await supabase.auth.getUser()
