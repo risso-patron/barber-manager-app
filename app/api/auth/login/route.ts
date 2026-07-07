@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { withRateLimit, loginLimiter, getClientIP } from '@/lib/rate-limit'
 import { validateEmail, validatePassword, isSQLInjectionAttempt } from '@/lib/validation'
-import { isDemoMode } from '@/lib/demo-config'
+import { isDemoMode } from "@/lib/demo"
 import { logLoginSuccess, logLoginFailed, logSqlInjectionAttempt } from '@/lib/security-logger'
 
 export async function POST(request: Request) {

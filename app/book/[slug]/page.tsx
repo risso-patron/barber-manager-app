@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { type Service, type Employee } from "@/lib/demo-appointments"
+import { type Service, type Employee } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { Footer } from "@/components/layout/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

@@ -23,7 +23,7 @@ import {
   DollarSign,
   Loader2,
 } from "lucide-react"
-import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
 import { DeleteConfirmModal } from "@/components/admin/employees/delete-confirm-modal"

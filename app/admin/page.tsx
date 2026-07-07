@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Plus, TrendingUp } from "lucide-react"
-import { DEMO_APPOINTMENTS, DEMO_CLIENTS, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS, DEMO_CLIENTS, DEMO_EMPLOYEES } from "@/lib/demo"
 
 
 interface DashboardStats {

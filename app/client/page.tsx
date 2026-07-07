@@ -22,7 +22,7 @@ import {
   Mail,
   CheckCircle2,
 } from "lucide-react"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS } from "@/lib/demo"
 
 interface Appointment {
   id: string

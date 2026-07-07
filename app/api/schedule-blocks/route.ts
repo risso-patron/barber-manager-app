@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { withRateLimit, apiLimiter } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { demoBlocksStore } from "@/lib/demo-blocks-store"
 import { z } from "zod"
 

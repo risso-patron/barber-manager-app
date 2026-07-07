@@ -20,7 +20,7 @@ import {
   Star,
   History as HistoryIcon
 } from "lucide-react"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS } from "@/lib/demo"
 
 interface Appointment {
   id: string

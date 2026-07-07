@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type InventoryItem, DEMO_INVENTORY } from "@/lib/demo-appointments"
+import { type InventoryItem, DEMO_INVENTORY } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

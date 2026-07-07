@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { isDemoMode } from "@/lib/demo-config"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { isDemoMode } from "@/lib/demo"
+import { DEMO_APPOINTMENTS } from "@/lib/demo"
 import { demoBlocksStore } from "@/lib/demo-blocks-store"
 import { withRateLimit, apiLimiter } from "@/lib/rate-limit"
 import { createServerSupabaseClient } from "@/lib/supabase/server"

@@ -23,8 +23,8 @@ import {
   User,
 } from "lucide-react"
 import Link from "next/link"
-import type { Service, InventoryItem } from "@/lib/demo-appointments"
-import { DEMO_SERVICES, DEMO_INVENTORY } from "@/lib/demo-appointments"
+import type { Service, InventoryItem } from "@/lib/demo"
+import { DEMO_SERVICES, DEMO_INVENTORY } from "@/lib/demo"
 import { ClientAvatar } from "@/components/admin/clients/client-identity"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

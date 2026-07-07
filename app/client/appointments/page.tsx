@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CancelAppointmentModal } from "@/components/client/cancel-appointment-modal"
-import { DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS } from "@/lib/demo"
 import { useToast, ToastContainer } from "@/components/ui/toast"
 import { 
   Calendar, 

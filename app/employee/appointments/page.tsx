@@ -8,7 +8,7 @@ import {
   getAppointmentsByEmployee,
   APPOINTMENT_STATUS_LABELS,
   getNextStatusActions,
-} from "@/lib/demo-appointments"
+} from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

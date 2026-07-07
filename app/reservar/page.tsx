@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
-import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { DEMO_SERVICES, DEMO_EMPLOYEES } from "@/lib/demo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { DEMO_USERS } from "@/lib/demo-config"
+import { DEMO_USERS } from "@/lib/demo"
 
 const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 

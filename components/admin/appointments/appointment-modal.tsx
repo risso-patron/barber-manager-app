@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, UserPlus, ChevronLeft } from "lucide-react"
-import type { Appointment, Service, Employee, Client } from "@/lib/demo-appointments"
+import type { Appointment, Service, Employee, Client } from "@/lib/demo"
 
 interface AppointmentModalProps {
   isOpen: boolean

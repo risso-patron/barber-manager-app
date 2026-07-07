@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
 import { adjustLoyaltySchema } from "@/lib/schemas"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 
 // GET /api/loyalty?user_id=... — get points balance + recent transactions

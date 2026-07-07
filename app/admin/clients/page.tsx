@@ -20,8 +20,8 @@ import {
   Gift,
   Loader2,
 } from "lucide-react"
-import type { Client } from "@/lib/demo-appointments"
-import { DEMO_CLIENTS } from "@/lib/demo-appointments"
+import type { Client } from "@/lib/demo"
+import { DEMO_CLIENTS } from "@/lib/demo"
 import { ClientModal } from "@/components/admin/clients/client-modal"
 import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
 import { LoyaltyModal } from "@/components/admin/clients/loyalty-modal"

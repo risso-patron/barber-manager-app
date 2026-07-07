@@ -33,9 +33,9 @@ import {
   type Service,
   type Employee,
   type Client,
-} from "@/lib/demo-appointments"
+} from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
-import { DEMO_APPOINTMENTS, DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_CLIENTS } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS, DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_CLIENTS } from "@/lib/demo"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

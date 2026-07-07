@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, APPOINTMENT_STATUS_LABELS } from "@/lib/demo-appointments"
+import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, APPOINTMENT_STATUS_LABELS } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

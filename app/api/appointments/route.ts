@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { withRateLimit, strictLimiter } from '@/lib/rate-limit'
 import { validateAppointmentInput, sanitizeInput } from '@/lib/validation'
-import { isDemoMode } from '@/lib/demo-config'
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {

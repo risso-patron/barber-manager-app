@@ -16,7 +16,7 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react"
-import { type Service, DEMO_SERVICES } from "@/lib/demo-appointments"
+import { type Service, DEMO_SERVICES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { ServiceModal } from "@/components/admin/services/service-modal"
 import { DeleteConfirmModal } from "@/components/admin/services/delete-confirm-modal"

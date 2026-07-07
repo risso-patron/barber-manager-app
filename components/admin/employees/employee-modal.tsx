@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Check } from "lucide-react"
-import type { Employee } from "@/lib/demo-appointments"
+import type { Employee } from "@/lib/demo"
 
 interface EmployeeWithCommission extends Employee {
   specialty?: string | null

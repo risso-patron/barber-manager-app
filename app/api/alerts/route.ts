@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { z } from "zod"
 
 const resolveSchema = z.object({ is_resolved: z.literal(true) })
