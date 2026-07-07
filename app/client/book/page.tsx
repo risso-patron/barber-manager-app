@@ -134,16 +134,19 @@ export default function BookAppointmentPage() {
     setAvailabilityError(null)
     setSelectedTime("")
 
+    const selectedServiceData = services.find((s) => s.id === selectedService)
+    const duration = selectedServiceData?.duration ?? 30
+
     const params = new URLSearchParams({
-      barberId: selectedBarber,
-      serviceId: selectedService,
+      barber_id: selectedBarber,
       date: selectedDate,
+      duration: String(duration),
     })
 
     fetch(`/api/availability?${params}`)
       .then(res => res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)))
       .then(data => {
-        setAvailableSlots(Array.isArray(data.slots) ? data.slots : [])
+        setAvailableSlots(Array.isArray(data.available) ? data.available : [])
       })
       .catch(() => {
         setAvailabilityError("No pudimos cargar los horarios. Intenta nuevamente.")
@@ -152,7 +155,7 @@ export default function BookAppointmentPage() {
       .finally(() => {
         setIsLoadingAvailability(false)
       })
-  }, [selectedService, selectedBarber, selectedDate])
+  }, [selectedService, selectedBarber, selectedDate, services])
 
   const handleSubmit = async () => {
     if (!user || !service || !barber) return
