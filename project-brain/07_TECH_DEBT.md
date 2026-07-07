@@ -64,9 +64,9 @@
 
 | Issue | Evidence |
 |---|---|
-| **Secret rotation overdue since 2026-02-27** — Twilio Auth Token, Resend API Key, CRON Secret exposed in git history. | `SECURITY-REPORT.md:26,166`, `docs/SECRET-ROTATION.md` |
-| **`scripts/validate-env.js` has the three real secret values hardcoded in plaintext today**, in a tracked file (introduced in commit `9aaf6dd`, 2026-06-23), compounding the rotation urgency since the exposure is current, not just historical. | `SECURITY-REPORT.md:175` |
-| **RLS policies never verified against a live Supabase instance.** All 31 SQL scripts in `scripts/` define intended policy — none have been confirmed to behave correctly against real data in a running instance. | `docs/manuales/manual-sistema.md:394`, `docs/GO-LIVE-PLAN.md:19` |
+| ~~**Secret rotation overdue since 2026-02-27**~~ — **Resolved 2026-07-07** (executed ~2026-06-30, per user confirmation): `TWILIO_AUTH_TOKEN`, `RESEND_API_KEY`, `CRON_SECRET` regenerated at Resend/Twilio and updated in Vercel production; `.env.local` updated on the user's personal laptop and on this machine — `pnpm validate-env` confirms all three pass here. Not independently verifiable by the agent (external dashboard/Vercel actions, no API access). Old values remain reachable via `git log`/`git show` on commits prior to `1fa6145` (2026-06-30) — purging git history was explicitly out of scope, see `openspec/changes/archive/2026-07-07-rotate-secrets/proposal.md`. | `docs/SECRET-ROTATION.md`, `SECURITY-REPORT.md`, `pnpm validate-env` output 2026-07-07 |
+| ~~**`scripts/validate-env.js` has the three real secret values hardcoded in plaintext today**~~ — **Already fixed before this was flagged**: commit `1fa6145` (2026-06-30, same day as the security-doc audit that raised this) removed the `exposedSecrets` object and replaced it with pattern-based placeholder detection. Confirmed by reading the current file — zero hardcoded secret values. `SECURITY-REPORT.md:175` and `docs/SECRET-ROTATION.md:15` still described this as an open, current-file exposure as of 2026-07-07 — that language was stale and has been corrected in this pass. | `scripts/validate-env.js` (read 2026-07-07, clean) |
+| **RLS policies never verified against a live Supabase instance.** All 31+ SQL scripts in `scripts/` define intended policy — none have been confirmed to behave correctly against real data in a running instance. | `docs/manuales/manual-sistema.md:394`, `docs/GO-LIVE-PLAN.md:19` |
 
 ## High
 
@@ -107,6 +107,12 @@
 | **Rate limiting is in-memory by default** — counters don't share across serverless instances unless Upstash Redis env vars are configured; falls back silently (with only a console warning) if they're absent in production. | `lib/rate-limit.ts:114-128`; `SECURITY-REPORT.md:58` |
 | **No documented backup strategy for appointment data.** | `docs/GO-LIVE-PLAN.md:52,106` |
 | **Temporary debug traces left in the demo auth endpoint/hook** after a diagnosis session; QA required a `pnpm dev` restart to pick up auth changes during testing. | `qa-analysis.md:51-52` |
+
+## Local dev environment note (found 2026-07-07, unrelated to secret rotation)
+
+| Issue | Evidence |
+|---|---|
+| **This machine's `.env.local` has placeholder Supabase credentials** (`NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_aqui`, `SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui`) — `NEXT_PUBLIC_SUPABASE_URL` is a real project URL, but the two keys were never filled in on this specific laptop. Confirmed by user: unrelated to the `rotate-secrets` change, which targeted only Twilio/Resend/CRON — this is a separate, pre-existing local setup gap, deliberately left as-is per user decision. `TWILIO_ACCOUNT_SID` also fails its format check (`pnpm validate-env` warning, doesn't start with `AC`) — not investigated further this session. | `pnpm validate-env` output 2026-07-07 |
 
 ## Scope gaps (not bugs — simply not built)
 

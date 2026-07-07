@@ -2,8 +2,9 @@
 
 > **Implementación original**: 29 de noviembre de 2025
 > **Esta revisión**: 30 de junio de 2026 — auditoría documental contra el código real
+> **Actualización**: 7 de julio de 2026 — rotación de secrets confirmada ejecutada ~2026-06-30
 > **Versión de paquete real**: `0.1.0` (`package.json`). La etiqueta "Versión: 1.1.0" de la versión anterior de este documento es un rótulo interno de noviembre 2025, anterior y no relacionado al esquema de milestones `v1.1`/`v1.2`/`v1.3`/`M1`-`M8` usado en `docs/manuales/INDEX.md` — se elimina acá para no generar confusión.
-> **Estado**: ✅ Apto para desarrollo | 🔴 No apto para producción (secrets sin rotar, RLS sin verificar en runtime)
+> **Estado**: ✅ Apto para desarrollo | 🟡 Cerca de apto para producción (secrets rotados ~2026-06-30, RLS sin verificar en runtime todavía)
 
 ---
 
@@ -19,11 +20,11 @@ También se corrige el ítem "Middleware de Autenticación Desactivado", verific
 
 ## 📊 Evaluación de seguridad
 
-### 🎯 Security Score: 7/10 (sin cambios numéricos en esta revisión — ver nota sobre Authentication)
+### 🎯 Security Score: 8/10 (actualizado 2026-07-07 tras rotación de secrets)
 
 | Aspecto | Score | Estado |
 |---------|-------|--------|
-| **Protección de Secrets** | 6/10 | 🔴 Rotación vencida desde el 27/02/2026 |
+| **Protección de Secrets** | 9/10 | ✅ Rotados ~2026-06-30 (confirmado 2026-07-07); valores viejos quedan en historial de git pero sin acceso activo |
 | **Rate Limiting** | 10/10 | ✅ Implementado |
 | **Input Validation** | 10/10 | ✅ Implementado |
 | **Security Headers** | 10/10 | ✅ Implementado |
@@ -33,7 +34,7 @@ También se corrige el ítem "Middleware de Autenticación Desactivado", verific
 
 > 🟡 **Nota sobre el score de Authentication:** el 3/10 ("demo mode only") fue asignado en noviembre de 2025, cuando aparentemente el middleware no aplicaba gating. A junio de 2026, `middleware.ts` está **activo**, usa `@supabase/ssr`, redirige usuarios no autenticados, y aplica reglas de acceso por rol para `/admin`, `/employee`, `/barber` y `/client` (incluyendo reglas específicas para el rol `manager`). Esto sugiere que el score real es más alto que 3/10. **No reasignamos un número nuevo en esta auditoría documental** porque eso requiere una re-evaluación formal de seguridad (incluyendo verificar RLS contra una instancia real de Supabase, cosa que no se hizo acá) — no solo una lectura de código. **Recomendación:** programar una re-auditoría de seguridad que reevalúe específicamente este aspecto antes de la próxima revisión de este documento.
 
-**Mejora desde el estado inicial (28/11/2025):** +75% (4/10 → 7/10)
+**Mejora desde el estado inicial (28/11/2025):** +100% (4/10 → 8/10)
 
 ---
 
@@ -159,22 +160,22 @@ También se corrige el ítem "Middleware de Autenticación Desactivado", verific
 
 ---
 
-## 🔴 Vulnerabilidades activas (verificado 2026-06-30)
+## 🔴 Vulnerabilidades activas (verificado 2026-06-30, actualizado 2026-07-07)
 
-### 1. Rotación de secrets vencida
-**Severidad**: 🔴 CRÍTICA
-**Estado**: 🔴 **Pendiente — vencida desde el 27/02/2026**
+### 1. ~~Rotación de secrets vencida~~ — Resuelta ~2026-06-30 (confirmada 2026-07-07)
+**Severidad**: ~~🔴 CRÍTICA~~ → ✅ Resuelta
+**Estado**: ✅ **Completada ~2026-06-30**
 
-Tres secrets fueron expuestos en texto plano en el historial de git de este repositorio (en versiones anteriores de este documento y de `docs/SECRET-ROTATION.md`, ambos ya redactados en esta auditoría, **pero el historial de git conserva las versiones anteriores**):
-- `TWILIO_AUTH_TOKEN`
-- `RESEND_API_KEY`
-- `CRON_SECRET`
+Tres secrets estuvieron expuestos en texto plano en el historial de git de este repositorio (en versiones anteriores de este documento y de `docs/SECRET-ROTATION.md`):
+- `TWILIO_AUTH_TOKEN` — ✅ rotado ~2026-06-30
+- `RESEND_API_KEY` — ✅ rotado ~2026-06-30
+- `CRON_SECRET` — ✅ regenerado ~2026-06-30
 
-**Impacto potencial**: uso no autorizado de los servicios (costos), envío de spam desde las cuentas de la barbería, posible acceso indebido según el alcance de cada key.
+**Estado actual**: los tres valores fueron regenerados en los dashboards de Resend/Twilio y actualizados en Vercel (producción) y en `.env.local` (entornos de desarrollo del usuario). `pnpm validate-env` confirma que los tres pasan validación (verificado 2026-07-07). Los valores **viejos** quedan en el historial de git pero ya no tienen acceso activo a los servicios.
 
-🔴🔴 **Hallazgo crítico de esta auditoría:** la exposición no es solo histórica. `scripts/validate-env.js` (líneas 145-149) tiene los tres valores reales **hardcodeados en texto plano hoy**, en un archivo trackeado por git (commit `9aaf6dd`, 2026-06-23). Esta auditoría es documental y no modifica código funcional, así que ese archivo **no fue corregido**. Recomendación: reemplazar la comparación por hashes (SHA-256) de los valores filtrados, como tarea de desarrollo aparte — ver detalle en [`docs/SECRET-ROTATION.md`](docs/SECRET-ROTATION.md).
+> ✅ **Corrección de un error de la versión 2026-06-30 de este documento:** esa versión afirmaba que `scripts/validate-env.js` (líneas 145-149) tenía "los tres valores reales hardcodeados en texto plano hoy". Eso ya no es así — fue corregido en commit `1fa6145` (2026-06-30), mismo día, unas horas después de escribir esa advertencia. El archivo actual usa detección de patrones, sin valores reales hardcodeados (verificado leyendo el archivo directamente 2026-07-07). La exposición histórica permanece en commits anteriores a `1fa6145`, pero el código funcional activo ya no tiene secrets en texto plano.
 
-**Solución (rotación)**: seguir el procedimiento completo, sin valores reales, en [`docs/SECRET-ROTATION.md`](docs/SECRET-ROTATION.md).
+**Solución (rotación)**: completada. Ver detalles de rotación en [`docs/SECRET-ROTATION.md`](docs/SECRET-ROTATION.md). Próxima rotación programada: 2026-09-28 (90 días desde la última).
 
 ---
 
@@ -223,7 +224,7 @@ Rate limiting, input validation, security headers (incluyendo CSP), pre-commit h
 - [x] Middleware con gating por rol implementado y activo (corrección de esta auditoría — antes se daba como pendiente)
 - [x] Auth con Supabase implementada en código (cookies, server-side, vía `@supabase/ssr`)
 - [ ] RLS verificada en runtime contra una instancia real — pendiente
-- [ ] Rotar los secrets expuestos — pendiente, vencido
+- [x] Rotar los secrets expuestos — ✅ completado ~2026-06-30 (confirmado 2026-07-07)
 - [ ] Verificación de email obligatoria — no confirmada como implementada
 - [ ] Decidir el tratamiento del modo demo en producción (ocultarlo o documentarlo explícitamente como no apto para datos reales)
 - [ ] Formalizar o eliminar los roles legacy `manager`/`barber` (ver `docs/manuales/manual-sistema.md §6`) — el middleware ya tiene lógica para `manager`, pero no existe forma de asignar ese rol a un usuario real (sin cuenta demo ni flujo de registro)
@@ -242,7 +243,7 @@ Rate limiting, input validation, security headers (incluyendo CSP), pre-commit h
 ## 📋 Checklist pre-producción
 
 ### Crítico (bloqueante)
-- [ ] Rotar TODAS las API keys expuestas — vencido
+- [x] Rotar TODAS las API keys expuestas — ✅ completado ~2026-06-30 (TWILIO_AUTH_TOKEN, RESEND_API_KEY, CRON_SECRET)
 - [x] `.env.local` NO está en Git ✅
 - [x] Middleware de autenticación activo ✅ (corregido en esta auditoría)
 - [x] Supabase Auth implementado en código ✅
@@ -275,16 +276,16 @@ Ver el runbook detallado en [`docs/SECRET-ROTATION.md`](docs/SECRET-ROTATION.md#
 ## 🎯 Recomendaciones actuales
 
 ### Para desarrollo (ahora)
-1. **Rotar los secrets vencidos** — ver `docs/SECRET-ROTATION.md`
+1. ~~**Rotar los secrets vencidos**~~ — ✅ completado ~2026-06-30 (ver `docs/SECRET-ROTATION.md`). Próxima rotación: 2026-09-28 (90 días)
 2. No compartir `.env.local` por ningún canal
-3. Corregir `scripts/validate-env.js` y `.env.example` (ambos con secrets reales en código funcional — ver advertencia en `docs/SECRET-ROTATION.md`)
+3. ~~Corregir `scripts/validate-env.js` y `.env.example`~~ — ✅ `validate-env.js` corregido en commit `1fa6145` (2026-06-30); `.env.example` también actualizado según commit message
 
 ### Para staging / mostrar a clientes
 1. Si se usa modo demo, dejar explícito que no es representativo de la seguridad real (gating client-side, evadible)
 2. Si se usa modo Supabase, verificar RLS contra esa instancia antes de cargar datos reales
 
 ### Para producción
-1. Rotar secrets y verificar RLS en runtime — ambos bloqueantes
+1. ~~Rotar secrets~~ (✅ completado ~2026-06-30) y verificar RLS en runtime — RLS sigue bloqueante
 2. Resolver `/admin/billing` (hoy stub sin backend real) antes de cualquier cobro — ver `docs/manuales/manual-admin.md §12`
 3. Configurar monitoreo y alertas
 4. Plan de backup de datos (no documentado actualmente)

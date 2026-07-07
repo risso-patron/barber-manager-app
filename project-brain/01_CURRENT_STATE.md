@@ -161,7 +161,7 @@ RLS is enabled per table with policies keyed on `auth.uid()` compared against `c
 
 ## 10. Current priorities (in order, per README + `docs/GO-LIVE-PLAN.md` + manual §15)
 
-1. **Rotate overdue secrets** — critical, overdue since 2026-02-27, plaintext values still committed in `scripts/validate-env.js` (see [07_TECH_DEBT.md](07_TECH_DEBT.md)).
+1. ~~Rotate overdue secrets~~ — **done, per user confirmation 2026-07-07** (rotated ~2026-06-30): `TWILIO_AUTH_TOKEN`, `RESEND_API_KEY`, `CRON_SECRET` regenerated at the provider dashboards and updated in Vercel production + local `.env.local`; `pnpm validate-env` confirms all three pass on this machine. Not independently verifiable by the agent (external dashboard actions) — see [07_TECH_DEBT.md](07_TECH_DEBT.md). Old values remain in git history (out of scope, per `openspec/changes/archive/2026-07-07-rotate-secrets/proposal.md`).
 2. ~~Resolve the `manager`/`barber` role inconsistency~~ — **done 2026-07-06**, see [ADR-003](04_DECISIONS.md).
 3. Verify RLS policies against a real, live Supabase instance.
 4. ~~Decide the fate of `/admin/billing` and `/admin/integrations`~~ — Phase A shipped 2026-07-06 (real schema, no fabricated data); choosing a payment provider and building the rest remains open, see [ADR-020](04_DECISIONS.md).
