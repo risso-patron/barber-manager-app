@@ -1,0 +1,54 @@
+change_name: rotate-secrets
+phase: archive
+status: complete
+created: 2026-07-07
+archived: 2026-07-07
+execution_date: ~2026-06-30
+documentation_date: 2026-07-07
+
+artifacts:
+  - proposal.md
+  - spec.md
+  - tasks.md
+  - verify-report.md
+  - state.yaml
+
+dependencies: []
+
+verdict: pass
+verdict_notes: |
+  Rotación ejecutada ~2026-06-30 (acciones externas: dashboards Resend/Twilio + Vercel env vars).
+  Documentación completada 2026-07-07.
+  Validación funcional parcial (manual OK, E2E no ejecutado por falta de Supabase credentials en esta máquina).
+  Revocación de keys viejas en dashboards no confirmada explícitamente — recomendación de seguimiento.
+
+next_steps:
+  - Confirmar revocación explícita de keys viejas en Resend/Twilio dashboards
+  - Ejecutar `pnpm test:e2e` cuando se resuelva debt de Supabase credentials
+  - Programar próxima rotación para 2026-09-28 (90 días desde ~2026-06-30)
+  - Considerar purgar historial de git como tarea de seguimiento separada (fuera del alcance original)
+
+files_changed:
+  - scripts/validate-env.js (commit 1fa6145, 2026-06-30)
+  - .env.example (commit 1fa6145, 2026-06-30)
+  - docs/SECRET-ROTATION.md (auditoría documental 2026-06-30, actualizado 2026-07-07)
+  - docs/GO-LIVE-PLAN.md (2026-07-07)
+  - SECURITY-REPORT.md (auditoría 2026-06-30, actualizado 2026-07-07)
+  - project-brain/01_CURRENT_STATE.md (2026-07-07)
+  - project-brain/05_ROADMAP.md (2026-07-07)
+  - project-brain/07_TECH_DEBT.md (2026-07-07)
+  - project-brain/08_CHANGELOG.md (2026-07-07)
+  - openspec/changes/rotate-secrets/tasks.md (2026-07-07)
+  - openspec/changes/rotate-secrets/verify-report.md (2026-07-07)
+  - openspec/changes/rotate-secrets/state.yaml (2026-07-07)
+
+notes: |
+  Este change documenta la rotación de secrets ejecutada externamente (dashboards de terceros + Vercel)
+  alrededor del 2026-06-30, y la actualización de toda la documentación del proyecto para reflejar
+  el estado resuelto.
+
+  Acciones que NO forman parte de este change (por diseño):
+  - Supabase keys (nunca estuvieron expuestos, no rotados)
+  - Purgar historial de git (excluido del alcance — los valores viejos quedan en commits <1fa6145)
+
+  Score de seguridad subió de 7/10 a 8/10 tras la rotación.
