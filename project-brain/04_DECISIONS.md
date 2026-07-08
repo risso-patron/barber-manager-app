@@ -285,9 +285,23 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 **Constraint (permanent)**: next/font variable classes MUST live on `<html>`, not `<body>` — `globals.css` resolves `--font-sans: var(--font-inter)` at `:root`, and custom properties resolve `var()` where declared; on `<body>` the chain computes invalid and the entire app falls back to the browser serif (this was live in production styling M0→M2).
 
-**Consequences**: The five orphaned legacy nav components (`components/{admin,employee,client}/layout/*-sidebar|*-bottom-nav`) were deleted in the follow-up cleanup commit after a repo-wide zero-reference verification; `components/layout/sidebar.tsx` survives only as a dependency of the legacy `/dashboard` tree. `middleware.ts` still uses `/dashboard` as its role-mismatch fallback (7 redirect sites), so the `/dashboard` tree cannot be deleted until that fallback is migrated. `components/layout/footer.tsx` is still imported by live routes (`app/book/[slug]`, `app/auth/layout.tsx`) — not shell-related, migrates separately. Page bodies keep their own legacy styling until Design Bible Phases 4–9.
+**Consequences**: The five orphaned legacy nav components (`components/{admin,employee,client}/layout/*-sidebar|*-bottom-nav`) were deleted in the follow-up cleanup commit after a repo-wide zero-reference verification; `components/layout/sidebar.tsx` survives only as a dependency of the legacy `/dashboard` tree. The `/dashboard` middleware fallback was subsequently migrated and the tree deleted — see ADR-022. `components/layout/footer.tsx` is still imported by live routes (`app/book/[slug]`, `app/auth/layout.tsx`) — not shell-related, migrates separately. Page bodies keep their own legacy styling until Design Bible Phases 4–9.
 
 **Status**: Implemented (2026-07-08), pending commit approval. `type-check`/`lint` pass; verified in-browser (all three portals, ⌘K palette, mobile bottom nav + FAB, sign-out, WCAG AA contrast on shell chrome).
+
+---
+
+### ADR-022 — Role-based routing consolidated in lib/routes.ts; legacy /dashboard role-router deleted
+
+**Context**: `app/dashboard/page.tsx` was never a dashboard — it was a client-side role router (read session → map role → redirect). The role→home map was duplicated in four places (`app/dashboard/page.tsx`, `useRequireAuth`'s `DASHBOARD_MAP`, `login-form`'s `ROLE_MAP`, `navigation.ts` `home` fields), and `middleware.ts` redirected role mismatches to `/dashboard` even in the six (of seven) branches where it already knew the role.
+
+**Decision** (user-approved 2026-07-08, "Alternativa A"): `lib/routes.ts` is the single source of role routing — `ROLE_HOME` + `roleHome(role)`, edge-safe pure constants. The middleware redirects mismatches directly to the offender's portal home; `/dashboard` stays in the matcher only as an edge redirect for legacy bookmarks; the `roleError` branch (role query fails) now passes the request through and lets the client-side guard (`useRequireAuth`) decide — the same decider the legacy router delegated to, minus the hop. All four duplicated maps now import from `lib/routes.ts`. `app/dashboard/**` and `components/layout/sidebar.tsx` (its only consumer) deleted.
+
+**Multi-tenant path**: when tenants land, `roleHome(role)` becomes `roleHome(role, tenant)` in this one file; the middleware already resolves per-request Supabase state, so tenant resolution slots in without new architecture.
+
+**Consequences**: Authorization model unchanged (same checks, same roles, same matcher). Wrong-portal navigation now lands on the user's own home in one hop with no legacy-shell flash. Only behavior delta: on a transient role-query failure the user sees the guard skeleton instead of a redirect bounce. Verified in-browser across 7 redirect flows (no session, role mismatch ×3, legacy bookmarks ×2, admin cross-portal access).
+
+**Status**: Implemented (2026-07-08) — commits `50119d7` (consolidation) + `b822311` (deletion). `type-check`/`lint` pass.
 
 ---
 
