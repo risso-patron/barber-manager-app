@@ -23,7 +23,7 @@ import {
   ArrowLeft
 } from "lucide-react"
 import { InventoryModal } from "@/components/admin/inventory/inventory-modal"
-import { DeleteConfirmModal } from "@/components/admin/inventory/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -503,11 +503,21 @@ export default function InventoryPage() {
         item={selectedItem}
       />
 
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => { setIsDeleteModalOpen(false); setItemToDelete(null) }}
+      <ConfirmDialog
+        open={isDeleteModalOpen}
+        onOpenChange={(open) => {
+          if (!open) { setIsDeleteModalOpen(false); setItemToDelete(null) }
+        }}
+        title="¿Eliminar este artículo?"
+        description={
+          <>
+            <strong>{itemToDelete?.name || ""}</strong>. Esta acción no se puede deshacer.
+          </>
+        }
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Mantener artículo"
+        tone="danger"
         onConfirm={handleDeleteItem}
-        itemName={itemToDelete?.name || ""}
       />
     </div>
   )

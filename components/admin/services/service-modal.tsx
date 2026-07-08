@@ -1,11 +1,12 @@
 "use client"
 
+// M3 · Migrated onto FormModal + Field. Same props, same validation,
+// same onSave payloads — only the modal shell and inputs changed.
+
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { FormModal } from "@/components/ui/form-modal"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
 import type { Service } from "@/lib/demo"
 
 interface ServiceModalProps {
@@ -16,15 +17,6 @@ interface ServiceModalProps {
 }
 
 export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalProps) {
-  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
-
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
-  }, [isOpen, onClose])
-
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -82,9 +74,7 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
     return !newErrors.name && !newErrors.price && !newErrors.duration
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleSubmit = () => {
     if (!validateForm()) return
 
     const serviceData = {
@@ -101,100 +91,58 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    <FormModal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={service ? "Editar Servicio" : "Nuevo Servicio"}
+      submitLabel={service ? "Guardar Cambios" : "Crear Servicio"}
+      onSubmit={handleSubmit}
+      size="sm"
     >
-      <Card role="dialog" aria-modal="true" aria-labelledby="service-modal-title" className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle id="service-modal-title">{service ? "Editar Servicio" : "Nuevo Servicio"}</CardTitle>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar modal">
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                Nombre del Servicio <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="ej. Corte Clásico"
-                className={fieldClassName}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
-              )}
-            </div>
+      <Field label="Nombre del Servicio" htmlFor="name" required error={errors.name || undefined}>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="ej. Corte Clásico"
+          error={!!errors.name}
+        />
+      </Field>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción (opcional)</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="ej. Corte tradicional con máquina y tijera"
-                className={fieldClassName}
-              />
-            </div>
+      <Field label="Descripción (opcional)" htmlFor="description">
+        <Input
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="ej. Corte tradicional con máquina y tijera"
+        />
+      </Field>
 
-            {/* Price */}
-            <div className="space-y-2">
-              <Label htmlFor="price">
-                Precio ($) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="ej. 150"
-                className={fieldClassName}
-              />
-              {errors.price && (
-                <p className="text-sm text-red-500">{errors.price}</p>
-              )}
-            </div>
+      <Field label="Precio ($)" htmlFor="price" required error={errors.price || undefined}>
+        <Input
+          id="price"
+          type="number"
+          step="0.01"
+          value={formData.price}
+          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+          placeholder="ej. 150"
+          error={!!errors.price}
+        />
+      </Field>
 
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label htmlFor="duration">
-                Duración (minutos) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                placeholder="ej. 30"
-                className={fieldClassName}
-              />
-              {errors.duration && (
-                <p className="text-sm text-red-500">{errors.duration}</p>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button type="submit" className="flex-1">
-                {service ? "Guardar Cambios" : "Crear Servicio"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      <Field label="Duración (minutos)" htmlFor="duration" required error={errors.duration || undefined}>
+        <Input
+          id="duration"
+          type="number"
+          value={formData.duration}
+          onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+          placeholder="ej. 30"
+          error={!!errors.duration}
+        />
+      </Field>
+    </FormModal>
   )
 }

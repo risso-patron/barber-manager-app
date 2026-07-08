@@ -6,10 +6,10 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Badge, StatusBadge } from "@/components/ui/badge"
 import { CancelAppointmentModal } from "@/components/client/cancel-appointment-modal"
 import { DEMO_APPOINTMENTS } from "@/lib/demo"
-import { useToast, ToastContainer } from "@/components/ui/toast"
+import { useNotify } from "@/components/ui/notify"
 import { 
   Calendar, 
   Clock, 
@@ -52,7 +52,7 @@ export default function ClientAppointmentsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const user = useRequireAuth(["client"])
-  const { toasts, removeToast, success, error } = useToast()
+  const notify = useNotify()
 
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
@@ -63,7 +63,7 @@ export default function ClientAppointmentsPage() {
   useEffect(() => {
     const msg = searchParams.get("success")
     if (msg) {
-      success(decodeURIComponent(msg))
+      notify({ kind: "success", title: decodeURIComponent(msg) })
       router.replace("/client/appointments")
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +167,7 @@ export default function ClientAppointmentsPage() {
       setAppointments(prev => prev.map(a =>
         a.id === appointmentToCancel.id ? { ...a, status: "cancelled" as const } : a
       ))
-      success("Cita cancelada exitosamente (modo demo)")
+      notify({ kind: "success", title: "Cita cancelada exitosamente (modo demo)" })
       setCancelModalOpen(false)
       setAppointmentToCancel(null)
       return
@@ -176,7 +176,7 @@ export default function ClientAppointmentsPage() {
     // Verificar sesión activa antes de intentar actualizar
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser) {
-      error("Tu sesión expiró. Por favor vuelve a iniciar sesión.")
+      notify({ kind: "error", title: "Tu sesión expiró. Por favor vuelve a iniciar sesión." })
       setCancelModalOpen(false)
       setAppointmentToCancel(null)
       return
@@ -192,7 +192,7 @@ export default function ClientAppointmentsPage() {
 
     if (dbError) {
       console.error("Error cancelando cita:", dbError)
-      error("No se pudo cancelar la cita. Intenta de nuevo.")
+      notify({ kind: "error", title: "No se pudo cancelar la cita. Intenta de nuevo." })
       setCancelModalOpen(false)
       setAppointmentToCancel(null)
       return
@@ -200,7 +200,7 @@ export default function ClientAppointmentsPage() {
 
     if (!updatedRows || updatedRows.length === 0) {
       console.error("RLS bloqueó la cancelación o la cita no existe. authUser.id:", authUser.id, "appointmentId:", appointmentToCancel.id)
-      error("No se pudo cancelar la cita. Verifica que la cita te pertenece.")
+      notify({ kind: "error", title: "No se pudo cancelar la cita. Verifica que la cita te pertenece." })
       setCancelModalOpen(false)
       setAppointmentToCancel(null)
       return
@@ -212,7 +212,7 @@ export default function ClientAppointmentsPage() {
         apt.id === appointmentToCancel.id ? { ...apt, status: "cancelled" as const } : apt
       )
     )
-    success("Cita cancelada exitosamente.")
+    notify({ kind: "success", title: "Cita cancelada exitosamente." })
     setCancelModalOpen(false)
     setAppointmentToCancel(null)
 
@@ -349,9 +349,7 @@ export default function ClientAppointmentsPage() {
                   <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 400, color: "#F0F0F0" }}>
                     {apt.serviceName}
                   </p>
-                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: statusColor[apt.status] ?? "#555555" }}>
-                    {statusLabel[apt.status] ?? apt.status}
-                  </span>
+                  <StatusBadge status={apt.status} />
                 </div>
                 <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
                   {new Date(apt.date + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "long" })}
@@ -433,8 +431,6 @@ export default function ClientAppointmentsPage() {
           employeeName: appointmentToCancel?.employeeName || "",
         }}
       />
-
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

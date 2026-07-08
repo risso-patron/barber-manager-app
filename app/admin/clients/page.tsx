@@ -23,7 +23,10 @@ import {
 import type { Client } from "@/lib/demo"
 import { DEMO_CLIENTS } from "@/lib/demo"
 import { ClientModal } from "@/components/admin/clients/client-modal"
-import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { AsyncPane, paneState } from "@/components/ui/async-pane"
+import { EmptyState } from "@/components/ui/empty-state"
+import { SkeletonList } from "@/components/ui/skeleton"
 import { LoyaltyModal } from "@/components/admin/clients/loyalty-modal"
 import { ClientIdentity } from "@/components/admin/clients/client-identity"
 
@@ -276,16 +279,12 @@ export default function ClientsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : filteredClients.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No se encontraron clientes</p>
-              </div>
-            ) : (
+            <AsyncPane
+              state={paneState({ loading: isLoading, count: filteredClients.length })}
+              skeleton={<SkeletonList rows={6} />}
+              empty={<EmptyState icon={Users} title="No se encontraron clientes" size="compact" />}
+              size="compact"
+            >
               <>
                 {pagedClients.map((client) => (
                   <div
@@ -393,7 +392,7 @@ export default function ClientsPage() {
                 </div>
               )}
               </>
-            )}
+            </AsyncPane>
           </div>
         </CardContent>
       </Card>
@@ -417,11 +416,22 @@ export default function ClientsPage() {
       )}
 
       {deletingClient && (
-        <DeleteConfirmModal
-          isOpen={!!deletingClient}
-          onClose={() => setDeletingClient(null)}
+        <ConfirmDialog
+          open={!!deletingClient}
+          onOpenChange={(open) => {
+            if (!open) setDeletingClient(null)
+          }}
+          title="¿Eliminar este cliente?"
+          description={
+            <>
+              <strong>{deletingClient.name}</strong>. Esta acción no se puede deshacer: se eliminan sus
+              datos y el historial de citas asociado.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener cliente"
+          tone="danger"
           onConfirm={() => handleDeleteClient(deletingClient.id)}
-          clientName={deletingClient.name}
         />
       )}
       {loyaltyClient && (

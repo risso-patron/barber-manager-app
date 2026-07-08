@@ -26,7 +26,10 @@ import {
 import { DEMO_EMPLOYEES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
-import { DeleteConfirmModal } from "@/components/admin/employees/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { AsyncPane, paneState } from "@/components/ui/async-pane"
+import { EmptyState } from "@/components/ui/empty-state"
+import { SkeletonList } from "@/components/ui/skeleton"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -338,17 +341,20 @@ export default function EmployeesPage() {
 
       {/* Employees Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          <div className="col-span-full flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : filteredEmployees.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No se encontraron empleados</p>
-          </div>
-        ) : (
-          pagedEmployees.map((employee) => (
+        <AsyncPane
+          state={paneState({ loading: isLoading, count: filteredEmployees.length })}
+          skeleton={<SkeletonList rows={6} className="col-span-full" />}
+          empty={
+            <EmptyState
+              icon={Users}
+              title="No se encontraron empleados"
+              size="compact"
+              className="col-span-full"
+            />
+          }
+          size="compact"
+        >
+          {pagedEmployees.map((employee) => (
             <Card key={employee.id} className="hover:shadow-lg transition-shadow" style={{ border: "1px solid #2E2E2E" }}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -441,8 +447,8 @@ export default function EmployeesPage() {
                 )}
               </CardContent>
             </Card>
-          ))
-        )}
+          ))}
+        </AsyncPane>
       </div>
 
       {totalPages > 1 && (
@@ -480,11 +486,22 @@ export default function EmployeesPage() {
       )}
 
       {deletingEmployee && (
-        <DeleteConfirmModal
-          isOpen={!!deletingEmployee}
-          onClose={() => setDeletingEmployee(null)}
+        <ConfirmDialog
+          open={!!deletingEmployee}
+          onOpenChange={(open) => {
+            if (!open) setDeletingEmployee(null)
+          }}
+          title="¿Eliminar a este empleado?"
+          description={
+            <>
+              <strong>{deletingEmployee.name}</strong>. Esta acción no se puede deshacer: se eliminan
+              sus datos y asignaciones.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener empleado"
+          tone="danger"
           onConfirm={() => handleDeleteEmployee(deletingEmployee.id)}
-          employeeName={deletingEmployee.name}
         />
       )}
     </div>

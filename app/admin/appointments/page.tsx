@@ -5,7 +5,7 @@ import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Badge, StatusBadge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import {
   Calendar,
@@ -43,7 +43,7 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
-import { DeleteConfirmModal } from "@/components/admin/appointments/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   pending:   "orno-status-pending   border",
@@ -637,9 +637,7 @@ export default function AppointmentsPage() {
                     <div className="flex-1 space-y-3">
                       {/* Header */}
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={STATUS_COLORS[appointment.status]}>
-                          {STATUS_LABELS[appointment.status]}
-                        </Badge>
+                        <StatusBadge status={appointment.status} />
                         <span className="text-sm text-gray-600 hidden sm:inline">
                           {new Date(appointment.date).toLocaleDateString('es-ES', {
                             weekday: 'long',
@@ -858,11 +856,22 @@ export default function AppointmentsPage() {
       )}
 
       {deletingAppointment && (
-        <DeleteConfirmModal
-          isOpen={!!deletingAppointment}
-          onClose={() => setDeletingAppointment(null)}
+        <ConfirmDialog
+          open={!!deletingAppointment}
+          onOpenChange={(open) => {
+            if (!open) setDeletingAppointment(null)
+          }}
+          title="¿Eliminar esta cita?"
+          description={
+            <>
+              {`${deletingAppointment.clientName} - ${deletingAppointment.serviceName}`}. Esta acción no se
+              puede deshacer y el horario quedará libre.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener cita"
+          tone="danger"
           onConfirm={() => handleDeleteAppointment(deletingAppointment.id)}
-          appointmentInfo={`${deletingAppointment.clientName} - ${deletingAppointment.serviceName}`}
         />
       )}
     </div>

@@ -19,7 +19,7 @@ import {
 import { type Service, DEMO_SERVICES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { ServiceModal } from "@/components/admin/services/service-modal"
-import { DeleteConfirmModal } from "@/components/admin/services/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -303,11 +303,22 @@ export default function ServicesPage() {
       )}
 
       {deletingService && (
-        <DeleteConfirmModal
-          isOpen={!!deletingService}
-          onClose={() => setDeletingService(null)}
+        <ConfirmDialog
+          open={!!deletingService}
+          onOpenChange={(open) => {
+            if (!open) setDeletingService(null)
+          }}
+          title="¿Eliminar este servicio?"
+          description={
+            <>
+              <strong>{deletingService.name}</strong>. Esta acción no se puede deshacer: se eliminan
+              todos los datos asociados.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener servicio"
+          tone="danger"
           onConfirm={() => handleDeleteService(deletingService.id)}
-          serviceName={deletingService.name}
         />
       )}
     </div>

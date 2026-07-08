@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, STATUS_LABELS as APPOINTMENT_STATUS_LABELS } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
+import { StatusBadge } from "@/components/ui/badge"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -113,9 +114,7 @@ export default function EmployeeHistoryPage() {
                 <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "18px", fontWeight: 400, color: "#F0F0F0" }}>
                   {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })} · {apt.clientName}
                 </p>
-                <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: STATUS_COLOR[apt.status] }}>
-                  {APPOINTMENT_STATUS_LABELS[apt.status]}
-                </span>
+                <StatusBadge status={apt.status} />
               </div>
               <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "3px" }}>
                 {apt.serviceName} · {apt.status === "completed" ? `$${apt.price}` : "—"}

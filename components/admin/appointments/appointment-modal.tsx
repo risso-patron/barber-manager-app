@@ -1,10 +1,15 @@
 "use client"
 
+// M3 · Migrated onto FormModal + Field. Same props, same validation, same
+// payloads. Native selects kept (ORNO-tokened) to preserve exact behavior.
+
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { FormModal } from "@/components/ui/form-modal"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { X, UserPlus, ChevronLeft } from "lucide-react"
+import { UserPlus, ChevronLeft } from "lucide-react"
 import type { Appointment, Service, Employee, Client } from "@/lib/demo"
 
 interface AppointmentModalProps {
@@ -17,6 +22,10 @@ interface AppointmentModalProps {
   clients: Client[]
 }
 
+// Native select, ORNO-tokened (mirrors the Input primitive's surface).
+const SELECT_CLS =
+  "flex h-12 w-full rounded-lg border border-border bg-card px-4 text-[15px] text-foreground transition-colors duration-micro ease-orno focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-primary focus-visible:ring-accent"
+
 export function AppointmentModal({
   isOpen,
   onClose,
@@ -26,15 +35,6 @@ export function AppointmentModal({
   employees,
   clients,
 }: AppointmentModalProps) {
-  const fieldClassName = "bg-[#1A1A1A] text-[#F0F0F0] placeholder:text-[#666666] border border-[#2E2E2E] focus:border-[#E53935] focus-visible:border-[#E53935]"
-
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
-  }, [isOpen, onClose])
-
   // Sync form whenever the modal opens or the appointment being edited changes
   useEffect(() => {
     if (!isOpen) return
@@ -141,8 +141,7 @@ export function AppointmentModal({
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     if (!validate()) return
 
     const clientId = isNewClient ? "__new__" : formData.clientId
@@ -158,225 +157,179 @@ export function AppointmentModal({
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    <FormModal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={appointment ? "Editar Cita" : "Nueva Cita"}
+      submitLabel={appointment ? "Guardar Cambios" : "Crear Cita"}
+      onSubmit={handleSubmit}
+      size="lg"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="apt-modal-title"
-        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 id="apt-modal-title" className="text-xl font-bold">
-            {appointment ? "Editar Cita" : "Nueva Cita"}
-          </h2>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar modal">
-            <X className="h-4 w-4" />
-          </Button>
+      {/* Client Selection */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="clientId">
+            Cliente
+            <span className="ml-1 text-ink-400" aria-hidden="true">*</span>
+          </Label>
+          <button
+            type="button"
+            onClick={() => {
+              setIsNewClient(!isNewClient)
+              setNewClientName("")
+              setNewClientPhone("")
+              setFormData({ ...formData, clientId: "", clientName: "", clientPhone: "" })
+            }}
+            className="flex items-center gap-1 text-[13px] font-medium text-sage-700 hover:text-sage-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          >
+            {isNewClient ? (
+              <><ChevronLeft className="h-3 w-3" /> Seleccionar existente</>
+            ) : (
+              <><UserPlus className="h-3 w-3" /> Nuevo cliente</>
+            )}
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Client Selection */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="clientId">Cliente *</Label>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNewClient(!isNewClient)
-                  setNewClientName("")
-                  setNewClientPhone("")
-                  setFormData({ ...formData, clientId: "", clientName: "", clientPhone: "" })
-                }}
-                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-              >
-                {isNewClient ? (
-                  <><ChevronLeft className="h-3 w-3" /> Seleccionar existente</>
-                ) : (
-                  <><UserPlus className="h-3 w-3" /> Nuevo cliente</>
-                )}
-              </button>
-            </div>
-
-            {isNewClient ? (
-              <div className="space-y-2 p-3 bg-blue-50 rounded-md border border-blue-200">
-                <p className="text-xs text-blue-700 font-medium">Se creará un cliente nuevo al guardar</p>
-                <Input
-                  placeholder="Nombre completo *"
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  className={fieldClassName}
-                />
-                {formErrors.newClientName && <p className="text-xs text-red-500">{formErrors.newClientName}</p>}
-                <Input
-                  placeholder="Teléfono *"
-                  type="tel"
-                  value={newClientPhone}
-                  onChange={(e) => setNewClientPhone(e.target.value)}
-                  className={fieldClassName}
-                />
-              </div>
-            ) : (
-              <>
-                <select
-                  id="clientId"
-                  aria-label="Cliente"
-                  value={formData.clientId}
-                  onChange={(e) => handleClientChange(e.target.value)}
-                  className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} - {client.phone}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.clientId && <p className="text-xs text-red-500">{formErrors.clientId}</p>}
-              </>
+        {isNewClient ? (
+          <div className="flex flex-col gap-2 rounded-lg border border-dustyblue/25 bg-dustyblue-tint p-3">
+            <p className="text-[13px] font-medium text-dustyblue-text">Se creará un cliente nuevo al guardar</p>
+            <Input
+              placeholder="Nombre completo *"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              error={!!formErrors.newClientName}
+            />
+            {formErrors.newClientName && (
+              <p role="alert" className="text-[13px] font-medium text-danger">{formErrors.newClientName}</p>
             )}
-          </div>
-
-          {/* Service Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="serviceId">Servicio *</Label>
-            <select
-              id="serviceId"
-              aria-label="Servicio"
-              value={formData.serviceId}
-              onChange={(e) => handleServiceChange(e.target.value)}
-              className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
-            >
-              <option value="">Seleccionar servicio</option>
-              {services.map(service => (
-                <option key={service.id} value={service.id}>
-                  {service.name} - ${service.price} ({service.duration} min)
-                </option>
-              ))}
-            </select>
-            {formErrors.serviceId && <p className="text-xs text-red-500">{formErrors.serviceId}</p>}
-          </div>
-
-          {/* Employee Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="employeeId">Barbero *</Label>
-            <select
-              id="employeeId"
-              aria-label="Barbero"
-              value={formData.employeeId}
-              onChange={(e) => handleEmployeeChange(e.target.value)}
-              className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
-            >
-              <option value="">Seleccionar barbero</option>
-              {employees.map(employee => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
-            {formErrors.employeeId && <p className="text-xs text-red-500">{formErrors.employeeId}</p>}
-          </div>
-
-          {/* Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date">Fecha *</Label>
-              <Input
-                id="date"
-                type="date"
-                min={appointment ? undefined : todayISO}
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className={fieldClassName}
-              />
-              {formErrors.date && <p className="text-xs text-red-500">{formErrors.date}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="time">Hora *</Label>
-              <Input
-                id="time"
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className={fieldClassName}
-              />
-              {formErrors.time && <p className="text-xs text-red-500">{formErrors.time}</p>}
-            </div>
-          </div>
-
-          {/* Duration and Price (read-only, auto-filled from service) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duración (minutos)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.duration}
-                readOnly
-                className={fieldClassName}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price">Precio ($)</Label>
-              <Input
-                id="price"
-                type="number"
-                value={formData.price}
-                readOnly
-                className={fieldClassName}
-              />
-            </div>
-          </div>
-
-          {/* Status (only for editing) */}
-          {appointment && (
-            <div className="space-y-2">
-              <Label htmlFor="status">Estado</Label>
-              <select
-                id="status"
-                aria-label="Estado de la cita"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
-                className={`flex h-10 w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
-              >
-                <option value="pending">Pendiente</option>
-                <option value="confirmed">Confirmada</option>
-                <option value="completed">Completada</option>
-                <option value="cancelled">Cancelada</option>
-              </select>
-            </div>
-          )}
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas (opcional)</Label>
-            <textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className={`flex min-h-[80px] w-full rounded-md px-3 py-2 text-sm ${fieldClassName}`}
-              placeholder="Preferencias del cliente, observaciones especiales..."
+            <Input
+              placeholder="Teléfono *"
+              type="tel"
+              value={newClientPhone}
+              onChange={(e) => setNewClientPhone(e.target.value)}
             />
           </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {appointment ? "Guardar Cambios" : "Crear Cita"}
-            </Button>
-          </div>
-        </form>
+        ) : (
+          <>
+            <select
+              id="clientId"
+              aria-label="Cliente"
+              value={formData.clientId}
+              onChange={(e) => handleClientChange(e.target.value)}
+              className={SELECT_CLS}
+            >
+              <option value="">Seleccionar cliente</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.name} - {client.phone}
+                </option>
+              ))}
+            </select>
+            {formErrors.clientId && (
+              <p role="alert" className="text-[13px] font-medium text-danger">{formErrors.clientId}</p>
+            )}
+          </>
+        )}
       </div>
-    </div>
+
+      <Field label="Servicio" htmlFor="serviceId" required error={formErrors.serviceId}>
+        <select
+          id="serviceId"
+          aria-label="Servicio"
+          value={formData.serviceId}
+          onChange={(e) => handleServiceChange(e.target.value)}
+          className={SELECT_CLS}
+        >
+          <option value="">Seleccionar servicio</option>
+          {services.map(service => (
+            <option key={service.id} value={service.id}>
+              {service.name} - ${service.price} ({service.duration} min)
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="Barbero" htmlFor="employeeId" required error={formErrors.employeeId}>
+        <select
+          id="employeeId"
+          aria-label="Barbero"
+          value={formData.employeeId}
+          onChange={(e) => handleEmployeeChange(e.target.value)}
+          className={SELECT_CLS}
+        >
+          <option value="">Seleccionar barbero</option>
+          {employees.map(employee => (
+            <option key={employee.id} value={employee.id}>
+              {employee.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {/* Date and Time */}
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Fecha" htmlFor="date" required error={formErrors.date}>
+          <Input
+            id="date"
+            type="date"
+            min={appointment ? undefined : todayISO}
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            error={!!formErrors.date}
+          />
+        </Field>
+
+        <Field label="Hora" htmlFor="time" required error={formErrors.time}>
+          <Input
+            id="time"
+            type="time"
+            value={formData.time}
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            error={!!formErrors.time}
+          />
+        </Field>
+      </div>
+
+      {/* Duration and Price (read-only, auto-filled from service) */}
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Duración (minutos)" htmlFor="duration">
+          <Input id="duration" type="number" value={formData.duration} readOnly />
+        </Field>
+
+        <Field label="Precio ($)" htmlFor="price">
+          <Input id="price" type="number" value={formData.price} readOnly />
+        </Field>
+      </div>
+
+      {/* Status (only for editing) */}
+      {appointment && (
+        <Field label="Estado" htmlFor="status">
+          <select
+            id="status"
+            aria-label="Estado de la cita"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
+            className={SELECT_CLS}
+          >
+            <option value="pending">Pendiente</option>
+            <option value="confirmed">Confirmada</option>
+            <option value="completed">Completada</option>
+            <option value="cancelled">Cancelada</option>
+          </select>
+        </Field>
+      )}
+
+      <Field label="Notas (opcional)" htmlFor="notes">
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          placeholder="Preferencias del cliente, observaciones especiales..."
+        />
+      </Field>
+    </FormModal>
   )
 }

@@ -6,7 +6,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Badge, StatusBadge } from "@/components/ui/badge"
 import { RescheduleModal } from "@/components/client/RescheduleModal"
 import { RatingModal } from "@/components/client/RatingModal"
 import {
@@ -294,9 +294,7 @@ export default function ClientHistoryPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>{apt.serviceName}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: statusColor[apt.status] ?? "#555555" }}>
-                      {getStatusText(apt.status)}
-                    </span>
+                    <StatusBadge status={apt.status} />
                     {apt.price > 0 && (
                       <span style={{ fontFamily: "var(--font-dm-mono)", fontSize: "12px", color: "#8A8A8A" }}>${apt.price}</span>
                     )}
