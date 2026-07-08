@@ -1,29 +1,72 @@
-import type * as React from "react"
+import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Check, Clock, X, UserX, Star } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// ORNO UI Framework · M1 · Data Display
+// Tinted pills, radius 999. Constitution rule: estado NUNCA solo por color —
+// use StatusBadge (icon + text) for appointment states.
+
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  "inline-flex h-[26px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold whitespace-nowrap [&_svg]:size-3 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+        neutral: "bg-secondary text-ink-600",
+        success: "bg-success-tint text-success-text",
+        warning: "bg-warning-tint text-warning-text",
+        danger: "bg-danger-tint text-danger-text",
+        info: "bg-dustyblue-tint text-dustyblue-text",
+        lavender: "bg-lavender-tint text-lavender-text",
+        terracotta: "bg-terracotta-tint text-terracotta-text",
+        outline: "border border-border bg-card text-ink-600",
+        default: "bg-sage-100 text-sage-700", // alias (legacy shadcn primary → sage tint)
+        secondary: "bg-secondary text-ink-600", // alias (legacy shadcn → neutral)
+        destructive: "bg-danger-tint text-danger-text", // alias (legacy shadcn → danger)
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
+    defaultVariants: { variant: "neutral" },
+  }
 )
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof badgeVariants> {}
 
 function Badge({ className, variant, ...props }: BadgeProps) {
-  return <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />
+}
+
+/* ── StatusBadge — appointment estados with mandatory icon + label ── */
+
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "checked_in"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "no_show"
+
+const STATUS: Record<AppointmentStatus, { label: string; variant: BadgeProps["variant"]; icon: React.ReactNode }> = {
+  pending: { label: "Sin confirmar", variant: "warning", icon: <Clock aria-hidden="true" /> },
+  confirmed: { label: "Confirmada", variant: "success", icon: <Check aria-hidden="true" /> },
+  checked_in: { label: "En el local", variant: "info", icon: <Check aria-hidden="true" /> },
+  in_progress: { label: "En curso", variant: "success", icon: <Star aria-hidden="true" /> },
+  completed: { label: "Completada", variant: "neutral", icon: <Check aria-hidden="true" /> },
+  cancelled: { label: "Cancelada", variant: "danger", icon: <X aria-hidden="true" /> },
+  no_show: { label: "No vino", variant: "terracotta", icon: <UserX aria-hidden="true" /> },
+}
+
+export function StatusBadge({ status, className }: { status: AppointmentStatus; className?: string }) {
+  const s = STATUS[status]
+  return (
+    <Badge variant={s.variant} className={className}>
+      {s.icon}
+      {s.label}
+    </Badge>
+  )
 }
 
 export { Badge, badgeVariants }

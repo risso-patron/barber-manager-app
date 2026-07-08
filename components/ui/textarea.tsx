@@ -2,26 +2,33 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>
+// ORNO UI Framework · M1 · Forms
+
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  error?: boolean
+}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, error = false, ...props }, ref) => {
     return (
       <textarea
+        ref={ref}
+        aria-invalid={error || undefined}
         className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-          "placeholder:text-muted-foreground",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          "disabled:cursor-not-allowed disabled:opacity-50",
+          "flex min-h-[96px] w-full rounded-lg border bg-card px-4 py-3.5 text-[15px] leading-normal text-foreground transition-colors duration-micro ease-orno",
+          "placeholder:text-ink-400",
+          "focus-visible:outline-none focus-visible:ring-[3px]",
+          "disabled:cursor-not-allowed disabled:bg-secondary disabled:text-ink-300",
+          error
+            ? "border-danger focus-visible:border-danger focus-visible:ring-danger-tint"
+            : "border-border focus-visible:border-primary focus-visible:ring-accent",
           className
         )}
-        ref={ref}
         {...props}
       />
     )
   }
 )
-
 Textarea.displayName = "Textarea"
 
 export { Textarea }
