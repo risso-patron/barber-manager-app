@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #ECE8E1; }
+    * { box-sizing: border-box; }
+    @keyframes orno-pop { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes orno-pulse { 0% { box-shadow: 0 0 0 0 rgba(95,159,119,.3); } 70% { box-shadow: 0 0 0 6px rgba(95,159,119,0); } 100% { box-shadow: 0 0 0 0 rgba(95,159,119,0); } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F; padding: 48px 32px 80px">
+  <div style="max-width: 1360px; margin: 0 auto">
+    <div style="margin-bottom: 32px">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A847A; margin-bottom: 8px">Fase 7 · App del barbero</div>
+      <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px">El día de Nico, en su bolsillo</h1>
+      <p style="font-size: 15px; color: #57534B; margin: 0; max-width: 720px; line-height: 1.6">Tres pantallas, cero administración. Todo lo que Nico toca lo ayuda a atender al próximo cliente más rápido. Acciones a la altura del pulgar, objetivos ≥48px.</p>
+    </div>
+
+    <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+
+      <!-- ═══════ PHONE 1: MI DÍA ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">1 · Mi día — la pantalla que vive abierta</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 780px">
+          <!-- status -->
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>11:35</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+
+          <div style="flex: 1; overflow-y: auto; padding: 4px 16px 16px">
+            <!-- greeting -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px">
+              <div>
+                <div style="font-size: 21px; font-weight: 600; letter-spacing: -0.02em">Hola, Nico</div>
+                <div style="font-size: 13.5px; color: #57534B">Martes · 6 citas · terminas 19:30</div>
+              </div>
+              <span style="width: 42px; height: 42px; border-radius: 999px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600">NG</span>
+            </div>
+
+            <!-- NOW card -->
+            <div style="background: #FFFFFF; border: 1.5px solid #5F9F77; border-radius: 20px; padding: 18px; margin-bottom: 12px; animation: orno-pulse 2.6s infinite">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px">
+                <span style="height: 24px; padding: 0 11px; border-radius: 999px; background: #5F9F77; color: #FFFFFF; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center">En la silla · 35 min</span>
+                <span style="font-size: 12.5px; color: #8A847A; font-variant-numeric: tabular-nums">11:00–12:00</span>
+              </div>
+              <div style="font-size: 18px; font-weight: 600; margin-bottom: 2px">Julián Torres</div>
+              <div style="font-size: 13.5px; color: #57534B; margin-bottom: 12px">Corte + barba · viene cada 3 semanas</div>
+              <div style="background: #FFF9EE; border: 1px solid #EFE4CC; border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; display: flex; gap: 9px">
+                <i data-lucide="sticky-note" style="width: 14px; height: 14px; color: #8F6A1F; flex-shrink: 0; margin-top: 1px"></i>
+                <span style="font-size: 13px; line-height: 1.45">La <strong>2 a los costados, tijera arriba</strong>. Raya baja izq. Sin mentol.</span>
+              </div>
+              <div style="display: flex; gap: 8px">
+                <button style="flex: 1; height: 48px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="check" style="width: 17px; height: 17px"></i>Terminé</button>
+                <button style="width: 48px; height: 48px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: flex; align-items: center; justify-content: center" title="Foto del corte" style-hover="background: #F4F2EE"><i data-lucide="camera" style="width: 18px; height: 18px"></i></button>
+                <button style="width: 48px; height: 48px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: flex; align-items: center; justify-content: center" title="Añadir nota" style-hover="background: #F4F2EE"><i data-lucide="sticky-note" style="width: 18px; height: 18px"></i></button>
+              </div>
+            </div>
+
+            <!-- NEXT strip -->
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px">
+              <div style="text-align: center; flex-shrink: 0; width: 48px">
+                <div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">12:30</div>
+                <div style="font-size: 10.5px; color: #8A847A">en 55 min</div>
+              </div>
+              <div style="width: 1px; height: 34px; background: #F0EDE8"></div>
+              <div style="flex: 1; min-width: 0">
+                <div style="font-size: 14.5px; font-weight: 600">Lucas Ríos <span style="height: 20px; padding: 0 8px; border-radius: 999px; background: #EAEFF4; color: #4A6B87; font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; vertical-align: 2px">Ya llegó</span></div>
+                <div style="font-size: 12.5px; color: #57534B">Corte + barba · vuelve tras 47 días</div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: #C6C0B6"></i>
+            </div>
+
+            <!-- Rest of day (compact) -->
+            <div style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A; padding: 8px 4px">Después</div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{ laterToday }}" as="l" hint-placeholder-count="4">
+                <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; opacity: {{ l.opacity }}">
+                  <span style="font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; width: 42px; flex-shrink: 0">{{ l.time }}</span>
+                  <div style="flex: 1; min-width: 0">
+                    <div style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ l.name }}</div>
+                    <div style="font-size: 12px; color: #8A847A">{{ l.meta }}</div>
+                  </div>
+                  <span style="height: 20px; padding: 0 9px; border-radius: 999px; background: {{ l.badgeBg }}; color: {{ l.badgeFg }}; font-size: 10.5px; font-weight: 600; display: inline-flex; align-items: center; flex-shrink: 0">{{ l.badge }}</span>
+                </div>
+              </sc-for>
+              <div style="border: 1.5px dashed #D8D3CA; border-radius: 14px; padding: 11px; text-align: center; font-size: 12.5px; color: #8A847A; font-weight: 500">13:30 · 45 min libres — <span style="color: #3E7354; font-weight: 600">avisar que estoy libre</span></div>
+            </div>
+          </div>
+
+          <!-- bottom nav -->
+          <div style="flex-shrink: 0; border-top: 1px solid #E8E4DE; background: rgba(250,249,247,.95); backdrop-filter: blur(12px); display: flex; padding: 8px 8px 20px">
+            <sc-for list="{{ tabs1 }}" as="t" hint-placeholder-count="4">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; cursor: pointer; color: {{ t.fg }}">
+                <i data-lucide="{{ t.icon }}" style="width: 21px; height: 21px"></i>
+                <span style="font-size: 10.5px; font-weight: 600">{{ t.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PHONE 2: CLIENT SHEET ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">2 · El cliente, en 5 segundos — hoja al tocar una cita</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 780px; position: relative">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>11:35</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+          <!-- dimmed background hint -->
+          <div style="padding: 8px 16px; opacity: .35; filter: blur(1px)">
+            <div style="font-size: 21px; font-weight: 600">Hola, Nico</div>
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; height: 90px; margin-top: 12px"></div>
+          </div>
+          <!-- sheet -->
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; top: 148px; background: #FFFFFF; border-radius: 28px 28px 40px 40px; box-shadow: 0 -16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; animation: orno-pop 200ms cubic-bezier(0.2,0,0,1)">
+            <div style="display: flex; justify-content: center; padding: 10px 0 4px"><span style="width: 40px; height: 4px; border-radius: 999px; background: #E8E4DE"></span></div>
+            <div style="flex: 1; overflow-y: auto; padding: 12px 20px 20px">
+              <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px">
+                <span style="width: 56px; height: 56px; border-radius: 999px; background: #EAEFF4; color: #4A6B87; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; flex-shrink: 0">LR</span>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em">Lucas Ríos</div>
+                  <div style="font-size: 13px; color: #57534B">12:30 · Corte + barba · 60 min</div>
+                </div>
+                <span style="height: 26px; padding: 0 11px; border-radius: 999px; background: #EAEFF4; color: #4A6B87; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center">Ya llegó</span>
+              </div>
+
+              <!-- the 3 things that matter -->
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px">
+                <div style="background: #FFF9EE; border: 1px solid #EFE4CC; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px">
+                  <i data-lucide="sticky-note" style="width: 15px; height: 15px; color: #8F6A1F; flex-shrink: 0; margin-top: 1px"></i>
+                  <span style="font-size: 13.5px; line-height: 1.5">Degradado medio, <strong>no muy corto arriba</strong>. La última vez pidió probar con raya.</span>
+                </div>
+                <div style="background: #F4F2EE; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px">
+                  <i data-lucide="history" style="width: 15px; height: 15px; color: #57534B; flex-shrink: 0; margin-top: 1px"></i>
+                  <span style="font-size: 13.5px; line-height: 1.5; color: #57534B"><strong style="color: #26231F">Vuelve tras 47 días</strong> — venía cada 3 semanas. Vale la pena preguntarle cómo anda.</span>
+                </div>
+                <div style="background: #F4F2EE; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px">
+                  <i data-lucide="image" style="width: 15px; height: 15px; color: #57534B; flex-shrink: 0; margin-top: 1px"></i>
+                  <div style="flex: 1">
+                    <div style="font-size: 13px; color: #57534B; margin-bottom: 8px">Su último corte · 19 may</div>
+                    <div style="display: flex; gap: 8px">
+                      <span style="width: 72px; height: 72px; border-radius: 12px; background: linear-gradient(135deg, #E8E4DE, #D8D3CA); display: inline-flex; align-items: center; justify-content: center; color: #8A847A"><i data-lucide="image" style="width: 22px; height: 22px"></i></span>
+                      <span style="width: 72px; height: 72px; border-radius: 12px; background: linear-gradient(135deg, #E8E4DE, #D8D3CA); display: inline-flex; align-items: center; justify-content: center; color: #8A847A"><i data-lucide="image" style="width: 22px; height: 22px"></i></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- actions -->
+              <button style="width: 100%; height: 52px; border-radius: 16px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; margin-bottom: 10px" style-hover="background: #4C8862"><i data-lucide="play" style="width: 17px; height: 17px"></i>Empezar servicio</button>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                <button style="height: 46px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px" style-hover="background: #F4F2EE"><i data-lucide="message-circle" style="width: 15px; height: 15px; color: #3E7354"></i>«Ya te atiendo»</button>
+                <button style="height: 46px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px" style-hover="background: #F4F2EE"><i data-lucide="calendar-clock" style="width: 15px; height: 15px; color: #57534B"></i>Mover cita</button>
+              </div>
+              <div style="font-size: 12px; color: #8A847A; text-align: center; margin-top: 14px">Al terminar te sugerimos reservarle la próxima — su recompra sube 15pp.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PHONE 3: MI SEMANA ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">3 · Lo mío — propinas, semana y disponibilidad</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 780px">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>11:35</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+          <div style="flex: 1; overflow-y: auto; padding: 4px 16px 16px">
+            <div style="font-size: 21px; font-weight: 600; letter-spacing: -0.02em; padding: 8px 4px 16px">Lo mío</div>
+
+            <!-- earnings -->
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 20px; margin-bottom: 12px">
+              <div style="font-size: 12.5px; color: #8A847A; margin-bottom: 4px">Esta semana llevas</div>
+              <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px">
+                <span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">$67.400</span>
+                <span style="font-size: 13px; font-weight: 600; color: #3E7354">+8% vs. tu semana pasada</span>
+              </div>
+              <div style="display: flex; gap: 20px; padding-top: 14px; border-top: 1px solid #F4F2EE">
+                <div><div style="font-size: 11.5px; color: #8A847A">Comisiones</div><div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">$53.300</div></div>
+                <div><div style="font-size: 11.5px; color: #8A847A">Propinas</div><div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">$14.100</div></div>
+                <div><div style="font-size: 11.5px; color: #8A847A">Cortes</div><div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">23</div></div>
+              </div>
+            </div>
+
+            <!-- my week -->
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 20px; margin-bottom: 12px">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+                <span style="font-size: 15px; font-weight: 600">Mi semana</span>
+                <span style="font-size: 12.5px; color: #8A847A">7–13 jul</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <sc-for list="{{ myWeek }}" as="d" hint-placeholder-count="5">
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <span style="width: 38px; font-size: 12.5px; font-weight: 600; color: {{ d.fg }}; flex-shrink: 0">{{ d.day }}</span>
+                    <div style="flex: 1; height: 30px; border-radius: 9px; background: {{ d.barBg }}; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600; color: {{ d.barFg }}; border: {{ d.border }}">{{ d.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <button style="margin-top: 14px; width: 100%; height: 44px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="calendar-x" style="width: 15px; height: 15px; color: #57534B"></i>Pedir día libre o bloquear horas</button>
+            </div>
+
+            <!-- craft feedback, not surveillance -->
+            <div style="background: #F3F8F5; border: 1px solid #DCE9E1; border-radius: 20px; padding: 20px">
+              <div style="display: flex; gap: 10px; margin-bottom: 6px"><i data-lucide="sparkles" style="width: 16px; height: 16px; color: #3E7354; flex-shrink: 0; margin-top: 2px"></i><span style="font-size: 14.5px; font-weight: 600; line-height: 1.4">Tus clientes son los que más vuelven del equipo</span></div>
+              <p style="font-size: 13px; color: #57534B; line-height: 1.55; margin: 0 0 12px">78% reserva de nuevo dentro de 45 días. Tu truco de ofrecer la próxima cita en la silla funciona — seguí así.</p>
+              <div style="display: flex; gap: 8px">
+                <span style="height: 26px; padding: 0 11px; border-radius: 999px; background: #FFFFFF; font-size: 11.5px; font-weight: 600; color: #3E7354; display: inline-flex; align-items: center; gap: 5px"><i data-lucide="star" style="width: 11px; height: 11px"></i>4.9 en reseñas</span>
+                <span style="height: 26px; padding: 0 11px; border-radius: 999px; background: #FFFFFF; font-size: 11.5px; font-weight: 600; color: #57534B; display: inline-flex; align-items: center">0 ausencias este mes</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex-shrink: 0; border-top: 1px solid #E8E4DE; background: rgba(250,249,247,.95); backdrop-filter: blur(12px); display: flex; padding: 8px 8px 20px">
+            <sc-for list="{{ tabs3 }}" as="t" hint-placeholder-count="4">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; cursor: pointer; color: {{ t.fg }}">
+                <i data-lucide="{{ t.icon }}" style="width: 21px; height: 21px"></i>
+                <span style="font-size: 10.5px; font-weight: 600">{{ t.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ STATES + RULES ═══════ -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 48px; max-width: 1280px">
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Vacío · día libre</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">«Hoy no trabajas — que lo disfrutes 🙌» con la próxima jornada visible. Si el día laboral no tiene citas: «Silla libre por ahora» + botón para avisar disponibilidad al mostrador.</div>
+      </div>
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Sin conexión</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">El día de hoy queda en caché — siempre legible. Acciones (terminé, nota, foto) se encolan y sincronizan al volver, con chip discreto «se guardará al conectar». Nunca un bloqueo.</div>
+      </div>
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Lo que NO está</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">Sin caja, sin inventario, sin análisis del negocio, sin configuración. Cero administración: si una tarea no ayuda a atender al próximo cliente, no existe en esta app. Cobros → mostrador o dueño.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1000}}">
+class Component extends DCLogic {
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+
+  renderVals() {
+    const tab = (label, icon, active) => ({ label, icon, fg: active ? '#3E7354' : '#8A847A' });
+    return {
+      laterToday: [
+        { time: '14:15', name: 'Tomás Medina', meta: 'Corte + barba · primera visita', badge: 'Confirmada', badgeBg: '#EAF2ED', badgeFg: '#3E7354', opacity: 1 },
+        { time: '16:00', name: 'Bruno Sosa', meta: 'Corte clásico · ya pagó', badge: 'Confirmada', badgeBg: '#EAF2ED', badgeFg: '#3E7354', opacity: 1 },
+        { time: '17:30', name: 'Fede Bravo', meta: 'Corte clásico', badge: 'Sin confirmar', badgeBg: '#F7EFDD', badgeFg: '#8F6A1F', opacity: 1 },
+        { time: '9:00', name: 'Santiago Duarte ✓', meta: 'Corte clásico · completada', badge: 'Hecha', badgeBg: '#F4F2EE', badgeFg: '#8A847A', opacity: 0.6 },
+      ],
+      myWeek: [
+        { day: 'Hoy', fg: '#26231F', label: '9:00–19:30 · 6 citas', barBg: '#EAF2ED', barFg: '#3E7354', border: '1px solid #DCE9E1' },
+        { day: 'Mié', fg: '#8A847A', label: 'Día libre', barBg: '#FAF9F7', barFg: '#8A847A', border: '1.5px dashed #E8E4DE' },
+        { day: 'Jue', fg: '#8A847A', label: '9:00–19:30 · 4 citas', barBg: '#F4F2EE', barFg: '#57534B', border: '1px solid transparent' },
+        { day: 'Vie', fg: '#8A847A', label: '9:00–19:30 · 7 citas', barBg: '#F4F2EE', barFg: '#57534B', border: '1px solid transparent' },
+        { day: 'Sáb', fg: '#8A847A', label: '9:00–18:00 · casi lleno', barBg: '#F4F2EE', barFg: '#57534B', border: '1px solid transparent' },
+      ],
+      tabs1: [tab('Mi día', 'sun', true), tab('Agenda', 'calendar-days', false), tab('Clientes', 'heart', false), tab('Lo mío', 'circle-user-round', false)],
+      tabs3: [tab('Mi día', 'sun', false), tab('Agenda', 'calendar-days', false), tab('Clientes', 'heart', false), tab('Lo mío', 'circle-user-round', true)],
+    };
+  }
+}
+</script>
+</body>
+</html>

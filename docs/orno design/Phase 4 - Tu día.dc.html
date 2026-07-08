@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    * { box-sizing: border-box; }
+    @keyframes orno-shimmer { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }
+    @keyframes orno-pulse { 0% { box-shadow: 0 0 0 0 rgba(95,159,119,.35); } 70% { box-shadow: 0 0 0 7px rgba(95,159,119,0); } 100% { box-shadow: 0 0 0 0 rgba(95,159,119,0); } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F">
+
+  <!-- ============ SHELL FRAME (static context) ============ -->
+  <div style="display: flex; min-height: 100vh; background: #FAF9F7">
+
+    <!-- Sidebar rail (compact, static) -->
+    <aside style="width: 76px; flex-shrink: 0; background: #F4F2EE; border-right: 1px solid #E8E4DE; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 6px">
+      <span style="width: 38px; height: 38px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600; margin-bottom: 10px">O<span style="color: #E53935">.</span></span>
+      <span title="Tu día" style="width: 44px; height: 44px; border-radius: 12px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; cursor: pointer"><i data-lucide="sun" style="width: 20px; height: 20px"></i></span>
+      <span title="Agenda" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="calendar-days" style="width: 20px; height: 20px"></i></span>
+      <span title="Caja" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="shopping-bag" style="width: 20px; height: 20px"></i></span>
+      <span title="Clientes" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="heart" style="width: 20px; height: 20px"></i></span>
+      <span title="Servicios" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="scissors" style="width: 20px; height: 20px"></i></span>
+      <span title="Equipo" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="users" style="width: 20px; height: 20px"></i></span>
+      <span title="Análisis" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="line-chart" style="width: 20px; height: 20px"></i></span>
+      <span style="flex: 1"></span>
+      <span title="Configuración" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms" style-hover="background: #ECE8E1"><i data-lucide="settings-2" style="width: 20px; height: 20px"></i></span>
+      <span style="width: 38px; height: 38px; border-radius: 999px; background: #F6EBE4; color: #9A5A3B; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">LM</span>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+
+      <!-- Header -->
+      <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: rgba(250,249,247,.85); backdrop-filter: blur(12px); border-bottom: 1px solid #E8E4DE; position: sticky; top: 0; z-index: 40">
+        <span style="font-size: 14px; font-weight: 600">Tu día</span>
+        <div style="flex: 1"></div>
+        <button style="width: 280px; height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; cursor: pointer; font-family: inherit" style-hover="border-color: #D8D3CA">
+          <i data-lucide="search" style="width: 17px; height: 17px; color: #8A847A"></i>
+          <span style="font-size: 14px; color: #8A847A">Buscar o ir a…</span>
+          <kbd style="margin-left: auto; height: 22px; padding: 0 7px; border-radius: 7px; border: 1px solid #E8E4DE; background: #FAF9F7; font-family: inherit; font-size: 12px; font-weight: 600; color: #8A847A; display: inline-flex; align-items: center">⌘K</kbd>
+        </button>
+        <button style="height: 42px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="plus" style="width: 17px; height: 17px"></i>Nuevo</button>
+        <button aria-label="Notificaciones" style="width: 42px; height: 42px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative" style-hover="background: #F4F2EE">
+          <i data-lucide="bell" style="width: 18px; height: 18px"></i>
+          <span style="position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 999px; background: #C57B57; border: 2px solid #FFFFFF"></span>
+        </button>
+      </header>
+
+      <!-- ============ CONTENT ============ -->
+      <main style="flex: 1">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px">
+
+          <!-- 1. WELCOME + QUICK ACTIONS -->
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 16px; flex-wrap: wrap">
+            <div>
+              <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 6px">
+                <h1 style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; margin: 0">{{ greeting }}, {{ ownerName }}</h1>
+                <span style="height: 30px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: {{ statusBg }}; color: {{ statusFg }}; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 999px; background: {{ statusDot }}; animation: {{ statusAnim }}"></span>{{ statusLabel }}</span>
+              </div>
+              <p style="font-size: 15px; color: #57534B; margin: 0">Viernes 4 de julio · <span style="font-weight: 600; color: #26231F; font-variant-numeric: tabular-nums">9 citas</span> hoy, la próxima en <span style="font-weight: 600; color: #26231F; font-variant-numeric: tabular-nums">25 min</span> · 2 huecos por la tarde</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap">
+              <button style="height: 44px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="calendar-plus" style="width: 17px; height: 17px"></i>Nueva cita</button>
+              <button style="height: 44px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="shopping-bag" style="width: 16px; height: 16px; color: #57534B"></i>Cobrar</button>
+              <button style="height: 44px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="user-round-plus" style="width: 16px; height: 16px; color: #57534B"></i>Cliente</button>
+              <button style="height: 44px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="ban" style="width: 16px; height: 16px; color: #57534B"></i>Bloquear</button>
+              <button style="height: 44px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="calendar-days" style="width: 16px; height: 16px; color: #57534B"></i>Agenda</button>
+            </div>
+          </div>
+
+          <!-- 5. BUSINESS SNAPSHOT (thin strip) -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0 40px">
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 20px 24px">
+              <div style="font-size: 13px; font-weight: 500; color: #57534B; margin-bottom: 6px">Ingresos de hoy</div>
+              <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">$36.500 <span style="font-size: 13px; font-weight: 600; color: #4E8A64">+8%</span></div>
+            </div>
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 20px 24px">
+              <div style="font-size: 13px; font-weight: 500; color: #57534B; margin-bottom: 6px">Citas de hoy</div>
+              <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">9 <span style="font-size: 13px; font-weight: 500; color: #8A847A">· 4 completadas</span></div>
+            </div>
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 20px 24px">
+              <div style="font-size: 13px; font-weight: 500; color: #57534B; margin-bottom: 6px">Clientes atendidos</div>
+              <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">5 <span style="font-size: 13px; font-weight: 500; color: #8A847A">· 1 walk-in</span></div>
+            </div>
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 20px 24px">
+              <div style="font-size: 13px; font-weight: 500; color: #57534B; margin-bottom: 10px">Ocupación</div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <span style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">78%</span>
+                <div style="flex: 1; height: 6px; border-radius: 999px; background: #F4F2EE; overflow: hidden"><div style="width: 78%; height: 100%; border-radius: 999px; background: #5F9F77"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MAIN GRID: timeline + right rail -->
+          <div style="display: grid; grid-template-columns: 1.55fr 1fr; gap: 20px; align-items: start">
+
+            <!-- ===== LEFT: 2. TIMELINE ===== -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px">
+                  <h2 style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0">Hoy en las sillas</h2>
+                  <button style="height: 36px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px" style-hover="background: #F4F2EE">Ver agenda completa<i data-lucide="arrow-right" style="width: 14px; height: 14px"></i></button>
+                </div>
+
+                <!-- Completed (muted) -->
+                <sc-for list="{{ doneAppts }}" as="a" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 16px; padding: 10px 0; opacity: 0.62">
+                    <span style="width: 52px; flex-shrink: 0; font-size: 13.5px; font-weight: 600; color: #8A847A; font-variant-numeric: tabular-nums; text-align: right">{{ a.time }}</span>
+                    <span style="width: 20px; display: flex; justify-content: center; flex-shrink: 0"><span style="width: 20px; height: 20px; border-radius: 999px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center"><i data-lucide="check" style="width: 12px; height: 12px"></i></span></span>
+                    <span style="font-size: 14px; font-weight: 500; text-decoration: line-through; text-decoration-color: #C6C0B6">{{ a.client }}</span>
+                    <span style="font-size: 13px; color: #8A847A">{{ a.detail }}</span>
+                    <span style="margin-left: auto; font-size: 13px; font-weight: 600; color: #57534B; font-variant-numeric: tabular-nums">{{ a.price }}</span>
+                  </div>
+                </sc-for>
+
+                <!-- NOW line -->
+                <div style="display: flex; align-items: center; gap: 12px; margin: 14px 0">
+                  <span style="height: 24px; padding: 0 12px; border-radius: 999px; background: #26231F; color: #FFFFFF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; font-variant-numeric: tabular-nums; flex-shrink: 0">Ahora · 11:35</span>
+                  <span style="flex: 1; height: 2px; background: #26231F; border-radius: 999px; opacity: .85"></span>
+                </div>
+
+                <!-- In progress (hero card) -->
+                <div style="border: 1.5px solid #5F9F77; background: #EAF2ED; border-radius: 16px; padding: 18px 20px; margin-bottom: 14px">
+                  <div style="display: flex; align-items: center; gap: 14px">
+                    <span style="width: 44px; height: 44px; border-radius: 999px; background: #FFFFFF; color: #3E7354; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0; animation: orno-pulse 2.4s infinite">JT</span>
+                    <div style="min-width: 0; flex: 1">
+                      <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+                        <span style="font-size: 16px; font-weight: 600">Julián Torres</span>
+                        <span style="font-size: 13px; font-weight: 600; color: #3E7354">En la silla de Nico · termina 12:00</span>
+                      </div>
+                      <div style="font-size: 13.5px; color: #57534B; margin-top: 2px">Corte + barba · $24.000 · «La 2 a los costados, tijera arriba»</div>
+                    </div>
+                    <button style="height: 44px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="check" style="width: 16px; height: 16px"></i>Completar y cobrar</button>
+                  </div>
+                </div>
+
+                <!-- Upcoming -->
+                <sc-for list="{{ nextAppts }}" as="a" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid #F4F2EE">
+                    <span style="width: 52px; flex-shrink: 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; color: #26231F">{{ a.time }}</span>
+                    <span style="width: 36px; height: 36px; border-radius: 999px; background: {{ a.avatarBg }}; color: {{ a.avatarFg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">{{ a.initials }}</span>
+                    <div style="min-width: 0; flex: 1">
+                      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                        <span style="font-size: 14.5px; font-weight: 600">{{ a.client }}</span>
+                        <span style="height: 22px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; background: {{ a.badgeBg }}; color: {{ a.badgeFg }}; font-size: 12px; font-weight: 600">{{ a.badge }}</span>
+                      </div>
+                      <div style="font-size: 13px; color: #8A847A; margin-top: 1px">{{ a.detail }}</div>
+                    </div>
+                    <button style="height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0" style-hover="background: #F4F2EE">{{ a.action }}</button>
+                  </div>
+                </sc-for>
+
+                <!-- Gap row -->
+                <div style="display: flex; align-items: center; gap: 16px; padding: 13px 0">
+                  <span style="width: 52px; flex-shrink: 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; color: #8A847A">15:00</span>
+                  <div style="flex: 1; border: 1.5px dashed #D8D3CA; border-radius: 12px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; color: #8A847A; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all 120ms" style-hover="border-color: #5F9F77; color: #3E7354; background: #EAF2ED">
+                    <i data-lucide="plus" style="width: 15px; height: 15px"></i>Hueco de 30 min — agendar o aceptar walk-in
+                  </div>
+                </div>
+              </div>
+
+              <!-- 7. RECENT ACTIVITY -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <h2 style="font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 20px">Actividad reciente</h2>
+                <div style="display: flex; flex-direction: column">
+                  <sc-for list="{{ activity }}" as="ev" hint-placeholder-count="4">
+                    <div style="display: flex; gap: 16px; padding: 9px 0">
+                      <span style="width: 52px; flex-shrink: 0; font-size: 13px; color: #8A847A; font-variant-numeric: tabular-nums; text-align: right">{{ ev.time }}</span>
+                      <span style="width: 8px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 6px"><span style="width: 7px; height: 7px; border-radius: 999px; background: {{ ev.dot }}"></span></span>
+                      <span style="font-size: 14px; color: #26231F; line-height: 1.5">{{ ev.text }} <span style="color: #8A847A">{{ ev.sub }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== RIGHT RAIL ===== -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+
+              <!-- 3. PRIORITY PANEL -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px">
+                  <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0">Necesita tu atención</h2>
+                  <span style="height: 24px; min-width: 24px; padding: 0 8px; border-radius: 999px; background: #F7EFDD; color: #8F6A1F; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">4</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px">
+                  <sc-for list="{{ priorities }}" as="p" hint-placeholder-count="4">
+                    <div style="border: 1px solid #F0EDE8; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; transition: border-color 120ms" style-hover="border-color: #E8E4DE">
+                      <span style="width: 34px; height: 34px; border-radius: 11px; background: {{ p.iconBg }}; color: {{ p.iconFg }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><i data-lucide="{{ p.icon }}" style="width: 16px; height: 16px"></i></span>
+                      <div style="min-width: 0; flex: 1">
+                        <div style="font-size: 14px; font-weight: 600; line-height: 1.4">{{ p.title }}</div>
+                        <div style="font-size: 13px; color: #57534B; line-height: 1.45; margin-top: 2px">{{ p.body }}</div>
+                        <button style="margin-top: 8px; height: 32px; padding: 0 13px; border-radius: 10px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">{{ p.action }}</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <!-- 8. SMART SUGGESTIONS -->
+              <div style="border: 1px solid #DCE9E1; border-radius: 20px; background: #F3F8F5; padding: 24px">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px">
+                  <i data-lucide="sparkles" style="width: 17px; height: 17px; color: #3E7354"></i>
+                  <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0">Para hoy</h2>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px">
+                  <sc-for list="{{ suggestions }}" as="sug" hint-placeholder-count="3">
+                    <div style="display: flex; flex-direction: column; gap: 8px">
+                      <span style="font-size: 14px; line-height: 1.5; color: #26231F">{{ sug.text }}</span>
+                      <button style="align-self: flex-start; height: 32px; padding: 0 13px; border-radius: 10px; border: none; background: #FFFFFF; color: #3E7354; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(38,35,31,.06)" style-hover="background: #EAF2ED">{{ sug.action }}</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <!-- 6. TEAM STATUS -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 18px">El equipo ahora</h2>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <sc-for list="{{ team }}" as="m" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 9px 10px; margin: 0 -10px; border-radius: 12px; transition: background 120ms; cursor: pointer" style-hover="background: #FAF9F7">
+                      <span style="position: relative; flex-shrink: 0">
+                        <span style="width: 38px; height: 38px; border-radius: 999px; background: {{ m.avatarBg }}; color: {{ m.avatarFg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">{{ m.initials }}</span>
+                        <span style="position: absolute; bottom: 0; right: 0; width: 11px; height: 11px; border-radius: 999px; background: {{ m.dot }}; border: 2px solid #FFFFFF"></span>
+                      </span>
+                      <div style="min-width: 0; flex: 1">
+                        <div style="font-size: 14px; font-weight: 600">{{ m.name }}</div>
+                        <div style="font-size: 12.5px; color: {{ m.stateFg }}; font-weight: 500">{{ m.state }}</div>
+                      </div>
+                      <span style="font-size: 12.5px; color: #8A847A; font-variant-numeric: tabular-nums">{{ m.meta }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ STATES SPEC ============ -->
+  <div style="max-width: 1200px; margin: 0 auto; padding: 80px 40px 120px">
+    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A847A; margin-bottom: 8px">Especificación · Fase 4</div>
+    <h2 style="font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 32px">Estados de «Tu día»</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px">
+      <!-- Empty -->
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 32px">
+        <div style="font-size: 13px; font-weight: 600; color: #8A847A; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase">Vacío — primera mañana</div>
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 0">
+          <div style="width: 56px; height: 56px; border-radius: 18px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; margin-bottom: 18px"><i data-lucide="sunrise" style="width: 26px; height: 26px"></i></div>
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px">Tu agenda está lista</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #57534B; margin-bottom: 20px">Comparte tu enlace de reservas y las citas aparecerán aquí solas.</div>
+          <button style="height: 42px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer" style-hover="background: #4C8862">Compartir enlace</button>
+          <button style="margin-top: 8px; height: 36px; padding: 0 16px; border-radius: 12px; border: none; background: transparent; color: #57534B; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Crear cita manual</button>
+        </div>
+        <div style="font-size: 13px; color: #8A847A; line-height: 1.5; margin-top: 12px">El panel de atención vacío dice «Todo en orden ✓» — el estado deseable se celebra, no se oculta.</div>
+      </div>
+      <!-- Loading -->
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 32px">
+        <div style="font-size: 13px; font-weight: 600; color: #8A847A; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase">Cargando</div>
+        <div style="display: flex; flex-direction: column; gap: 14px">
+          <div style="height: 22px; width: 55%; border-radius: 8px; background: #F0EDE8; animation: orno-shimmer 1.4s ease-in-out infinite"></div>
+          <div style="display: flex; gap: 10px">
+            <div style="height: 56px; flex: 1; border-radius: 14px; background: #F4F2EE; animation: orno-shimmer 1.4s ease-in-out infinite .1s"></div>
+            <div style="height: 56px; flex: 1; border-radius: 14px; background: #F4F2EE; animation: orno-shimmer 1.4s ease-in-out infinite .2s"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #F0EDE8; animation: orno-shimmer 1.4s ease-in-out infinite .15s"></div>
+            <div style="flex: 1"><div style="height: 12px; width: 65%; border-radius: 6px; background: #F0EDE8; animation: orno-shimmer 1.4s ease-in-out infinite .15s; margin-bottom: 7px"></div><div style="height: 10px; width: 42%; border-radius: 6px; background: #F4F2EE; animation: orno-shimmer 1.4s ease-in-out infinite .15s"></div></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #F0EDE8; animation: orno-shimmer 1.4s ease-in-out infinite .3s"></div>
+            <div style="flex: 1"><div style="height: 12px; width: 50%; border-radius: 6px; background: #F0EDE8; animation: orno-shimmer 1.4s ease-in-out infinite .3s; margin-bottom: 7px"></div><div style="height: 10px; width: 36%; border-radius: 6px; background: #F4F2EE; animation: orno-shimmer 1.4s ease-in-out infinite .3s"></div></div>
+          </div>
+        </div>
+        <div style="font-size: 13px; color: #8A847A; line-height: 1.5; margin-top: 20px">Esqueletos con la forma exacta del contenido: saludo, franja de métricas, filas de la línea de tiempo. Aparecen solo si la carga supera 300ms.</div>
+      </div>
+      <!-- Error -->
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 32px">
+        <div style="font-size: 13px; font-weight: 600; color: #8A847A; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase">Error — por panel, nunca total</div>
+        <div style="border: 1px solid #F0EDE8; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; align-items: flex-start">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px"><i data-lucide="cloud-off" style="width: 18px; height: 18px; color: #C24E42"></i><span style="font-size: 14.5px; font-weight: 600">No pudimos cargar la línea de tiempo</span></div>
+          <div style="font-size: 13.5px; line-height: 1.55; color: #57534B; margin-bottom: 14px">El resto de tu día sigue disponible. Tus datos están a salvo.</div>
+          <button style="height: 38px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Reintentar</button>
+        </div>
+        <div style="font-size: 13px; color: #8A847A; line-height: 1.5; margin-top: 20px">Cada panel falla de forma aislada: si la actividad no carga, la agenda sigue viva. Sin códigos de error, siempre con salida.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 960}, &quot;ownerName&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Luis&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Contenido&quot;}, &quot;abierto&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Estado del negocio&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+
+  renderVals() {
+    const open = this.props.abierto ?? true;
+    return {
+      ownerName: this.props.ownerName ?? 'Luis',
+      greeting: 'Buenos días',
+      statusLabel: open ? 'Abierto · cierra 20:00' : 'Cerrado · abre 9:00',
+      statusBg: open ? '#EAF2ED' : '#F4F2EE',
+      statusFg: open ? '#3E7354' : '#57534B',
+      statusDot: open ? '#4E8A64' : '#B5AFA5',
+      statusAnim: open ? 'orno-pulse 2.4s infinite' : 'none',
+
+      doneAppts: [
+        { time: '9:00', client: 'Santiago Duarte', detail: 'Corte clásico · Nico', price: '$18.000' },
+        { time: '9:45', client: 'Pedro Alonso', detail: 'Corte + barba · Rama', price: '$24.000' },
+        { time: '10:30', client: 'Walk-in', detail: 'Barba · Nico', price: '$12.000' },
+      ],
+      nextAppts: [
+        { time: '12:00', initials: 'MV', client: 'Marcos Vidal', badge: 'Sin confirmar', badgeBg: '#F7EFDD', badgeFg: '#8F6A1F', detail: 'Corte clásico · Rama · 40 min', action: 'Recordar', avatarBg: '#F6EBE4', avatarFg: '#9A5A3B' },
+        { time: '12:30', initials: 'LR', client: 'Lucas Ríos', badge: 'Confirmada', badgeBg: '#EAF2ED', badgeFg: '#3E7354', detail: 'Corte + barba · Nico · 60 min · vuelve tras 47 días', action: 'Check-in', avatarBg: '#EAEFF4', avatarFg: '#4A6B87' },
+        { time: '13:30', initials: 'FB', client: 'Fede Bravo', badge: 'Llega tarde', badgeBg: '#FBF3F2', badgeFg: '#A93F34', detail: 'Corte clásico · Rama · avisó +15 min', action: 'Llamar', avatarBg: '#EFEAF6', avatarFg: '#6D5F91' },
+        { time: '14:15', initials: 'TM', client: 'Tomás Medina', badge: 'Nuevo', badgeBg: '#F6EBE4', badgeFg: '#9A5A3B', detail: 'Corte + barba · Nico · primera visita', action: 'Ver ficha', avatarBg: '#EAF2ED', avatarFg: '#3E7354' },
+      ],
+      priorities: [
+        { icon: 'clock', iconBg: '#F7EFDD', iconFg: '#8F6A1F', title: '2 citas sin confirmar', body: 'Marcos (12:00) y Leo (18:30) todavía no respondieron.', action: 'Recordar por WhatsApp' },
+        { icon: 'timer', iconBg: '#FBF3F2', iconFg: '#A93F34', title: 'Fede llega 15 min tarde', body: 'Su cita de 13:30 puede pisar la de 14:15.', action: 'Reacomodar' },
+        { icon: 'package', iconBg: '#EAEFF4', iconFg: '#4A6B87', title: 'Crema de afeitar baja', body: 'Quedan 2 unidades — se usa en 6 servicios de hoy.', action: 'Reponer' },
+        { icon: 'circle-dollar-sign', iconBg: '#F6EBE4', iconFg: '#9A5A3B', title: 'Cobro pendiente', body: 'La cita de Pedro (9:45) quedó sin cobrar.', action: 'Cobrar ahora' },
+      ],
+      suggestions: [
+        { text: 'Tienes un hueco de 30 min a las 15:00. ¿Lo ofrecemos a la lista de espera?', action: 'Ofrecer hueco' },
+        { text: 'Lucas vuelve después de 47 días. Un saludo de bienvenida suma.', action: 'Ver su ficha' },
+        { text: 'Los viernes a la tarde se llenan: 2 huecos libres aún.', action: 'Compartir enlace' },
+      ],
+      team: [
+        { initials: 'NG', name: 'Nico García', state: 'En su silla · con Julián', stateFg: '#3E7354', dot: '#4E8A64', meta: 'desde 8:55', avatarBg: '#EAF2ED', avatarFg: '#3E7354' },
+        { initials: 'RS', name: 'Rama Suárez', state: 'Descanso · vuelve 12:00', stateFg: '#8F6A1F', dot: '#C9A24B', meta: '20 min', avatarBg: '#F6EBE4', avatarFg: '#9A5A3B' },
+        { initials: 'DC', name: 'Diego Castro', state: 'Aún no llegó · turno 12:00', stateFg: '#A93F34', dot: '#C24E42', meta: '—', avatarBg: '#EAEFF4', avatarFg: '#4A6B87' },
+        { initials: 'MP', name: 'Mati Paz', state: 'Terminó su turno', stateFg: '#8A847A', dot: '#B5AFA5', meta: '9:00–11:00', avatarBg: '#EFEAF6', avatarFg: '#6D5F91' },
+      ],
+      activity: [
+        { time: '11:20', dot: '#4E8A64', text: 'Nico completó el corte de Walk-in.', sub: '$12.000 cobrado en efectivo.' },
+        { time: '11:05', dot: '#7E9BB4', text: 'Lucas confirmó su cita de 12:30', sub: 'por WhatsApp.' },
+        { time: '10:40', dot: '#C9A24B', text: 'Rama inició su descanso.', sub: '' },
+        { time: '10:12', dot: '#4E8A64', text: 'María actualizó el inventario:', sub: '+12 ceras mate.' },
+        { time: '8:55', dot: '#4E8A64', text: 'Nico fichó su entrada.', sub: '' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

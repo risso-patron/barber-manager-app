@@ -166,11 +166,25 @@
 
 **Context**: No historical M0–M4 migration sequence exists in this repository. The only M-numbered artifact in git history is commit `14bb85a` ("M1-M8 feature pack"), whose M1–M8 labels refer to eight unrelated features shipped in a single commit, not a phased plan. This ADR exists to prevent that historical commit from being confused with the new scheme below.
 
-**Decision**: Adopt "M0–M4" as the milestone naming scheme for the target-architecture initiatives in [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md), going forward from 2026-07-05. Proposed (not yet ratified) grouping: M0 stabilization, M1 tenant schema, M2 design system/branding, M3 shell unification, M4 scheduling + white-label launch.
+**Original proposed grouping (2026-07-05, superseded)**: M0 = stabilization, M1 = tenant schema, M2 = design system/branding, M3 = shell unification, M4 = scheduling + white-label launch. That grouping mixed product-architecture milestones with framework-implementation milestones and was explicitly marked "Needs Validation."
 
-**Consequences**: Until ratified, any reference to "M0-M4" in planning documents should be read as this new scheme, never as a claim about work already completed — no work under this scheme has started as of this writing.
+**Decision (ratified 2026-07-08)**: The `ORNO Design Bible v1.0` (frozen 2026-07-08, `docs/orno design/ORNO Design Bible v1.0.md`) supersedes the original proposed grouping. M0–M4 are now the **ORNO Framework component milestones** — fully specified, with production-ready drop-in packages in `docs/orno design/migration/`:
 
-**Status**: Planned — proposed grouping **Needs Validation** (see [02_TARGET_ARCHITECTURE.md §12](02_TARGET_ARCHITECTURE.md)).
+| Milestone | Scope | Package location | Status |
+|---|---|---|---|
+| **M0** | Design Tokens — warm palette, CSS variables, `tailwind.config.ts`, `lib/tokens.ts`, `Logo`/`Icon` foundations | `docs/orno design/migration/M0/` | Ready to apply |
+| **M1** | UI Primitives — 16 components (`Button`, `Input`, `Field`, `FormModal`, `ConfirmDialog`, `StatusBadge`, `CurrencyInput`, `SearchInput`, `Logo`, `AppIcon`, `lib/brand.ts`, etc.) | `docs/orno design/migration/M1/` | Ready to apply |
+| **M2** | Application Shell — `AppShell`, `Sidebar` (one component, two states), `BrandProvider`, `CommandPalette`, `BottomNav`, `Header`; replaces 4 independent layouts | `docs/orno design/migration/M2/` | Ready to apply |
+| **M3** | Feedback & Data — `AsyncPane`, `DataTable`, `PanelCard`, `StatCard`, `EmptyState`, `ErrorPane`, `Skeleton`, `notify` (toasts with `onUndo`) | `docs/orno design/migration/M3/` | Ready to apply |
+| **M4** | Scheduling Engine — pure `engine.ts` (tz math, `suggestGaps`, `detectConflict`) + headless `useScheduleDnd` + 12 presentation components (`AppointmentTimeline`, `AppointmentCard`, etc.) | `docs/orno design/migration/M4/` | Ready to apply |
+
+Apply order: **M0 → M1 → M2 on one branch; M3 → M4 on the same branch or next; merge only when all work together** (per M2 README).
+
+The product-architecture milestones originally described (tenant schema, white-label, scheduling engine consolidation) remain in [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) and are addressed by the M0–M4 framework above (M2 = Application Shell, M4 = Scheduling Engine) or deferred (tenant schema = still `Planned`, depends on M0–M4 being live first).
+
+**Consequences**: The "Until ratified" disclaimer no longer applies. Any reference to "M0–M4" in this codebase means the framework milestones above. The historical commit `14bb85a`'s internal "M1–M8" labels remain a separate, unrelated naming — do not confuse them. The first implementation task is creating branch `feat/orno-framework-m0-m1-m2` and applying the three packages together (see Engineering Readiness Report, Sprint 1 plan).
+
+**Status**: **Approved — ratified 2026-07-08** by owner confirmation that `ORNO Design Bible v1.0` (frozen same date) supersedes the original "Needs Validation" grouping. Drop-in packages are implementation-ready; no further design approval required before applying.
 
 ---
 

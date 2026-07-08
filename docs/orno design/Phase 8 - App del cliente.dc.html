@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #ECE8E1; }
+    * { box-sizing: border-box; }
+    @keyframes orno-pop { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes orno-check { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F; padding: 48px 32px 80px">
+  <div style="max-width: 1400px; margin: 0 auto">
+    <div style="margin-bottom: 32px">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A847A; margin-bottom: 8px">Fase 8 · Experiencia del cliente</div>
+      <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 8px">Reservar debería sentirse como nada</h1>
+      <p style="font-size: 15px; color: #57534B; margin: 0; max-width: 760px; line-height: 1.6">Marca blanca de punta a punta: esta demo es «Barbería Central», no Ornō. Un solo campo de texto en todo el viaje (el teléfono). El flujo de reserva es interactivo — pruébalo en el primer teléfono.</p>
+    </div>
+
+    <div style="display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start">
+
+      <!-- ═══════ PHONE 1: LANDING + BOOKING (interactive) ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">1 · Del enlace a la cita — flujo interactivo</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 800px">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>18:22</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+
+          <div style="flex: 1; overflow-y: auto; min-height: 0">
+
+            <!-- STEP 0: landing -->
+            <sc-if value="{{ step0 }}" hint-placeholder-val="{{ true }}">
+              <div style="animation: orno-pop 200ms cubic-bezier(0.2,0,0,1)">
+                <div style="height: 150px; background: linear-gradient(160deg, #3E3A34, #57534B); position: relative; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.55)">
+                  <i data-lucide="image" style="width: 30px; height: 30px"></i>
+                  <span style="position: absolute; bottom: -30px; left: 24px; width: 60px; height: 60px; border-radius: 18px; background: #FFFFFF; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 600; box-shadow: 0 4px 16px rgba(38,35,31,.1)">B<span style="color: #C57B57">.</span></span>
+                </div>
+                <div style="padding: 42px 24px 24px">
+                  <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 600; margin: 0 0 4px">Barbería Central</h2>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; font-weight: 600"><i data-lucide="star" style="width: 14px; height: 14px; color: #B98A2E; fill: #B98A2E"></i>4.9</span>
+                    <span style="font-size: 13.5px; color: #8A847A">· 312 reseñas · Palermo</span>
+                  </div>
+                  <div style="font-size: 13.5px; color: #57534B; display: flex; align-items: center; gap: 7px; margin-bottom: 20px"><i data-lucide="clock" style="width: 14px; height: 14px; color: #3E7354"></i>Abierto hasta las 20:00 · Gorriti 4722</div>
+
+                  <button onClick="{{ goStep1 }}" style="width: 100%; height: 54px; border-radius: 16px; border: none; background: #C57B57; color: #FFFFFF; font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; margin-bottom: 10px" style-hover="background: #B06A48"><i data-lucide="calendar-plus" style="width: 18px; height: 18px"></i>Reservar turno</button>
+                  <div style="font-size: 12.5px; color: #8A847A; text-align: center; margin-bottom: 24px">Sin registrarte · confirmación por WhatsApp</div>
+
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: flex; justify-content: space-between; padding: 13px 16px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px"><span style="font-size: 14px; font-weight: 600">Corte clásico</span><span style="font-size: 14px; color: #57534B; font-variant-numeric: tabular-nums">40 min · $18.000</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 13px 16px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px"><span style="font-size: 14px; font-weight: 600">Corte + barba</span><span style="font-size: 14px; color: #57534B; font-variant-numeric: tabular-nums">60 min · $24.000</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 13px 16px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px"><span style="font-size: 14px; font-weight: 600">Barba y perfilado</span><span style="font-size: 14px; color: #57534B; font-variant-numeric: tabular-nums">25 min · $12.000</span></div>
+                  </div>
+                  <div style="display: flex; gap: 14px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #E8E4DE">
+                    <span style="font-size: 12.5px; color: #57534B; display: flex; align-items: center; gap: 6px"><i data-lucide="shield-check" style="width: 14px; height: 14px; color: #3E7354"></i>Cancela gratis hasta 2 h antes</span>
+                    <span style="font-size: 12.5px; color: #57534B; display: flex; align-items: center; gap: 6px"><i data-lucide="message-circle" style="width: 14px; height: 14px; color: #3E7354"></i>Recordatorio automático</span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- STEPS 1-4: booking conversation -->
+            <sc-if value="{{ inFlow }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 12px 20px 20px; animation: orno-pop 200ms cubic-bezier(0.2,0,0,1)">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px">
+                  <button onClick="{{ goBack }}" style="width: 40px; height: 40px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: flex; align-items: center; justify-content: center" style-hover="background: #F4F2EE" aria-label="Volver"><i data-lucide="arrow-left" style="width: 17px; height: 17px"></i></button>
+                  <div style="flex: 1">
+                    <div style="font-size: 17px; font-weight: 600">{{ stepTitle }}</div>
+                    <div style="display: flex; gap: 4px; margin-top: 6px">
+                      <span style="height: 4px; flex: 1; border-radius: 999px; background: {{ dot1 }}"></span>
+                      <span style="height: 4px; flex: 1; border-radius: 999px; background: {{ dot2 }}"></span>
+                      <span style="height: 4px; flex: 1; border-radius: 999px; background: {{ dot3 }}"></span>
+                      <span style="height: 4px; flex: 1; border-radius: 999px; background: {{ dot4 }}"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- step 1: service -->
+                <sc-if value="{{ step1 }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <sc-for list="{{ services }}" as="sv" hint-placeholder-count="3">
+                      <button onClick="{{ sv.pick }}" style="display: flex; align-items: center; gap: 14px; padding: 16px; border: {{ sv.border }}; border-radius: 16px; background: {{ sv.bg }}; cursor: pointer; font-family: inherit; text-align: left; min-height: 64px" style-hover="border-color: #C57B57">
+                        <div style="flex: 1"><div style="font-size: 15px; font-weight: 600; margin-bottom: 1px">{{ sv.name }}</div><div style="font-size: 13px; color: #8A847A">{{ sv.meta }}</div></div>
+                        <span style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{ sv.price }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <!-- step 2: barber -->
+                <sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <sc-for list="{{ barbers }}" as="b" hint-placeholder-count="4">
+                      <button onClick="{{ b.pick }}" style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: {{ b.border }}; border-radius: 16px; background: {{ b.bg }}; cursor: pointer; font-family: inherit; text-align: left; min-height: 64px" style-hover="border-color: #C57B57">
+                        <span style="width: 46px; height: 46px; border-radius: 999px; background: {{ b.avatarBg }}; color: {{ b.avatarFg }}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0">{{ b.initials }}</span>
+                        <div style="flex: 1"><div style="font-size: 15px; font-weight: 600">{{ b.name }}</div><div style="font-size: 12.5px; color: #8A847A">{{ b.meta }}</div></div>
+                        <span style="font-size: 12px; font-weight: 600; color: {{ b.hintFg }}">{{ b.hint }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <!-- step 3: day -->
+                <sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: #F3F8F5; border: 1px solid #DCE9E1; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; margin-bottom: 14px">
+                    <i data-lucide="sparkles" style="width: 15px; height: 15px; color: #3E7354; flex-shrink: 0; margin-top: 1px"></i>
+                    <span style="font-size: 13px; line-height: 1.5">Sueles venir los <strong>viernes a la tarde</strong> — te marcamos los que tienen lugar.</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px">
+                    <sc-for list="{{ days }}" as="d" hint-placeholder-count="8">
+                      <button onClick="{{ d.pick }}" style="height: 72px; border: {{ d.border }}; border-radius: 14px; background: {{ d.bg }}; cursor: {{ d.cursor }}; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; opacity: {{ d.opacity }}" style-hover="border-color: #C57B57">
+                        <span style="font-size: 11.5px; font-weight: 600; color: #8A847A; text-transform: uppercase">{{ d.dow }}</span>
+                        <span style="font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums">{{ d.num }}</span>
+                        <span style="width: 5px; height: 5px; border-radius: 999px; background: {{ d.dotBg }}"></span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <!-- step 4: time -->
+                <sc-if value="{{ step4 }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size: 13px; font-weight: 600; color: #8A847A; margin-bottom: 10px">Tarde — tu franja habitual</div>
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px">
+                    <sc-for list="{{ pmTimes }}" as="t" hint-placeholder-count="6">
+                      <button onClick="{{ t.pick }}" style="height: 52px; border: {{ t.border }}; border-radius: 14px; background: {{ t.bg }}; color: {{ t.fg }}; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums" style-hover="border-color: #C57B57">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+                  <div style="font-size: 13px; font-weight: 600; color: #8A847A; margin-bottom: 10px">Mañana</div>
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px">
+                    <sc-for list="{{ amTimes }}" as="t" hint-placeholder-count="3">
+                      <button onClick="{{ t.pick }}" style="height: 52px; border: {{ t.border }}; border-radius: 14px; background: {{ t.bg }}; color: {{ t.fg }}; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums" style-hover="border-color: #C57B57">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <!-- step 5: confirm -->
+                <sc-if value="{{ step5 }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 20px; margin-bottom: 16px">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F4F2EE"><span style="font-size: 13.5px; color: #8A847A">Servicio</span><span style="font-size: 14px; font-weight: 600">{{ pickedService }}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F4F2EE"><span style="font-size: 13.5px; color: #8A847A">Con</span><span style="font-size: 14px; font-weight: 600">{{ pickedBarber }}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F4F2EE"><span style="font-size: 13.5px; color: #8A847A">Cuándo</span><span style="font-size: 14px; font-weight: 600">{{ pickedWhen }}</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0"><span style="font-size: 13.5px; color: #8A847A">Precio</span><span style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{ pickedPrice }} <span style="font-size: 12px; color: #8A847A; font-weight: 500">se paga en el local</span></span></div>
+                  </div>
+                  <label style="display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 8px" for="cphone">Tu WhatsApp — para confirmarte la cita</label>
+                  <input id="cphone" placeholder="11 5502 3311" inputMode="tel" style="height: 52px; width: 100%; padding: 0 16px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 16px; color: #26231F; outline: none; margin-bottom: 14px" style-focus="border-color: #C57B57; box-shadow: 0 0 0 3px #F6EBE4">
+                  <button onClick="{{ confirm }}" style="width: 100%; height: 54px; border-radius: 16px; border: none; background: #C57B57; color: #FFFFFF; font-family: inherit; font-size: 15.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px" style-hover="background: #B06A48"><i data-lucide="check" style="width: 18px; height: 18px"></i>Confirmar reserva</button>
+                  <div style="font-size: 12px; color: #8A847A; text-align: center; margin-top: 10px">Sin tarjeta · cancela gratis hasta 2 h antes</div>
+                </sc-if>
+
+                <!-- step 6: booked! -->
+                <sc-if value="{{ step6 }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align: center; padding-top: 16px">
+                    <span style="width: 64px; height: 64px; border-radius: 999px; background: #EAF2ED; color: #3E7354; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; animation: orno-check 300ms cubic-bezier(0.2,0,0,1)"><i data-lucide="check" style="width: 30px; height: 30px"></i></span>
+                    <h3 style="font-size: 20px; font-weight: 600; margin: 0 0 4px">¡Listo! Te esperamos</h3>
+                    <p style="font-size: 13.5px; color: #57534B; margin: 0 0 20px">Te llega la confirmación por WhatsApp en segundos.</p>
+                    <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 22px; text-align: left; box-shadow: 0 1px 2px rgba(38,35,31,.04), 0 4px 16px rgba(38,35,31,.05); margin-bottom: 14px">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px">
+                        <div>
+                          <div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">{{ pickedWhen }}</div>
+                          <div style="font-size: 13.5px; color: #57534B; margin-top: 2px">{{ pickedService }} · con {{ pickedBarber }}</div>
+                        </div>
+                        <span style="width: 40px; height: 40px; border-radius: 13px; background: #F4F2EE; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600">B<span style="color: #C57B57">.</span></span>
+                      </div>
+                      <div style="font-size: 13px; color: #57534B; display: flex; align-items: center; gap: 7px; padding-bottom: 14px; border-bottom: 1px solid #F4F2EE; margin-bottom: 12px"><i data-lucide="map-pin" style="width: 14px; height: 14px; color: #8A847A"></i>Gorriti 4722, Palermo · <span style="color: #C57B57; font-weight: 600">Cómo llegar</span></div>
+                      <div style="display: flex; gap: 8px">
+                        <button style="flex: 1; height: 42px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="calendar-plus" style="width: 14px; height: 14px; color: #57534B"></i>Al calendario</button>
+                        <button style="flex: 1; height: 42px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="share-2" style="width: 14px; height: 14px; color: #57534B"></i>Compartir</button>
+                      </div>
+                    </div>
+                    <button onClick="{{ restart }}" style="height: 40px; padding: 0 18px; border-radius: 12px; border: none; background: transparent; color: #57534B; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">↺ Probar el flujo otra vez</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PHONE 2: CUSTOMER HOME ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">2 · Inicio del cliente — memoria, no gestión</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 800px">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>18:22</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+          <div style="flex: 1; overflow-y: auto; padding: 4px 16px 16px">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 16px">
+              <div>
+                <div style="font-size: 21px; font-weight: 600; letter-spacing: -0.02em">Hola, Juli</div>
+                <div style="font-size: 13.5px; color: #57534B">Barbería Central</div>
+              </div>
+              <span style="width: 42px; height: 42px; border-radius: 13px; background: #F4F2EE; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600">B<span style="color: #C57B57">.</span></span>
+            </div>
+
+            <!-- Next appointment: wallet pass -->
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 20px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(38,35,31,.04), 0 4px 16px rgba(38,35,31,.05)">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+                <span style="height: 24px; padding: 0 11px; border-radius: 999px; background: #EAF2ED; color: #3E7354; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px"><i data-lucide="check" style="width: 11px; height: 11px"></i>Confirmada</span>
+                <span style="font-size: 12.5px; color: #8A847A">en 4 días</span>
+              </div>
+              <div style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 2px; font-variant-numeric: tabular-nums">Viernes 11 · 15:00</div>
+              <div style="font-size: 14px; color: #57534B; margin-bottom: 16px">Corte + barba · con Nico</div>
+              <div style="display: flex; gap: 8px">
+                <button style="flex: 1; height: 44px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="calendar-clock" style="width: 15px; height: 15px; color: #57534B"></i>Mover</button>
+                <button style="flex: 1; height: 44px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="calendar-plus" style="width: 15px; height: 15px; color: #57534B"></i>Calendario</button>
+                <button style="width: 44px; height: 44px; border-radius: 13px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: flex; align-items: center; justify-content: center" title="Más opciones" style-hover="background: #F4F2EE"><i data-lucide="ellipsis" style="width: 16px; height: 16px"></i></button>
+              </div>
+            </div>
+
+            <!-- Loyalty -->
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 16px 18px; margin-bottom: 12px">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
+                <span style="font-size: 13.5px; font-weight: 600">Tu tarjeta de cortes</span>
+                <span style="font-size: 12.5px; font-weight: 600; color: #3E7354">faltan 2 para uno gratis</span>
+              </div>
+              <div style="display: flex; gap: 5px">
+                <sc-for list="{{ stamps }}" as="st" hint-placeholder-count="10">
+                  <span style="flex: 1; height: 26px; border-radius: 8px; background: {{ st.bg }}; border: {{ st.border }}; display: flex; align-items: center; justify-content: center; color: {{ st.fg }}"><i data-lucide="{{ st.icon }}" style="width: 12px; height: 12px"></i></span>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- AI whisper -->
+            <div style="background: #F3F8F5; border: 1px solid #DCE9E1; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start">
+              <i data-lucide="sparkles" style="width: 15px; height: 15px; color: #3E7354; flex-shrink: 0; margin-top: 1px"></i>
+              <span style="font-size: 13px; line-height: 1.5; flex: 1">Después de esta cita te tocaría de nuevo el <strong>1 de agosto</strong> — ¿te la dejamos apalabrada con Nico?</span>
+              <button style="width: 28px; height: 28px; border-radius: 9px; border: none; background: transparent; color: #8A847A; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center" style-hover="background: #EAF2ED" aria-label="Descartar"><i data-lucide="x" style="width: 13px; height: 13px"></i></button>
+            </div>
+
+            <!-- History -->
+            <div style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A; padding: 10px 4px 8px">Tus visitas</div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{ visits }}" as="v" hint-placeholder-count="3">
+                <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 12px">
+                  <div style="flex: 1; min-width: 0">
+                    <div style="font-size: 13.5px; font-weight: 600">{{ v.what }}</div>
+                    <div style="font-size: 12px; color: #8A847A">{{ v.when }}</div>
+                  </div>
+                  <button style="height: 34px; padding: 0 13px; border-radius: 10px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0" style-hover="background: #F4F2EE">Repetir</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PHONE 3: PROFILE + STATES ═══════ -->
+      <div>
+        <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 12px; color: #57534B">3 · Perfil y preferencias — chips, no formularios</div>
+        <div style="width: 390px; background: #FAF9F7; border: 1px solid #D8D3CA; border-radius: 40px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.14); display: flex; flex-direction: column; height: 800px">
+          <div style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; flex-shrink: 0"><span>18:22</span><span style="display: flex; gap: 5px; color: #57534B"><i data-lucide="signal" style="width: 14px; height: 14px"></i><i data-lucide="wifi" style="width: 14px; height: 14px"></i><i data-lucide="battery-medium" style="width: 16px; height: 16px"></i></span></div>
+          <div style="flex: 1; overflow-y: auto; padding: 4px 16px 16px">
+            <div style="padding: 8px 4px 16px">
+              <div style="font-size: 21px; font-weight: 600; letter-spacing: -0.02em">Tu perfil</div>
+            </div>
+
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px">
+              <span style="width: 52px; height: 52px; border-radius: 999px; background: #F6EBE4; color: #9A5A3B; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600">JT</span>
+              <div style="flex: 1">
+                <div style="font-size: 16px; font-weight: 600">Julián Torres</div>
+                <div style="font-size: 13px; color: #8A847A">+54 11 5502 3311</div>
+              </div>
+              <button style="height: 36px; padding: 0 14px; border-radius: 11px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Editar</button>
+            </div>
+
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 18px; margin-bottom: 12px">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px">Tus preferencias</div>
+              <div style="font-size: 12.5px; color: #8A847A; margin-bottom: 8px">Barbero favorito</div>
+              <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+                <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #F6EBE4; border: 1.5px solid #C57B57; color: #9A5A3B; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px"><i data-lucide="check" style="width: 13px; height: 13px"></i>Nico</span>
+                <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E8E4DE; color: #57534B; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center">Rama</span>
+                <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E8E4DE; color: #57534B; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center">Cualquiera</span>
+              </div>
+              <div style="font-size: 12.5px; color: #8A847A; margin-bottom: 8px">Tu servicio habitual</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #F6EBE4; border: 1.5px solid #C57B57; color: #9A5A3B; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px"><i data-lucide="check" style="width: 13px; height: 13px"></i>Corte + barba</span>
+                <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E8E4DE; color: #57534B; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center">Corte clásico</span>
+              </div>
+            </div>
+
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 18px; margin-bottom: 12px">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px">Cómo te avisamos</div>
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <sc-for list="{{ commPrefs }}" as="cp" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <div style="flex: 1"><div style="font-size: 13.5px; font-weight: 600">{{ cp.label }}</div><div style="font-size: 12px; color: #8A847A">{{ cp.hint }}</div></div>
+                    <button onClick="{{ cp.toggle }}" role="switch" aria-checked="{{ cp.on }}" style="width: 44px; height: 26px; border-radius: 999px; border: none; background: {{ cp.trackBg }}; cursor: pointer; position: relative; transition: background 150ms; flex-shrink: 0">
+                      <span style="position: absolute; top: 3px; left: {{ cp.knobLeft }}; width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(38,35,31,.2); transition: left 150ms cubic-bezier(0.2,0,0,1)"></span>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 18px; padding: 18px; display: flex; align-items: center; gap: 12px; opacity: .75">
+              <span style="width: 38px; height: 38px; border-radius: 12px; background: #F4F2EE; color: #57534B; display: flex; align-items: center; justify-content: center"><i data-lucide="credit-card" style="width: 17px; height: 17px"></i></span>
+              <div style="flex: 1"><div style="font-size: 13.5px; font-weight: 600">Métodos de pago</div><div style="font-size: 12px; color: #8A847A">Para pagar desde la app · próximamente</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ STATES + RULES ═══════ -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; margin-top: 48px">
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Vacío</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">Primera vez sin citas: el inicio ES el flujo de reserva — nunca una pantalla en blanco. Sin visitas pasadas: la sección no aparece (no «no hay datos»).</div>
+      </div>
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Cargando</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">Marca y estructura pintan al instante desde caché; los horarios llegan como esqueletos con la forma de los botones de hora. El botón «Confirmar» muestra spinner inline, nunca bloquea la pantalla.</div>
+      </div>
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Error</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">Horario tomado justo antes de confirmar: «Uy, ese horario se acaba de ocupar» + los 3 más cercanos en un toque. Fallo de red al confirmar: reintento automático ×2, luego «Guardamos tu selección — reintentar».</div>
+      </div>
+      <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 14px">Sin conexión</div>
+        <div style="font-size: 14px; line-height: 1.6; color: #57534B">La cita confirmada vive en caché: fecha, hora, dirección y «cómo llegar» siempre visibles sin red (es un pase, no una página). Reservar requiere conexión — se dice honesto y claro.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1020}}">
+class Component extends DCLogic {
+  state = {
+    step: 0, service: null, barber: null, day: null, time: null,
+    notifWhats: true, notifRecordatorio: true, notifPromos: false,
+  };
+
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const A = '#C57B57', AT = '#F6EBE4', AD = '#9A5A3B'; // brand accent (white-label demo)
+
+    const SERVICES = [
+      { id: 'cb', name: 'Corte + barba', meta: '60 min · el favorito', price: '$24.000' },
+      { id: 'cc', name: 'Corte clásico', meta: '40 min', price: '$18.000' },
+      { id: 'bp', name: 'Barba y perfilado', meta: '25 min', price: '$12.000' },
+    ];
+    const BARBERS = [
+      { id: 'nico', name: 'Nico', initials: 'NG', avatarBg: '#EAF2ED', avatarFg: '#3E7354', meta: '4.9 ★ · tu barbero habitual', hint: 'Tu habitual', hintFg: AD },
+      { id: 'rama', name: 'Rama', initials: 'RS', avatarBg: AT, avatarFg: AD, meta: '4.8 ★ · especialista en barba', hint: '', hintFg: '#8A847A' },
+      { id: 'diego', name: 'Diego', initials: 'DC', avatarBg: '#EAEFF4', avatarFg: '#4A6B87', meta: '4.7 ★ · desde las 12:00', hint: '', hintFg: '#8A847A' },
+      { id: 'any', name: 'El primero libre', initials: '✂', avatarBg: '#F4F2EE', avatarFg: '#57534B', meta: 'Te toca el que tenga lugar antes', hint: 'Más rápido', hintFg: '#3E7354' },
+    ];
+    const DAYS = [
+      { id: 'mar8', dow: 'mar', num: '8', has: true }, { id: 'mie9', dow: 'mié', num: '9', has: true },
+      { id: 'jue10', dow: 'jue', num: '10', has: false }, { id: 'vie11', dow: 'vie', num: '11', has: true, usual: true },
+      { id: 'sab12', dow: 'sáb', num: '12', has: true }, { id: 'lun14', dow: 'lun', num: '14', has: true },
+      { id: 'mar15', dow: 'mar', num: '15', has: true }, { id: 'vie18', dow: 'vie', num: '18', has: true, usual: true },
+    ];
+    const PM = ['14:00', '15:00', '16:30', '17:00', '18:30', '19:00'];
+    const AM = ['9:30', '10:00', '11:30'];
+
+    const svc = SERVICES.find(x => x.id === s.service);
+    const brb = BARBERS.find(x => x.id === s.barber);
+    const dayObj = DAYS.find(x => x.id === s.day);
+
+    const stepTitles = { 1: '¿Qué te hacemos?', 2: '¿Con quién?', 3: '¿Qué día?', 4: '¿A qué hora?', 5: 'Confirma tu cita' };
+    const dot = (n) => (s.step >= n && s.step <= 5) || s.step === 6 ? A : '#E8E4DE';
+
+    return {
+      step0: s.step === 0,
+      inFlow: s.step >= 1,
+      step1: s.step === 1, step2: s.step === 2, step3: s.step === 3,
+      step4: s.step === 4, step5: s.step === 5, step6: s.step === 6,
+      stepTitle: stepTitles[s.step] || '',
+      dot1: dot(1), dot2: dot(2), dot3: dot(3), dot4: dot(4),
+
+      goStep1: () => this.setState({ step: 1 }),
+      goBack: () => this.setState({ step: Math.max(0, s.step - 1) }),
+      confirm: () => this.setState({ step: 6 }),
+      restart: () => this.setState({ step: 0, service: null, barber: null, day: null, time: null }),
+
+      services: SERVICES.map(x => ({
+        name: x.name, meta: x.meta, price: x.price,
+        border: s.service === x.id ? '1.5px solid ' + A : '1px solid #E8E4DE',
+        bg: s.service === x.id ? AT : '#FFFFFF',
+        pick: () => this.setState({ service: x.id, step: 2 }),
+      })),
+      barbers: BARBERS.map(x => ({
+        name: x.name, initials: x.initials, avatarBg: x.avatarBg, avatarFg: x.avatarFg, meta: x.meta, hint: x.hint, hintFg: x.hintFg,
+        border: s.barber === x.id ? '1.5px solid ' + A : '1px solid #E8E4DE',
+        bg: s.barber === x.id ? AT : '#FFFFFF',
+        pick: () => this.setState({ barber: x.id, step: 3 }),
+      })),
+      days: DAYS.map(x => ({
+        dow: x.dow, num: x.num,
+        border: s.day === x.id ? '1.5px solid ' + A : (x.usual && x.has ? '1.5px solid #DCE9E1' : '1px solid #E8E4DE'),
+        bg: s.day === x.id ? AT : (x.has ? '#FFFFFF' : '#FAF9F7'),
+        dotBg: x.has ? (x.usual ? '#5F9F77' : '#D8D3CA') : 'transparent',
+        opacity: x.has ? 1 : 0.45,
+        cursor: x.has ? 'pointer' : 'not-allowed',
+        pick: x.has ? () => this.setState({ day: x.id, step: 4 }) : () => {},
+      })),
+      pmTimes: PM.map(t => ({
+        label: t,
+        border: s.time === t ? '1.5px solid ' + A : '1px solid #E8E4DE',
+        bg: s.time === t ? A : '#FFFFFF',
+        fg: s.time === t ? '#FFFFFF' : '#26231F',
+        pick: () => this.setState({ time: t, step: 5 }),
+      })),
+      amTimes: AM.map(t => ({
+        label: t,
+        border: s.time === t ? '1.5px solid ' + A : '1px solid #E8E4DE',
+        bg: s.time === t ? A : '#FFFFFF',
+        fg: s.time === t ? '#FFFFFF' : '#26231F',
+        pick: () => this.setState({ time: t, step: 5 }),
+      })),
+
+      pickedService: svc ? svc.name : '—',
+      pickedBarber: brb ? brb.name : '—',
+      pickedWhen: dayObj && s.time ? (dayObj.dow.charAt(0).toUpperCase() + dayObj.dow.slice(1)) + ' ' + dayObj.num + ' jul · ' + s.time : '—',
+      pickedPrice: svc ? svc.price : '—',
+
+      stamps: Array.from({ length: 10 }, (_, i) => ({
+        icon: i < 8 ? 'scissors' : (i === 9 ? 'gift' : 'plus'),
+        bg: i < 8 ? AT : '#FFFFFF',
+        fg: i < 8 ? AD : '#C6C0B6',
+        border: i < 8 ? '1px solid transparent' : '1.5px dashed #E8E4DE',
+      })),
+
+      visits: [
+        { what: 'Corte + barba · con Nico', when: '20 jun · $24.000' },
+        { what: 'Corte + barba · con Nico', when: '30 may · $24.000' },
+        { what: 'Corte clásico · con Rama', when: '8 may · $18.000' },
+      ],
+
+      commPrefs: [
+        { label: 'Confirmaciones por WhatsApp', hint: 'Cita reservada, movida o cancelada', key: 'notifWhats' },
+        { label: 'Recordatorio el día anterior', hint: 'Un solo mensaje, sin insistir', key: 'notifRecordatorio' },
+        { label: 'Promos y novedades', hint: 'Máximo una por mes', key: 'notifPromos' },
+      ].map(x => ({
+        label: x.label, hint: x.hint, on: s[x.key],
+        trackBg: s[x.key] ? '#5F9F77' : '#E8E4DE',
+        knobLeft: s[x.key] ? '21px' : '3px',
+        toggle: () => this.setState({ [x.key]: !s[x.key] }),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>
