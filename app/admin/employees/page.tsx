@@ -23,7 +23,7 @@ import {
   DollarSign,
   Loader2,
 } from "lucide-react"
-import { type Employee, DEMO_EMPLOYEES } from "@/lib/demo"
+import { DEMO_EMPLOYEES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
 import { DeleteConfirmModal } from "@/components/admin/employees/delete-confirm-modal"
@@ -39,7 +39,17 @@ function isBarber(emp: EmployeeWithSpecialty): boolean {
   return BARBER_SPECIALTIES.includes(emp.specialty || "")
 }
 
-type EmployeeWithSpecialty = Employee & { specialty?: string | null; commission_rate?: number | null }
+type EmployeeWithSpecialty = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  avatar?: string
+  avatar_url?: string
+  specialty?: string | null
+  commission_rate?: number | null
+}
 
 export default function EmployeesPage() {
   const router = useRouter()
@@ -56,7 +66,7 @@ export default function EmployeesPage() {
   const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const handleResetPassword = async (employee: Employee) => {
+  const handleResetPassword = async (employee: EmployeeWithSpecialty) => {
     setActiveDropdown(null)
     if (!supabase) {
       setResetPasswordResult({ name: employee.name, password: "demo-1234" })

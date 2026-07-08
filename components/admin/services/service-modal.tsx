@@ -89,15 +89,15 @@ export function ServiceModal({ isOpen, onClose, onSave, service }: ServiceModalP
 
     const serviceData = {
       name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
+      description: formData.description.trim() || "",
       price: parseFloat(formData.price),
       duration: parseInt(formData.duration),
     }
 
     if (service) {
-      onSave({ ...serviceData, id: service.id })
+      onSave({ ...serviceData, id: service.id, category: service.category, isActive: service.isActive })
     } else {
-      onSave(serviceData)
+      onSave({ ...serviceData, category: "other", isActive: true })
     }
   }
 

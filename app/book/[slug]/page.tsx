@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { type Service, type Employee } from "@/lib/demo"
+import { type Service } from "@/lib/demo"
+
+/** Shape of employee rows returned by the Supabase query in this page. */
+type Employee = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  avatar_url?: string
+}
 import { createBrowserClient } from "@supabase/ssr"
 import { Footer } from "@/components/layout/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

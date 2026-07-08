@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, APPOINTMENT_STATUS_LABELS } from "@/lib/demo"
+import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, STATUS_LABELS as APPOINTMENT_STATUS_LABELS } from "@/lib/demo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

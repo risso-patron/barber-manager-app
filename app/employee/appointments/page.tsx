@@ -6,7 +6,7 @@ import {
   type Appointment,
   type AppointmentStatus,
   getAppointmentsByEmployee,
-  APPOINTMENT_STATUS_LABELS,
+  STATUS_LABELS as APPOINTMENT_STATUS_LABELS,
   getNextStatusActions,
 } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"

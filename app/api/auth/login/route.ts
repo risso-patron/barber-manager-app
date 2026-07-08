@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
       // MODO DEMO - Simulación de autenticación
       if (isDemoMode()) {
-        const { DEMO_USERS } = await import('@/lib/demo-config')
+        const { DEMO_USERS } = await import('@/lib/demo')
         
         const user = Object.values(DEMO_USERS).find(
           u => u.email.toLowerCase() === email.toLowerCase()

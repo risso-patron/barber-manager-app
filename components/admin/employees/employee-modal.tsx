@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Check } from "lucide-react"
-import type { Employee } from "@/lib/demo"
-
-interface EmployeeWithCommission extends Employee {
+interface EmployeeWithCommission {
+  id?: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  avatar?: string
   specialty?: string | null
   commission_rate?: number | null
 }
