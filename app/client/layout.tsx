@@ -1,39 +1,49 @@
 "use client"
 
-import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { ClientSidebar } from "@/components/client/layout/client-sidebar"
-import { ClientBottomNav } from "@/components/client/layout/client-bottom-nav"
+// M2 · Replaces app/client/layout.tsx — same pattern; client role.
 
-export default function ClientLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { AppShell } from "@/components/shell/app-shell"
+import { UserMenu } from "@/components/shell/user-menu"
+import { BrandProvider } from "@/components/shell/brand-provider"
+import { Skeleton } from "@/components/ui/skeleton"
+import { signOut } from "@/lib/sign-out"
+
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const user = useRequireAuth(["client", "admin"])
+  const router = useRouter()
 
   if (!user) {
     return (
-      <div
-        style={{ minHeight: "100vh", background: "#0F0F0F", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "16px" }}
-      >
-        <div style={{ width: "32px", height: "32px", border: "2px solid #E53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#555555" }}>Cargando</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4" role="status" aria-label="Verificando sesión">
+          <Skeleton className="size-10 rounded-full" />
+          <p className="text-[13px] text-muted-foreground">Un momento…</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div data-theme="orno-admin" style={{ minHeight: "100vh", background: "#0F0F0F" }}>
-      <ClientSidebar />
-      <main
-        className="lg:ml-[240px]"
-        style={{ minHeight: "100vh", scrollbarWidth: "thin", scrollbarColor: "#2E2E2E #0F0F0F" }}
+    <BrandProvider>
+      <AppShell
+        role="client"
+        userSlot={
+          <UserMenu
+            name={user.name ?? "Mi cuenta"}
+            roleLabel="Cliente"
+            email={user.email ?? undefined}
+            onProfile={() => router.push("/client/profile")}
+            onSignOut={async () => {
+              await signOut()
+              router.push("/auth/login")
+            }}
+          />
+        }
       >
         {children}
-      </main>
-      <ClientBottomNav />
-    </div>
+      </AppShell>
+    </BrandProvider>
   )
 }
-

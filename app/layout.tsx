@@ -59,10 +59,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${GeistMono.variable} ${cormorant.variable} ${dmSans.variable} ${dmMono.variable} font-sans antialiased`}
-      >
+    // Font variables must live on <html>: globals.css declares
+    // --font-sans: var(--font-inter) at :root, and custom properties
+    // resolve var() where they are declared — with the variables on
+    // <body>, :root can't see them, font-family computes invalid and
+    // the whole app falls back to the browser serif.
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${inter.variable} ${GeistMono.variable} ${cormorant.variable} ${dmSans.variable} ${dmMono.variable}`}
+    >
+      <body className="font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

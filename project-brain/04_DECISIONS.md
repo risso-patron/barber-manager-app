@@ -272,4 +272,23 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 ---
 
+### ADR-021 — ORNO M2 Application Shell: single AppShell + BrandProvider replace the four independent layouts
+
+**Context**: The three portal layouts (`app/admin`, `app/employee`, `app/client`) plus the legacy `/dashboard` tree each carried their own sidebar/bottom-nav and their own styling (admin and employee: hardcoded dark `#0F0F0F` with `#E53935` as an interface color — a direct Design Constitution violation). Design detail lives in `docs/orno design/ORNO Design Bible v1.0.md` (not duplicated here).
+
+**Decision**: One `AppShell` (`components/shell/`) renders all three portals; navigation is data (`components/shell/navigation.ts`, one manifest per role — the single source of portal navigation); `BrandProvider` is the single source of branding (ORNO exists only as the default `BrandConfig`; white-label = pass a different config, zero shell edits). Sign-out is centralized in `lib/sign-out.ts` (verbatim port of the legacy sidebar handlers).
+
+**Repo-specific corrections vs the M2 drop-in package** (the package's claims were verified, not trusted):
+1. Auth guards restored to the repo's real matrix — admin `["admin"]` (package reintroduced the dead `manager` role removed in FASE 5), employee `["employee","admin"]`, client `["client","admin"]` (package dropped admin access). This matrix matches `middleware.ts` server-side authorization exactly.
+2. Package sign-out dispatched `CustomEvent("orno:signout")` with no listener anywhere — replaced with the real flow.
+3. Package navigation pointed at four nonexistent routes (`/employee/agenda|fichaje|historial|perfil`) and omitted `/admin/billing`, `/admin/integrations`, `/client/history` — fixed to real routes with full page reachability.
+
+**Constraint (permanent)**: next/font variable classes MUST live on `<html>`, not `<body>` — `globals.css` resolves `--font-sans: var(--font-inter)` at `:root`, and custom properties resolve `var()` where declared; on `<body>` the chain computes invalid and the entire app falls back to the browser serif (this was live in production styling M0→M2).
+
+**Consequences**: Legacy shells (`components/{admin,employee,client}/layout/*-sidebar|*-bottom-nav`, `components/layout/sidebar.tsx`) are orphaned pending deletion approval. `middleware.ts` still uses `/dashboard` as its role-mismatch fallback (7 redirect sites), so the `/dashboard` tree cannot be deleted until that fallback is migrated. `components/layout/footer.tsx` is still imported by live routes (`app/book/[slug]`, `app/auth/layout.tsx`) — not shell-related, migrates separately. Page bodies keep their own legacy styling until Design Bible Phases 4–9.
+
+**Status**: Implemented (2026-07-08), pending commit approval. `type-check`/`lint` pass; verified in-browser (all three portals, ⌘K palette, mobile bottom nav + FAB, sign-out, WCAG AA contrast on shell chrome).
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)
