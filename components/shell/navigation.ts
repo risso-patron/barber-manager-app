@@ -7,6 +7,7 @@
 // `flag` gates unreleased modules without touching layout code.
 
 import type { LucideIcon } from "lucide-react"
+import { ROLE_HOME } from "@/lib/routes"
 import {
   Sun,
   CalendarDays,
@@ -71,7 +72,7 @@ const adminBiz: NavItem[] = [
 ]
 
 export const ADMIN_NAV: RoleNav = {
-  home: "/admin",
+  home: ROLE_HOME.admin,
   sections: [
     { key: "ops", label: "", items: adminOps },
     { key: "biz", label: "Negocio", items: adminBiz },
@@ -104,7 +105,7 @@ const empProfile: NavItem = { key: "profile", label: "Mi perfil", href: "/employ
 const employeeOps: NavItem[] = [empToday, empAgenda, empAppointments, empClock, empStats, empHistory]
 
 export const EMPLOYEE_NAV: RoleNav = {
-  home: "/employee/dashboard",
+  home: ROLE_HOME.employee,
   sections: [
     { key: "ops", label: "", items: employeeOps },
     {
@@ -129,7 +130,7 @@ const cliProfile: NavItem = { key: "profile", label: "Mi perfil", href: "/client
 const clientOps: NavItem[] = [cliHome, cliBook, cliAppointments, cliHistory, cliProfile]
 
 export const CLIENT_NAV: RoleNav = {
-  home: "/client",
+  home: ROLE_HOME.client,
   sections: [{ key: "ops", label: "", items: clientOps }],
   mobile: {
     primary: [cliHome, cliBook, cliAppointments],

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { roleHome, LOGIN_ROUTE } from "@/lib/routes"
 
 export async function middleware(request: NextRequest) {
   // DEMO MODE BYPASS — solo en desarrollo
@@ -6,14 +7,18 @@ export async function middleware(request: NextRequest) {
     const demoRole = request.cookies.get("demo-role")?.value
     if (demoRole) {
       const path = request.nextUrl.pathname
+      // Legacy role-router path: send bookmarks straight to the role home.
+      if (path.startsWith("/dashboard")) {
+        return NextResponse.redirect(new URL(roleHome(demoRole), request.url))
+      }
       if (path.startsWith("/admin") && demoRole !== "admin") {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        return NextResponse.redirect(new URL(roleHome(demoRole), request.url))
       }
       if (path.startsWith("/client") && demoRole !== "client" && demoRole !== "admin") {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        return NextResponse.redirect(new URL(roleHome(demoRole), request.url))
       }
       if (path.startsWith("/employee") && demoRole !== "employee" && demoRole !== "admin") {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        return NextResponse.redirect(new URL(roleHome(demoRole), request.url))
       }
       return NextResponse.next({ request })
     }
@@ -27,6 +32,11 @@ export async function middleware(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error("Missing Supabase environment variables in middleware")
+    // Demo mode without a session cookie: /dashboard no longer exists as a
+    // page, so route the legacy path to login instead of a 404.
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL(LOGIN_ROUTE, request.url))
+    }
     return supabaseResponse
   }
 
@@ -53,7 +63,7 @@ export async function middleware(request: NextRequest) {
   )
 
   if (isProtectedRoute && !user) {
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+    return NextResponse.redirect(new URL(LOGIN_ROUTE, request.url))
   }
 
   if (user && isProtectedRoute) {
@@ -64,16 +74,21 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (roleError) {
-      if (!request.nextUrl.pathname.startsWith("/dashboard")) {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
-      }
+      // Role unknown (transient DB error): let the request through and let
+      // the client-side guard (useRequireAuth) resolve — it is the same
+      // decider the legacy /dashboard router delegated to.
       return supabaseResponse
     }
 
     const userRole = userData?.role
 
+    // Legacy role-router path: send bookmarks straight to the role home.
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL(roleHome(userRole), request.url))
+    }
+
     if (request.nextUrl.pathname.startsWith("/admin") && userRole !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL(roleHome(userRole), request.url))
     }
 
     if (
@@ -81,7 +96,7 @@ export async function middleware(request: NextRequest) {
       userRole !== "employee" &&
       userRole !== "admin"
     ) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL(roleHome(userRole), request.url))
     }
 
     if (
@@ -89,7 +104,7 @@ export async function middleware(request: NextRequest) {
       userRole !== "client" &&
       userRole !== "admin"
     ) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL(roleHome(userRole), request.url))
     }
   }
 

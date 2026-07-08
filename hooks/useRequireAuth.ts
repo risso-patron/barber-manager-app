@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
-
-const DASHBOARD_MAP: Record<string, string> = {
-  admin: "/admin",
-  employee: "/employee/dashboard",
-  client: "/client",
-}
+import { roleHome } from "@/lib/routes"
 
 function isPlaceholder(value: string | undefined): boolean {
   if (!value) return true
@@ -48,7 +43,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
           return
         }
         if (allowedRoles?.length && !allowedRoles.includes(currentUser.role)) {
-          router.replace(DASHBOARD_MAP[currentUser.role] || "/auth/login")
+          router.replace(roleHome(currentUser.role))
           return
         }
         setUser(currentUser)
@@ -82,7 +77,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
       const role = profile?.role || "client"
 
       if (allowedRoles?.length && !allowedRoles.includes(role)) {
-        router.replace(DASHBOARD_MAP[role] || "/auth/login")
+        router.replace(roleHome(role))
         return
       }
 
