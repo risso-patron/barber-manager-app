@@ -5,6 +5,8 @@ import { Mail, Phone, Calendar, Gift, XCircle } from "lucide-react"
 
 interface ClientAvatarProps {
   name: string
+  /** Foto/avatar de la persona; sin ella cae a la inicial del nombre. */
+  imageUrl?: string | null
   size?: "sm" | "lg"
   className?: string
 }
@@ -14,12 +16,17 @@ const AVATAR_DIMENSIONS: Record<NonNullable<ClientAvatarProps["size"]>, string> 
   lg: "size-20 text-3xl",
 }
 
-export function ClientAvatar({ name, size = "sm", className }: ClientAvatarProps) {
+export function ClientAvatar({ name, imageUrl, size = "sm", className }: ClientAvatarProps) {
   return (
     <div
-      className={`${AVATAR_DIMENSIONS[size]} shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold ${className ?? ""}`}
+      className={`${AVATAR_DIMENSIONS[size]} shrink-0 overflow-hidden rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold ${className ?? ""}`}
     >
-      {name.charAt(0).toUpperCase()}
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        name.charAt(0).toUpperCase()
+      )}
     </div>
   )
 }
