@@ -30,6 +30,8 @@ Real phase taxonomy, as it exists in git history (full detail in [08_CHANGELOG.m
 ✅ Functional today: Citas/Booking, Empleados, Clientes, Inventario, POS, Reportes, Fidelización.
 🔴 Stub: Facturación (Billing), Integraciones.
 
+> **Framework migration status (2026-07-09)**: Citas/Agenda, Clientes (CRM), y Empleados corren íntegramente sobre el framework ORNO (presentación solamente — data layer byte-idéntico en los tres casos). Inventario, POS, Servicios y Reportes usan primitivas ad hoc; cada uno abrirá con su propio Readiness Report.
+
 ---
 
 ## Planned

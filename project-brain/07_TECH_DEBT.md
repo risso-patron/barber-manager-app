@@ -4,6 +4,13 @@
 
 ---
 
+## EMP-1 follow-ups (added 2026-07-09)
+
+| Issue | Evidence |
+|---|---|
+| **`NativeSelect` en Inventory usa la constante local `SELECT_CLS`** — `components/admin/inventory/inventory-modal.tsx` quedó fuera del alcance de EMP-1 por decisión explícita ([ADR-025](04_DECISIONS.md)). Cuando Inventario reciba su Readiness Report, la migración a `NativeSelect` es un cambio mecánico de una línea. | `components/admin/inventory/inventory-modal.tsx:21` |
+| **`DEMO_EMPLOYEES` desincronizados — encontrado durante EMP-1, no tocado por decisión**: `lib/demo-config.ts` (`DEMO_EMPLOYEES` con IDs `emp-001..003`, "Carlos Martínez", `@barberia.com`) y `lib/demo-appointments.ts` (`DEMO_EMPLOYEES` con IDs `e1..e3`/`demo-employee-001`, "Carlos Pérez", `@barbershop.com`) definen catálogos incompatibles. Misma deuda que el item "Two demo data catalogs are desynchronized" en la sección Low — se añade aquí para registrar que fue inspeccionada durante EMP-1 y deliberadamente excluida del alcance. | `lib/demo-config.ts`; `lib/demo-appointments.ts`; [ADR-025](04_DECISIONS.md) |
+
 ## Billing/Integrations Phase A follow-ups (added 2026-07-06)
 
 | Issue | Evidence |

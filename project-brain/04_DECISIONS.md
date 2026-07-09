@@ -346,4 +346,30 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 ---
 
+### ADR-025 — Módulo Empleados migrado al framework ORNO; NativeSelect evoluciona como primitivo del framework; TempPasswordAlert como patrón de credencial temporal
+
+**Context**: `app/admin/employees/page.tsx` y `components/admin/employees/employee-modal.tsx` funcionaban antes de esta migración sobre primitivas ad hoc: selects nativos con una constante local `SELECT_CLS`, avatar de empleado con lógica `if (imageUrl)` inline, y contraseña temporal gestionada con `toast()` — un patrón incorrecto para información operacional que el admin necesita copiar antes de cerrar. La regla de ADR-023 ("el framework evoluciona primero, los módulos consumen — nunca forks locales") requería que el framework recibiera ambas primitivas antes del consumo.
+
+**Decision** (usuario, 2026-07-09): migración de presentación solamente — queries, mutaciones, rutas API, permisos y RLS byte-idénticos. El framework recibió primero `NativeSelect` (FW-1, `354681c`) y `ClientAvatar.imageUrl`; EMP-1 (`ba197f8`) consumió ambos en Empleados y, como efecto colateral, en el modal de Agenda (primer consumidor de `NativeSelect` fuera del módulo original — primera prueba de regresión del framework).
+
+**Commits del baseline**: FW-1 `354681c` (NativeSelect al framework + ClientAvatar.imageUrl) → EMP-1 `ba197f8` (Empleados + modal de Agenda: NativeSelect, ClientAvatar.imageUrl, TempPasswordAlert).
+
+**Decisiones clave**:
+
+1. **NativeSelect como componente del framework, no constante compartida**: `SELECT_CLS` existía en `inventory-modal.tsx` como constante local — el selector nativo merece ser un primitivo del framework para garantizar consistencia de tokens ORNO entre módulos. Inventario conserva la constante local por quedar fuera del alcance de EMP-1; deuda registrada en [07_TECH_DEBT.md](07_TECH_DEBT.md).
+
+2. **ClientAvatar.imageUrl como prop aditiva, no bifurcación**: antes de FW-1, `ClientAvatar` no tenía prop `imageUrl` — el employee-modal renderizaba su propio `<img>` condicional. Añadir `imageUrl` al componente existente respeta la regla ADR-023: el componente evoluciona en el framework y todos los consumidores (CRM, POS, Empleados) se benefician sin fork.
+
+3. **TempPasswordAlert como panel persistente, no toast**: la contraseña temporal es información operacional, no una notificación efímera — el admin necesita verla, copiarla y cerrarla manualmente. Un `Alert` persistente con acción "Copiar" es el patrón correcto. Props: todos primitivos (`variant: "success"|"info"`, `title: string`, `name: string`, `password: string`, `note: string`, `onDismiss: () => void`), sin dependencia de tipos, rutas ni lógica del dominio Empleados. Candidato a promoverse al framework como `CredentialPanel` en una evolución futura explícita; el naming `variant`/`onDismiss` (vs `tone`/`onClose`) es convención interna, no acoplamiento — un rename debe hacerse como evolución del framework con todos los consumidores en el mismo commit, no mezclado en un milestone de cierre documental.
+
+4. **DEMO_EMPLOYEES fuera del alcance**: `lib/demo-config.ts` y `lib/demo-appointments.ts` definen dos catálogos de empleados demo desincronizados — IDs, nombres, emails y campos incompatibles. Esta es deuda de datos, no de interfaz; no tocarla en EMP-1 fue la decisión correcta. Registrado en [07_TECH_DEBT.md](07_TECH_DEBT.md) como deuda explícita.
+
+**Verificación pre-commit (EMP-1)**: `type-check` limpio, `lint` solo warnings pre-existentes, 26/26 tests verdes. Greps repo-wide: `SELECT_CLS` únicamente en Inventory, hex colors en `app/admin/employees` + `components/admin/employees` = 0, inline styles = 0, `activeDropdown` únicamente en Services.
+
+**Consequences**: Empleados habla el idioma del sistema — `NativeSelect` reemplaza el `<select>` ad hoc con tokens ORNO garantizados, `ClientAvatar` es el componente canónico para avatares en cualquier contexto, y la contraseña temporal tiene un patrón correcto y reutilizable. La Agenda adoptó `NativeSelect` en su modal como efecto colateral: si el framework se rompe en ese primitivo, la Agenda lo detecta antes de que el bug se propague. `activeDropdown` queda aislado en Services — el Readiness Report de Services abrirá ese dominio como el último con esa familia de deuda técnica.
+
+**Status**: Implemented (2026-07-09) — EMP-2 es este cierre documental (ADR + sync del Brain, sin cambios funcionales ni visuales). El módulo Empleados queda oficialmente cerrado; siguiente dominio: Services, previo Readiness Report.
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)
