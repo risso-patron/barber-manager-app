@@ -48,6 +48,12 @@ export interface AppointmentTimelineProps {
   services?: Array<{ name: string; minutes: number }>
   /** Optimistic commit callbacks. Rollback via your data layer + notify(Deshacer). */
   onMove?: (change: { appointmentId: string; resourceId: string; startMin: number; endMin: number; duplicate: boolean }) => void
+  /**
+   * Resize deshabilitado por defecto: la cita no persiste duración propia
+   * (viene de service.duration). Activar solo cuando el modelo de datos
+   * soporte end_time/duración por cita.
+   */
+  allowResize?: boolean
   onSelect?: (appointment: SchedAppointment, anchor: { top: number; resourceIndex: number }) => void
   onCreateAt?: (resourceId: string, minute: number) => void
   onBookGap?: (resourceId: string, startMin: number) => void
@@ -68,6 +74,7 @@ export function AppointmentTimeline({
   state = "success",
   services,
   onMove,
+  allowResize = false,
   onSelect,
   onCreateAt,
   onBookGap,
@@ -195,7 +202,7 @@ export function AppointmentTimeline({
                         selected={selectedId === item.id}
                         onSelect={() => onSelect?.(item, { top, resourceIndex: ri })}
                         onPointerDownMove={onMove ? (e) => dnd.begin(item.id, "move", e) : undefined}
-                        onPointerDownResize={onMove ? (e) => dnd.begin(item.id, "resize", e) : undefined}
+                        onPointerDownResize={allowResize && onMove ? (e) => dnd.begin(item.id, "resize", e) : undefined}
                         onKeyDown={(e) => {
                           if (!onMove || !e.shiftKey) return
                           const map: Record<string, [number, number]> = {

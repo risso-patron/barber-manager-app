@@ -89,7 +89,8 @@ export const AppointmentCard = React.memo(function AppointmentCard({
       style={style}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn("truncate text-[13.5px] font-semibold text-foreground", state === "cancelled" && "line-through decoration-ink-300")}>
+        {/* Bible §15: nunca truncar el nombre del cliente — hasta 2 líneas. */}
+        <span className={cn("line-clamp-2 break-words text-[13.5px] font-semibold text-foreground", state === "cancelled" && "line-through decoration-ink-300")}>
           {clientName}
         </span>
         <span className={cn("nums shrink-0 text-[11.5px] font-semibold", S.time)}>{timeLabel}</span>

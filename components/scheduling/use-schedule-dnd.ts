@@ -9,7 +9,7 @@
 import * as React from "react"
 
 import type { SchedAppointment, ScheduleBlock, ScheduleConfig, ScheduleConflict } from "./types"
-import { detectConflict, minutesInTz, snap } from "./engine"
+import { detectConflict, minutesInTz, minutesToLabel, snap } from "./engine"
 
 export interface DragState {
   appointmentId: string
@@ -27,7 +27,7 @@ export interface DragState {
 export interface UseScheduleDndArgs {
   appointments: SchedAppointment[]
   blocks: ScheduleBlock[]
-  resources: Array<{ id: string }>
+  resources: Array<{ id: string; name?: string }>
   cfg: ScheduleConfig
   /** Optimistic commit. Return a promise; rollback on reject is the caller's. */
   onCommit: (change: {
@@ -86,6 +86,20 @@ export function useScheduleDnd({ appointments, blocks, resources, cfg, onCommit,
     [appointments, blocks, cfg]
   )
 
+  /** Bible §12 — announce with full context: "Cita de Marcos movida a las 13:00 con Rama." */
+  const announceCommit = React.useCallback(
+    (change: { appointmentId: string; resourceId: string; startMin: number; duplicate: boolean }) => {
+      if (!announce) return
+      const appt = appointments.find((a) => a.id === change.appointmentId)
+      const resource = resources.find((r) => r.id === change.resourceId)
+      const who = appt ? `Cita de ${appt.clientName}` : "Cita"
+      const verb = change.duplicate ? "duplicada" : "movida"
+      const where = resource?.name ? ` con ${resource.name}` : ""
+      announce(`${who} ${verb} a las ${minutesToLabel(change.startMin)}${where}.`)
+    },
+    [announce, appointments, resources]
+  )
+
   const finish = React.useCallback(() => {
     const d = dragRef.current
     setDrag(null)
@@ -101,7 +115,8 @@ export function useScheduleDnd({ appointments, blocks, resources, cfg, onCommit,
       return
     }
     onCommit({ appointmentId: d.appointmentId, resourceId: d.resourceId, startMin: d.startMin, endMin: d.endMin, duplicate: d.duplicate })
-  }, [appointments, blocks, cfg, onCommit, onConflict])
+    if (d.mode === "move") announceCommit(d)
+  }, [appointments, blocks, cfg, onCommit, onConflict, announceCommit])
 
   const cancel = React.useCallback(() => setDrag(null), [])
 
@@ -126,9 +141,9 @@ export function useScheduleDnd({ appointments, blocks, resources, cfg, onCommit,
         return
       }
       onCommit({ appointmentId, resourceId: nextResource, startMin: s, endMin: e, duplicate: false })
-      announce?.(`Cita movida`)
+      announceCommit({ appointmentId, resourceId: nextResource, startMin: s, duplicate: false })
     },
-    [appointments, blocks, resources, cfg, onCommit, onConflict, announce]
+    [appointments, blocks, resources, cfg, onCommit, onConflict, announceCommit]
   )
 
   return { drag, begin, update, finish, cancel, moveBy }
