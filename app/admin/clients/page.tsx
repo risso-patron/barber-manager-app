@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatCard, StatStrip } from "@/components/ui/stat-card"
 import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { useNotify } from "@/components/ui/notify"
 import { Users, Plus, Edit, Trash2, Eye, Gift } from "lucide-react"
 import type { Client } from "@/lib/demo"
 import { DEMO_CLIENTS } from "@/lib/demo"
@@ -35,6 +36,7 @@ export default function ClientsPage() {
   const [page, setPage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const PAGE_SIZE = 25
+  const notify = useNotify()
 
   // Load clients from Supabase (or demo data)
   useEffect(() => {
@@ -118,6 +120,7 @@ export default function ClientsPage() {
         createdAt: new Date().toISOString(),
         isActive: true,
       }, ...prev])
+      notify({ title: "Cliente creado." })
       setIsCreateModalOpen(false)
       return
     }
@@ -136,6 +139,7 @@ export default function ClientsPage() {
         createdAt: new Date().toISOString(),
         isActive: true,
       }, ...clients])
+      notify({ title: "Cliente creado." })
     }
     setIsCreateModalOpen(false)
   }
@@ -144,6 +148,7 @@ export default function ClientsPage() {
     const updatedClient = client as Client
     if (!supabase) {
       setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+      notify({ title: "Cambios guardados." })
       setEditingClient(null)
       return
     }
@@ -152,18 +157,21 @@ export default function ClientsPage() {
       .update({ name: updatedClient.name, email: updatedClient.email, phone: updatedClient.phone })
       .eq("id", updatedClient.id)
     setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+    notify({ title: "Cambios guardados." })
     setEditingClient(null)
   }
 
   const handleDeleteClient = async (id: string) => {
     if (!supabase) {
       setClients(prev => prev.filter(c => c.id !== id))
+      notify({ title: "Cliente eliminado." })
       setDeletingClient(null)
       return
     }
     const res = await fetch(`/api/clients?id=${id}`, { method: "DELETE" })
     if (res.ok) {
       setClients(clients.filter(c => c.id !== id))
+      notify({ title: "Cliente eliminado." })
     }
     setDeletingClient(null)
   }

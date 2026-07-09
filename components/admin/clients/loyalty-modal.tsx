@@ -4,6 +4,7 @@
 // removed (Constitution: tinted semantics, never solid red). Keeps its
 // M1 Dialog base: the icon title and mode-colored footer are behavior
 // FormModal's standard shell doesn't model. Logic/fetch flow verbatim.
+// CRM-2 · Textarea para motivo, notify() al completar, size-X, text-danger-text.
 
 import { useState } from "react"
 import {
@@ -15,7 +16,9 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Field } from "@/components/ui/field"
+import { useNotify } from "@/components/ui/notify"
 import { Gift, Plus, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Client } from "@/lib/demo"
@@ -33,6 +36,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const parsed = parseInt(amount, 10)
   const isValid = !isNaN(parsed) && parsed > 0
@@ -68,7 +72,13 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
         return
       }
 
-      onAdjusted(data.new_balance ?? preview)
+      const newBalance = data.new_balance ?? preview
+      notify({
+        kind: "success",
+        title: mode === "add" ? "Puntos agregados." : "Puntos canjeados.",
+        description: `Nuevo saldo: ${newBalance.toLocaleString("es-ES")} pts`,
+      })
+      onAdjusted(newBalance)
     } catch {
       setError("Error de conexión. Intenta de nuevo.")
     } finally {
@@ -81,7 +91,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-warning-text" aria-hidden="true" />
+            <Gift className="size-5 text-warning-text" aria-hidden="true" />
             Puntos de Fidelidad — {client.name}
           </DialogTitle>
           <DialogDescription>
@@ -103,7 +113,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
                   : "bg-card text-ink-600 hover:bg-secondary"
               )}
             >
-              <Plus className="h-4 w-4" aria-hidden="true" />
+              <Plus className="size-4" aria-hidden="true" />
               Agregar
             </button>
             <button
@@ -117,7 +127,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
                   : "bg-card text-ink-600 hover:bg-secondary"
               )}
             >
-              <Minus className="h-4 w-4" aria-hidden="true" />
+              <Minus className="size-4" aria-hidden="true" />
               Canjear
             </button>
           </div>
@@ -136,12 +146,13 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
           </Field>
 
           <Field label="Motivo (opcional)" htmlFor="loyalty-desc">
-            <Input
+            <Textarea
               id="loyalty-desc"
               placeholder={mode === "add" ? "Ej. Bono especial" : "Ej. Canje por descuento $10"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}
+              className="min-h-[72px]"
             />
           </Field>
 
@@ -156,7 +167,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
           )}
 
           {error && (
-            <p role="alert" className="text-sm font-medium text-danger">{error}</p>
+            <p role="alert" className="text-sm font-medium text-danger-text">{error}</p>
           )}
 
           <div className="flex justify-end gap-3 pt-2">

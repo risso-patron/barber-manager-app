@@ -10,8 +10,8 @@ interface ClientAvatarProps {
 }
 
 const AVATAR_DIMENSIONS: Record<NonNullable<ClientAvatarProps["size"]>, string> = {
-  sm: "h-12 w-12 text-lg",
-  lg: "h-20 w-20 text-3xl",
+  sm: "size-12 text-lg",
+  lg: "size-20 text-3xl",
 }
 
 export function ClientAvatar({ name, size = "sm", className }: ClientAvatarProps) {
@@ -57,40 +57,40 @@ export function ClientIdentity({
           </h3>
           {isActive !== undefined && (
             isActive ? (
-              <Badge variant="secondary">Activo</Badge>
+              <Badge variant="success">Activo</Badge>
             ) : (
-              <Badge variant="outline">Inactivo</Badge>
+              <Badge variant="neutral">Inactivo</Badge>
             )
           )}
           {loyaltyPoints !== null && loyaltyPoints !== undefined && (
-            <Badge variant="secondary" className="gap-1">
-              <Gift className="h-3 w-3" />
+            <Badge variant="warning" className="gap-1">
+              <Gift />
               {loyaltyPoints} pts
             </Badge>
           )}
           {!!noShowCount && noShowCount > 0 && (
-            <Badge variant="destructive" className="gap-1">
-              <XCircle className="h-3 w-3" />
+            <Badge variant="danger" className="gap-1">
+              <XCircle />
               {noShowCount} no-show{noShowCount > 1 ? "s" : ""}
             </Badge>
           )}
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-ink-600">
           {email && (
             <span className="flex items-center gap-1">
-              <Mail className="h-3.5 w-3.5" />
+              <Mail className="size-3.5" />
               {email}
             </span>
           )}
           {phone && (
             <span className="flex items-center gap-1">
-              <Phone className="h-3.5 w-3.5" />
+              <Phone className="size-3.5" />
               {phone}
             </span>
           )}
           {createdAt && (
             <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="size-3.5" />
               Cliente desde{" "}
               {new Date(createdAt).toLocaleDateString("es-ES", {
                 day: "numeric",
