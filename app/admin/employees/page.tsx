@@ -1,31 +1,38 @@
 "use client"
 
+// EMP-1 · Employees sobre el framework ORNO: tokens en vez de ~30 hex inline,
+// ActionMenu (adiós dropdown con hover en JS), StatStrip, SearchInput +
+// NativeSelect, ClientAvatar con imagen, Alert persistente para contraseñas
+// temporales (información operacional — nunca un toast) y notify() en CRUD.
+// Queries, handlers, rutas API y permisos idénticos al legacy.
+
 import { useState, useMemo, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useRouter } from "next/navigation"
-import { 
+import { Alert } from "@/components/ui/alert"
+import { SearchInput } from "@/components/ui/search-input"
+import { NativeSelect } from "@/components/ui/native-select"
+import { StatCard, StatStrip } from "@/components/ui/stat-card"
+import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { useNotify } from "@/components/ui/notify"
+import {
   Users,
   Plus,
-  Search,
   Mail,
   Phone,
-  MoreVertical,
   Edit,
   Trash2,
-  UserCheck,
   Calendar,
-  ArrowLeft,
   KeyRound,
   DollarSign,
-  Loader2,
+  Copy,
 } from "lucide-react"
 import { DEMO_EMPLOYEES } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { EmployeeModal } from "@/components/admin/employees/employee-modal"
+import { ClientAvatar } from "@/components/admin/clients/client-identity"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { AsyncPane, paneState } from "@/components/ui/async-pane"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -54,9 +61,73 @@ type EmployeeWithSpecialty = {
   commission_rate?: number | null
 }
 
+const ROLE_FILTER_OPTIONS = [
+  { value: "all", label: "Todos los roles" },
+  { value: "barberos", label: "Barberos" },
+  { value: "staff", label: "Staff" },
+]
+
+/**
+ * Contraseña temporal — información operacional, no un mensaje: persiste
+ * hasta que el admin la copie y cierre. Caso canónico del futuro
+ * InfoPanel/ResultCard de ORNO; mientras tanto, Alert persistente.
+ */
+function TempPasswordAlert({
+  variant,
+  title,
+  name,
+  password,
+  note,
+  onDismiss,
+}: {
+  variant: "success" | "info"
+  title: string
+  name: string
+  password: string
+  note: string
+  onDismiss: () => void
+}) {
+  const notify = useNotify()
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(password)
+      notify({ title: "Contraseña copiada." })
+    } catch {
+      notify({ kind: "error", title: "No se pudo copiar.", description: "Seleccionala y copiala manualmente." })
+    }
+  }
+
+  return (
+    <Alert
+      variant={variant}
+      title={title}
+      action={
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleCopy}>
+            <Copy className="size-3.5" aria-hidden="true" />
+            Copiar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDismiss}>
+            Cerrar
+          </Button>
+        </div>
+      }
+    >
+      <p>
+        Contraseña temporal de <strong>{name}</strong>:{" "}
+        <code className="rounded bg-card px-2 py-0.5 font-mono font-semibold text-foreground">
+          {password}
+        </code>
+      </p>
+      <p className="mt-1 text-xs">La contraseña solo se mostrará una vez. {note}</p>
+    </Alert>
+  )
+}
+
 export default function EmployeesPage() {
-  const router = useRouter()
   const user = useRequireAuth(["admin"])
+  const notify = useNotify()
   const [employees, setEmployees] = useState<EmployeeWithSpecialty[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
   const [newEmployeePassword, setNewEmployeePassword] = useState<{ name: string; password: string } | null>(null)
@@ -65,12 +136,10 @@ export default function EmployeesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithSpecialty | null>(null)
   const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithSpecialty | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [resetPasswordResult, setResetPasswordResult] = useState<{ name: string; password: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const handleResetPassword = async (employee: EmployeeWithSpecialty) => {
-    setActiveDropdown(null)
     if (!supabase) {
       setResetPasswordResult({ name: employee.name, password: "demo-1234" })
       return
@@ -187,6 +256,7 @@ export default function EmployeesPage() {
     const { id, avatar, specialty, role, name, email, phone, commission_rate } = updatedEmployee
     if (!supabase) {
       setEmployees(employees.map(emp => emp.id === id ? { ...updatedEmployee } : emp))
+      notify({ title: "Cambios guardados." })
       setEditingEmployee(null)
       return
     }
@@ -204,140 +274,118 @@ export default function EmployeesPage() {
       .eq("id", id)
       .select()
       .single()
-    if (!error && data) setEmployees(employees.map(emp =>
-      emp.id === id ? { ...data, avatar: data.avatar_url, specialty: data.specialty, commission_rate: data.commission_rate } : emp
-    ))
+    if (!error && data) {
+      setEmployees(employees.map(emp =>
+        emp.id === id ? { ...data, avatar: data.avatar_url, specialty: data.specialty, commission_rate: data.commission_rate } : emp
+      ))
+      notify({ title: "Cambios guardados." })
+    }
     setEditingEmployee(null)
   }
 
   const handleDeleteEmployee = async (id: string) => {
     if (!supabase) {
       setEmployees(prev => prev.filter(emp => emp.id !== id))
+      notify({ title: "Empleado eliminado." })
       setDeletingEmployee(null)
       return
     }
     const res = await fetch(`/api/employees?id=${id}`, { method: "DELETE" })
-    if (res.ok) setEmployees(employees.filter(emp => emp.id !== id))
+    if (res.ok) {
+      setEmployees(employees.filter(emp => emp.id !== id))
+      notify({ title: "Empleado eliminado." })
+    }
     setDeletingEmployee(null)
   }
+
+  /** Acciones por empleado — la lógica vive acá; ActionMenu solo la presenta. */
+  const buildEmployeeActions = (employee: EmployeeWithSpecialty): ActionMenuAction[][] => [
+    [
+      { label: "Editar", icon: Edit, onSelect: () => setEditingEmployee(employee) },
+      { label: "Ver Agenda", icon: Calendar, href: `/admin/appointments?employeeId=${encodeURIComponent(employee.id)}` },
+      { label: "Resetear Clave", icon: KeyRound, tone: "warning" as const, onSelect: () => handleResetPassword(employee) },
+    ],
+    [{ label: "Eliminar", icon: Trash2, tone: "danger" as const, onSelect: () => setDeletingEmployee(employee) }],
+  ]
 
   if (!user) return null
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
-      {/* Error banner */}
+      {/* Error de API — persistente hasta que el admin lo cierre */}
       {apiError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm flex justify-between">
-          <span>{apiError}</span>
-          <button onClick={() => setApiError(null)} className="font-bold ml-4">✕</button>
-        </div>
+        <Alert
+          variant="danger"
+          title="Algo salió mal"
+          action={
+            <Button variant="ghost" size="sm" onClick={() => setApiError(null)}>
+              Cerrar
+            </Button>
+          }
+        >
+          {apiError}
+        </Alert>
       )}
 
-      {/* Contráseña temporal del nuevo empleado */}
+      {/* Contraseña temporal del nuevo empleado */}
       {newEmployeePassword && (
-        <div style={{ padding: "14px 18px", background: "#0F2E1A", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10, fontSize: 13 }}>
-          <p style={{ fontWeight: 600, color: "#22C55E", marginBottom: 4 }}>✓ Empleado creado exitosamente</p>
-          <p style={{ color: "#F0F0F0" }}>
-            Contraseña temporal de <strong>{newEmployeePassword.name}</strong>:{" "}
-            <code style={{ background: "rgba(34,197,94,0.15)", padding: "2px 8px", borderRadius: 4, fontFamily: "var(--font-dm-mono), monospace", color: "#22C55E" }}>{newEmployeePassword.password}</code>
-          </p>
-          <p style={{ color: "#8A8A8A", fontSize: 11, marginTop: 4 }}>Compartí esta contraseña con el empleado para que pueda iniciar sesión.</p>
-          <button onClick={() => setNewEmployeePassword(null)} style={{ marginTop: 8, fontSize: 11, color: "#22C55E", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Cerrar</button>
-        </div>
+        <TempPasswordAlert
+          variant="success"
+          title="Empleado creado"
+          name={newEmployeePassword.name}
+          password={newEmployeePassword.password}
+          note="Compartila con el empleado para que pueda iniciar sesión."
+          onDismiss={() => setNewEmployeePassword(null)}
+        />
       )}
 
       {/* Resultado de reset de contraseña */}
       {resetPasswordResult && (
-        <div style={{ padding: "14px 18px", background: "#1A1A2E", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 10, fontSize: 13 }}>
-          <p style={{ fontWeight: 600, color: "#818CF8", marginBottom: 4 }}>🔑 Contraseña reseteada</p>
-          <p style={{ color: "#F0F0F0" }}>
-            Nueva contraseña temporal de <strong>{resetPasswordResult.name}</strong>:{" "}
-            <code style={{ background: "rgba(129,140,248,0.15)", padding: "2px 8px", borderRadius: 4, fontFamily: "var(--font-dm-mono), monospace", color: "#818CF8" }}>{resetPasswordResult.password}</code>
-          </p>
-          <p style={{ color: "#8A8A8A", fontSize: 11, marginTop: 4 }}>Compartí esta contraseña con el empleado. La anterior ya no sirve.</p>
-          <button onClick={() => setResetPasswordResult(null)} style={{ marginTop: 8, fontSize: 11, color: "#818CF8", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Cerrar</button>
-        </div>
+        <TempPasswordAlert
+          variant="info"
+          title="Contraseña reseteada"
+          name={resetPasswordResult.name}
+          password={resetPasswordResult.password}
+          note="La anterior ya no sirve."
+          onDismiss={() => setResetPasswordResult(null)}
+        />
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Empleados</h1>
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra barberos y personal de la barbería</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">Empleados</h1>
+          <p className="mt-1 text-[13px] text-ink-600">Administra barberos y personal de la barbería</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo Empleado
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Total Empleados</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.total}</p>
-              </div>
-              <Users className="h-7 w-7" style={{ color: "#E53935" }} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Barberos</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.barbers}</p>
-              </div>
-              <UserCheck className="h-7 w-7" style={{ color: "#22C55E" }} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Staff</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.employees}</p>
-              </div>
-              <Users className="h-7 w-7" style={{ color: "#818CF8" }} />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistics */}
+      <StatStrip className="xl:grid-cols-3">
+        <StatCard label="Total Empleados" value={stats.total} loading={isLoading} />
+        <StatCard label="Barberos" value={stats.barbers} loading={isLoading} />
+        <StatCard label="Staff" value={stats.employees} loading={isLoading} />
+      </StatStrip>
+
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <SearchInput
+          value={searchTerm}
+          onValueChange={setSearchTerm}
+          placeholder="Buscar por nombre, email o teléfono…"
+          className="w-full sm:w-80"
+        />
+        <NativeSelect
+          aria-label="Filtrar por rol"
+          value={filterRole}
+          onValueChange={(v) => setFilterRole(v as "all" | "barberos" | "staff")}
+          options={ROLE_FILTER_OPTIONS}
+          className="w-auto"
+        />
       </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por nombre, email o teléfono..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <select
-              aria-label="Filtrar por rol"
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value as "all" | "barberos" | "staff")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">Todos los roles</option>
-              <option value="barberos">Barberos</option>
-              <option value="staff">Staff</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Employees Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -348,6 +396,13 @@ export default function EmployeesPage() {
             <EmptyState
               icon={Users}
               title="No se encontraron empleados"
+              description="Ajusta la búsqueda o crea un empleado nuevo."
+              action={
+                <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                  <Plus className="size-4" aria-hidden="true" />
+                  Nuevo Empleado
+                </Button>
+              }
               size="compact"
               className="col-span-full"
             />
@@ -355,94 +410,39 @@ export default function EmployeesPage() {
           size="compact"
         >
           {pagedEmployees.map((employee) => (
-            <Card key={employee.id} className="hover:shadow-lg transition-shadow" style={{ border: "1px solid #2E2E2E" }}>
+            <Card key={employee.id} className="transition-shadow duration-micro hover:shadow-raised">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
-                      style={{ background: ["#1E3A5F","#1A3325","#3D1A1A","#2A1A3D","#1A2E3D"][parseInt(employee.id, 36) % 5] || "#1E3A5F", border: "2px solid #252525" }}
-                    >
-                      {employee.avatar ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={employee.avatar} alt={employee.name} className="w-full h-full object-cover" />
-                      ) : (
-                        employee.name.charAt(0)
-                      )}
-                    </div>
+                    <ClientAvatar name={employee.name} imageUrl={employee.avatar} />
                     <div>
                       <CardTitle className="text-lg">{employee.name}</CardTitle>
-                      <Badge
-                        variant={employee.specialty && ["Barbero","Estilista","Colorista"].includes(employee.specialty) ? "default" : "secondary"}
-                        className="mt-1"
-                      >
+                      <Badge variant={isBarber(employee) ? "info" : "neutral"} className="mt-1">
                         {employee.specialty || "Empleado"}
                       </Badge>
                     </div>
                   </div>
-                  
-                  {/* Actions Dropdown */}
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveDropdown(activeDropdown === employee.id ? null : employee.id)}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
 
-                    {activeDropdown === employee.id && (
-                      <div className="absolute right-0 mt-2 w-40 rounded-md shadow-lg border z-50" style={{ background: "#1A1A1A", borderColor: "#2E2E2E" }}>
-                        <div className="py-1">
-                          <button
-                            onClick={() => { setEditingEmployee(employee); setActiveDropdown(null) }}
-                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                          >
-                            <Edit className="h-4 w-4" />
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => { setActiveDropdown(null); router.push(`/admin/appointments?employeeId=${encodeURIComponent(employee.id)}`) }}
-                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                          >
-                            <Calendar className="h-4 w-4" />
-                            Ver Agenda
-                          </button>
-                          <button
-                            onClick={() => handleResetPassword(employee)}
-                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F59E0B" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2A2000" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                          >
-                            <KeyRound className="h-4 w-4" />
-                            Resetear Clave
-                          </button>
-                          <div style={{ height: 1, background: "#252525", margin: "4px 0" }} />
-                          <button
-                            onClick={() => { setDeletingEmployee(employee); setActiveDropdown(null) }}
-                            className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 font-medium" style={{ color: "#EF4444" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1F1212" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <ActionMenu
+                    label={`Acciones del empleado ${employee.name}`}
+                    groups={buildEmployeeActions(employee)}
+                  />
                 </div>
               </CardHeader>
 
               <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 text-sm" style={{ color: "#8A8A8A" }}>
-                  <Mail className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-sm text-ink-600">
+                  <Mail className="size-4" aria-hidden="true" />
                   <span>{employee.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm" style={{ color: "#8A8A8A" }}>
-                  <Phone className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-sm text-ink-600">
+                  <Phone className="size-4" aria-hidden="true" />
                   <span>{employee.phone}</span>
                 </div>
                 {employee.commission_rate !== null && employee.commission_rate !== undefined && employee.commission_rate > 0 && (
-                  <div className="flex items-center gap-2 text-sm" style={{ color: "#22C55E" }}>
-                    <DollarSign className="h-4 w-4" />
-                    <span>Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
+                  <div className="flex items-center gap-2 text-sm text-ink-600">
+                    <DollarSign className="size-4" aria-hidden="true" />
+                    <span className="nums">Comisión: {(employee.commission_rate * 100).toFixed(0)}%</span>
                   </div>
                 )}
               </CardContent>
@@ -453,15 +453,15 @@ export default function EmployeesPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between py-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="nums text-sm text-ink-600">
             {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredEmployees.length)} de {filteredEmployees.length}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              Anterior
+            <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+              ← Anterior
             </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              Siguiente
+            <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+              Siguiente →
             </Button>
           </div>
         </div>

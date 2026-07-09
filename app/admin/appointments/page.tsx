@@ -46,6 +46,7 @@ import { StatusBadge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { NativeSelect } from "@/components/ui/native-select"
 import { useNotify } from "@/components/ui/notify"
 import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
@@ -85,10 +86,6 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
 // Ventana visible del board — alineada con la agenda de employee (8:00–20:00).
 const DAY_START_MIN = 8 * 60
 const DAY_END_MIN = 20 * 60
-
-// Native select con la misma superficie del Input (patrón del AppointmentModal).
-const SELECT_CLS =
-  "flex h-12 w-full cursor-pointer rounded-lg border border-border bg-card px-4 text-[15px] text-foreground transition-colors duration-micro ease-orno focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-primary focus-visible:ring-accent"
 
 function toDateStr(d: Date) {
   return d.toISOString().split("T")[0]!
@@ -757,18 +754,18 @@ export default function AppointmentsPage() {
           placeholder="Buscar por cliente, empleado o servicio…"
           className="w-full sm:w-80"
         />
-        <select
+        <NativeSelect
           aria-label="Filtrar por estado"
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as AppointmentStatus | "all")}
-          className={`${SELECT_CLS} h-12 w-auto`}
+          onValueChange={(v) => setFilterStatus(v as AppointmentStatus | "all")}
+          className="w-auto"
         >
           <option value="all">Todos los estados</option>
           <option value="pending">Pendientes</option>
           <option value="confirmed">Confirmadas</option>
           <option value="completed">Completadas</option>
           <option value="cancelled">Canceladas</option>
-        </select>
+        </NativeSelect>
         {viewMode === "list" && (
           <Input
             type="date"

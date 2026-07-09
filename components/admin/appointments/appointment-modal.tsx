@@ -1,12 +1,13 @@
 "use client"
 
 // M3 · Migrated onto FormModal + Field. Same props, same validation, same
-// payloads. Native selects kept (ORNO-tokened) to preserve exact behavior.
+// payloads. EMP-1: selects sobre NativeSelect del framework (semántica nativa intacta).
 
 import { useState, useEffect } from "react"
 import { FormModal } from "@/components/ui/form-modal"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { UserPlus, ChevronLeft } from "lucide-react"
@@ -21,10 +22,6 @@ interface AppointmentModalProps {
   employees: Employee[]
   clients: Client[]
 }
-
-// Native select, ORNO-tokened (mirrors the Input primitive's surface).
-const SELECT_CLS =
-  "flex h-12 w-full rounded-lg border border-border bg-card px-4 text-[15px] text-foreground transition-colors duration-micro ease-orno focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-primary focus-visible:ring-accent"
 
 export function AppointmentModal({
   isOpen,
@@ -214,12 +211,11 @@ export function AppointmentModal({
           </div>
         ) : (
           <>
-            <select
+            <NativeSelect
               id="clientId"
               aria-label="Cliente"
               value={formData.clientId}
-              onChange={(e) => handleClientChange(e.target.value)}
-              className={SELECT_CLS}
+              onValueChange={handleClientChange}
             >
               <option value="">Seleccionar cliente</option>
               {clients.map(client => (
@@ -227,7 +223,7 @@ export function AppointmentModal({
                   {client.name} - {client.phone}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             {formErrors.clientId && (
               <p role="alert" className="text-[13px] font-medium text-danger">{formErrors.clientId}</p>
             )}
@@ -236,12 +232,11 @@ export function AppointmentModal({
       </div>
 
       <Field label="Servicio" htmlFor="serviceId" required error={formErrors.serviceId}>
-        <select
+        <NativeSelect
           id="serviceId"
           aria-label="Servicio"
           value={formData.serviceId}
-          onChange={(e) => handleServiceChange(e.target.value)}
-          className={SELECT_CLS}
+          onValueChange={handleServiceChange}
         >
           <option value="">Seleccionar servicio</option>
           {services.map(service => (
@@ -249,16 +244,15 @@ export function AppointmentModal({
               {service.name} - ${service.price} ({service.duration} min)
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Field>
 
       <Field label="Barbero" htmlFor="employeeId" required error={formErrors.employeeId}>
-        <select
+        <NativeSelect
           id="employeeId"
           aria-label="Barbero"
           value={formData.employeeId}
-          onChange={(e) => handleEmployeeChange(e.target.value)}
-          className={SELECT_CLS}
+          onValueChange={handleEmployeeChange}
         >
           <option value="">Seleccionar barbero</option>
           {employees.map(employee => (
@@ -266,7 +260,7 @@ export function AppointmentModal({
               {employee.name}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </Field>
 
       {/* Date and Time */}
@@ -307,18 +301,17 @@ export function AppointmentModal({
       {/* Status (only for editing) */}
       {appointment && (
         <Field label="Estado" htmlFor="status">
-          <select
+          <NativeSelect
             id="status"
             aria-label="Estado de la cita"
             value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
-            className={SELECT_CLS}
+            onValueChange={(v) => setFormData({ ...formData, status: v as "pending" | "confirmed" | "completed" | "cancelled" | "no_show" })}
           >
             <option value="pending">Pendiente</option>
             <option value="confirmed">Confirmada</option>
             <option value="completed">Completada</option>
             <option value="cancelled">Cancelada</option>
-          </select>
+          </NativeSelect>
         </Field>
       )}
 

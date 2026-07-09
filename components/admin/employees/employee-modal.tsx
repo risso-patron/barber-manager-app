@@ -8,6 +8,7 @@ import { useState } from "react"
 import { FormModal } from "@/components/ui/form-modal"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Label } from "@/components/ui/label"
 import { Check } from "lucide-react"
 
@@ -54,10 +55,6 @@ const PRESET_AVATARS = [
   "https://api.dicebear.com/9.x/avataaars/svg?seed=Quinn",
   "https://api.dicebear.com/9.x/avataaars/svg?seed=Ryan",
 ]
-
-// Native select, ORNO-tokened (mirrors the Input primitive's surface).
-const SELECT_CLS =
-  "flex h-12 w-full rounded-lg border border-border bg-card px-4 text-[15px] text-foreground transition-colors duration-micro ease-orno focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-primary focus-visible:ring-accent"
 
 export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeModalProps) {
   const defaultSpecialty = (employee as { specialty?: string } | undefined)?.specialty || "barbero"
@@ -142,18 +139,14 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
       </Field>
 
       <Field label="Especialidad / Puesto" htmlFor="specialty" required help={selectedSpec?.desc}>
-        <select
+        <NativeSelect
           id="specialty"
           aria-label="Especialidad"
           required
           value={formData.specialty}
-          onChange={(e) => handleSpecialtyChange(e.target.value)}
-          className={SELECT_CLS}
-        >
-          {SPECIALTIES.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </select>
+          onValueChange={handleSpecialtyChange}
+          options={SPECIALTIES.map((s) => ({ value: s.value, label: s.label }))}
+        />
       </Field>
 
       <Field
