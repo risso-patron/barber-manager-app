@@ -118,17 +118,6 @@
   outline-offset: 2px;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   Status pills — SAME class names as before, retokened warm-light.
-   Estado nunca solo por color: los componentes añaden icono/texto.
-   ════════════════════════════════════════════════════════════════ */
-
-.orno-status-pending   { background: #F7EFDD; color: #8F6A1F; border-color: rgba(185, 138, 46, 0.28); }
-.orno-status-confirmed { background: #EAF2ED; color: #3E7354; border-color: rgba(95, 159, 119, 0.30); }
-.orno-status-completed { background: #F4F2EE; color: #57534B; border-color: #E8E4DE; }
-.orno-status-cancelled { background: #FBF3F2; color: #A93F34; border-color: rgba(194, 78, 66, 0.25); }
-.orno-status-no_show   { background: #F6EBE4; color: #9A5A3B; border-color: rgba(197, 123, 87, 0.30); }
-
 /* Inventory category tokens — accents apagados */
 .orno-cat-producto    { background: #EAEFF4; color: #4A6B87; }
 .orno-cat-herramienta { background: #EFEAF6; color: #6D5F91; }

@@ -305,4 +305,25 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 ---
 
+### ADR-023 — Agenda admin reconstruida sobre el M4 Scheduling Kit; la Agenda es la implementación canónica del framework
+
+**Context**: `app/admin/appointments/page.tsx` (880 líneas) era list-first con una week view de solo lectura, estilada con hex dark hardcodeado (`#1A1A1A`, `#E53935` como color de interfaz — violación de la Constitution). El M4 Scheduling Kit (`components/scheduling/`, commit `0e38952`) pasó una Acceptance Review dedicada contra la Design Bible v1.0, la página legacy y la capa de datos real; el usuario aprobó 8 decisiones que gobiernan esta reconstrucción.
+
+**Decision** (usuario, 2026-07-09): la Agenda tiene dos representaciones de la MISMA fuente de datos/filtros/permisos — Board M4 por barbero (default, operación diaria: drag optimista con Deshacer, huecos sugeridos, bloqueos, línea de ahora) y Lista (búsqueda histórica, auditoría, paginación). Sustitución de infraestructura, no reescritura funcional: mismas queries con joins, mismas rutas API, mismos handlers CRUD, mismo RLS (mover = el mismo `update({barber_id, appointment_date, appointment_time})` que ya ejercía la edición). Commit `1e18b82`.
+
+**Divergencias modelo-de-datos ↔ kit (resueltas sin tocar la DB)**:
+1. La DB guarda `appointment_date` + `appointment_time` naive sin `end_time` (duración = `service.duration`) → mapping en la página con `cfg.timezone` = tz del navegador (round-trip identidad); **resize deshabilitado** (`allowResize=false` — nuevo prop del kit): no hay dónde persistir duración por cita.
+2. Los 5 estados de la DB son subconjunto estricto de los 7 del kit → pass-through directo; `checked_in`/`in_progress` son contrato futuro (requieren migración aprobada).
+3. Walk-ins, working hours y `variant="week"` (prometido en comentarios del package, no implementado) quedan como contratos documentados.
+
+**Correcciones al package en la adopción**: import roto de `DEFAULT_CONFIG` (estaba en `./types`, no `./engine`), `endMin` sin uso, `announce()` genérico → enriquecido ("Cita de Julián movida a las 13:00 con Nicolás." — Bible §12), `truncate` en nombre de cliente → `line-clamp-2` (Bible §15). El engine tiene 20 tests unitarios (`engine.test.ts`: `minutesInTz`, `suggestGaps`, `detectConflict`, `snap`).
+
+**Regla derivada (usuario)**: la Agenda es la implementación canónica del framework M4. CRM/POS/Inventario migran con exactamente los mismos componentes y patrones; si un componente necesita evolucionar, evoluciona primero en el framework y todos los módulos consumen la nueva versión — nunca soluciones locales, nunca forks.
+
+**Consequences**: la week view legacy desapareció dentro del rewrite (el board es su superset funcional). Huérfanos verificados y eliminados en el cleanup: `components/dashboard/stats-card.tsx` (cero referencias; resto del árbol `/dashboard` borrado en ADR-022) y las 5 clases `.orno-status-*` de `globals.css` (su único consumidor era el `STATUS_COLORS` de la página legacy; `.orno-cat-*` sigue vivo en inventory). Nota de naming: el `MetricRow` de la Bible §9 se llama `StatCard`/`StatStrip` en el repo. Fix colateral: `appointment_time` se normaliza a `HH:MM` al cargar (Postgres devuelve `HH:MM:SS`, que rompía el `<input type="time">` del modal de edición).
+
+**Status**: Implemented (2026-07-09) — commit `1e18b82` (rebuild) + cleanup en commit posterior. `type-check`/`lint`/`vitest` pass. Pendiente: recorrido manual del usuario (drag, undo, estados, CRUD, POS, toggle, responsive, teclado, performance) antes de declarar la Agenda aprobada y arrancar CRM.
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)
