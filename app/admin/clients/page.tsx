@@ -1,25 +1,14 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import Link from "next/link"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Users,
-  Plus,
-  Search,
-  MoreVertical,
-  Edit,
-  Trash2,
-  UserPlus,
-  TrendingUp,
-  Eye,
-  Gift,
-  Loader2,
-} from "lucide-react"
+import { SearchInput } from "@/components/ui/search-input"
+import { StatCard, StatStrip } from "@/components/ui/stat-card"
+import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { Users, Plus, Edit, Trash2, Eye, Gift } from "lucide-react"
 import type { Client } from "@/lib/demo"
 import { DEMO_CLIENTS } from "@/lib/demo"
 import { ClientModal } from "@/components/admin/clients/client-modal"
@@ -42,7 +31,6 @@ export default function ClientsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [loyaltyClient, setLoyaltyClient] = useState<Client | null>(null)
   const [page, setPage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -180,6 +168,16 @@ export default function ClientsPage() {
     setDeletingClient(null)
   }
 
+  /** Acciones por cliente — la lógica de negocio vive acá; ActionMenu solo la presenta. */
+  const buildClientActions = (client: Client): ActionMenuAction[][] => [
+    [
+      { label: "Ver perfil", icon: Eye, href: `/admin/clients/${client.id}` },
+      { label: "Editar", icon: Edit, onSelect: () => setEditingClient(client) },
+      { label: "Puntos", icon: Gift, tone: "warning" as const, onSelect: () => setLoyaltyClient(client) },
+    ],
+    [{ label: "Eliminar", icon: Trash2, tone: "danger" as const, onSelect: () => setDeletingClient(client) }],
+  ]
+
   if (!user) return null
 
   return (
@@ -187,91 +185,44 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-          <p className="text-gray-600 mt-1">Administra la base de datos de clientes</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">Clientes</h1>
+          <p className="mt-1 text-[13px] text-ink-600">Administra la base de datos de clientes</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo Cliente
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Clientes</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Nuevos este Mes</p>
-                <p className="text-2xl font-bold">{stats.newThisMonth}</p>
-              </div>
-              <UserPlus className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Clientes Activos</p>
-                <p className="text-2xl font-bold">{stats.activeClients}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Crecimiento</p>
-                <p className="text-2xl font-bold">{stats.growth}%</p>
-              </div>
-              <TrendingUp className={`h-8 w-8 ${Number(stats.growth) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Statistics */}
+      <StatStrip>
+        <StatCard label="Total clientes" value={stats.total} loading={isLoading} />
+        <StatCard
+          label="Nuevos este mes"
+          value={stats.newThisMonth}
+          deltaPct={Number(stats.growth)}
+          deltaHint="vs. mes anterior"
+          loading={isLoading}
+        />
+        <StatCard label="Clientes activos" value={stats.activeClients} loading={isLoading} />
+        <StatCard label="Crecimiento" value={`${stats.growth}%`} loading={isLoading} />
+      </StatStrip>
 
       {/* Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Buscar Clientes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar por nombre, email o teléfono..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <SearchInput
+        value={searchTerm}
+        onValueChange={setSearchTerm}
+        placeholder="Buscar por nombre, email o teléfono…"
+        className="w-full sm:w-96"
+      />
 
       {/* Clients Table/Grid */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Listado de Clientes ({filteredClients.length})
+            Clientes ({filteredClients.length})
             {totalPages > 1 && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
+              <span className="ml-2 text-sm font-normal text-ink-600">
                 — página {page + 1} de {totalPages}
               </span>
             )}
@@ -282,14 +233,27 @@ export default function ClientsPage() {
             <AsyncPane
               state={paneState({ loading: isLoading, count: filteredClients.length })}
               skeleton={<SkeletonList rows={6} />}
-              empty={<EmptyState icon={Users} title="No se encontraron clientes" size="compact" />}
+              empty={
+                <EmptyState
+                  icon={Users}
+                  title="No se encontraron clientes"
+                  description="Ajusta la búsqueda o crea un cliente nuevo."
+                  action={
+                    <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                      <Plus className="size-4" aria-hidden="true" />
+                      Nuevo Cliente
+                    </Button>
+                  }
+                  size="compact"
+                />
+              }
               size="compact"
             >
               <>
                 {pagedClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:shadow-md transition-shadow"
+                    className="flex items-center justify-between rounded-[14px] border border-border bg-card p-4 transition-shadow duration-micro hover:shadow-raised"
                   >
                     <ClientIdentity
                       name={client.name}
@@ -302,78 +266,22 @@ export default function ClientsPage() {
                       className="flex-1"
                     />
 
-                    {/* Actions Dropdown */}
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveDropdown(activeDropdown === client.id ? null : client.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-
-                      {activeDropdown === client.id && (
-                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
-                          <div className="py-1">
-                            <Link
-                              href={`/admin/clients/${client.id}`}
-                              onClick={() => setActiveDropdown(null)}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Ver perfil
-                            </Link>
-
-                            <button
-                              onClick={() => {
-                                setEditingClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              <Edit className="h-4 w-4" />
-                              Editar
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setLoyaltyClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-amber-700"
-                            >
-                              <Gift className="h-4 w-4" />
-                              Puntos
-                            </button>
-
-                            <div className="border-t my-1"></div>
-
-                            <button
-                              onClick={() => {
-                                setDeletingClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <ActionMenu
+                      label={`Acciones del cliente ${client.name}`}
+                      groups={buildClientActions(client)}
+                    />
                   </div>
                 ))}
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">
+                <div className="flex items-center justify-between border-t border-border pt-4">
+                  <span className="nums text-sm text-ink-600">
                     {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredClients.length)} de {filteredClients.length}
                   </span>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       disabled={page === 0}
                       onClick={() => setPage(p => p - 1)}
@@ -381,7 +289,7 @@ export default function ClientsPage() {
                       ← Anterior
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage(p => p + 1)}
