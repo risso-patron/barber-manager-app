@@ -62,16 +62,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cuerpo de la petición inválido" }, { status: 400 })
     }
 
+    // Demo primero, como en GET: los ids demo ('c1'…) no son UUID, así que
+    // el schema estricto de abajo aplica únicamente a Supabase real.
+    if (isDemoMode()) {
+      return NextResponse.json({ success: true })
+    }
+
     const parsed = adjustLoyaltySchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Datos inválidos", details: parsed.error.flatten() },
         { status: 422 }
       )
-    }
-
-    if (isDemoMode()) {
-      return NextResponse.json({ success: true })
     }
 
     const supabase = await createServerSupabaseClient()
