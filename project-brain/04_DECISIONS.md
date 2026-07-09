@@ -326,4 +326,24 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 ---
 
+### ADR-024 — Módulo CRM (Clientes) migrado al framework ORNO; primera adopción completa post-Agenda
+
+**Context**: `app/admin/clients` era el primer módulo en migrar bajo la regla de ADR-023 ("el framework evoluciona primero, los módulos consumen — nunca forks locales"). Readiness Report previo (2026-07-09) identificó: lista híbrida (ya usaba `AsyncPane`/`ClientIdentity` pero con 4 stat cards artesanales, search y dropdown a mano), perfil pre-ORNO (733 líneas: `Loader2` full-page violando Bible §16, `STATUS_LABEL` color-only violando §12, azul/púrpura como colores de interfaz violando la Constitution, 3 textareas crudos, feedback `success + setTimeout`), y 5 usos de colores raw en sub-componentes.
+
+**Decision** (usuario, 2026-07-09): migración por milestones con aprobación por commit, presentación solamente — queries, mutaciones, rutas API, permisos y RLS byte-idénticos (verificado filtrando el diff por `supabase|.from(|select|update|insert|fetch(|useRequireAuth|/api/` → 0 líneas). Única evolución de framework: `ActionMenu` (CRM-0, `3fb0dc7`), adoptado primero por la Agenda y consumido después por CRM.
+
+**Commits del baseline**: CRM-0 `3fb0dc7` (ActionMenu al framework) → CRM-1 `14996d6` (lista: StatStrip/StatCard, SearchInput, ActionMenu) → CRM-2A `9ffcd4b` (badges semánticos, `notify()` en CRUD, Textarea, tokens en lista/identity/loyalty-modal) → CRM-2B `1f68cc9` (perfil íntegro: AsyncPane page-level + skeletons con forma, EmptyState, 7 StatCards, StatusBadge con fallback neutral, `notify()` ×4, 3 Textarea, acentos a tokens sancionados) → hotfix `22bda7c` (POST `/api/loyalty` resuelve demo antes del schema UUID — bug pre-existente: los ids demo `'c1'…` no son UUID y el `safeParse` corría antes del branch `isDemoMode()`; el fix imita al GET del mismo endpoint y preserva el 400 de body malformado y el flujo real completo). CRM-3 (extracción de AiHint, opcional por Bible §9) deliberadamente NO ejercida: `ClientAIInsightsCard` sigue siendo placeholder estático.
+
+**Deuda extinta (métricas)**: colores de paleta cruda 52→0 (grep repo-scoped sobre `app/admin/clients` + `components/admin/clients` = 0), stat cards artesanales 11→0, spinner full-page 1→0, `setTimeout` como feedback 4→0, textareas crudos 3→0, dropdowns artesanales 1→0, mapas de estado color-only 1→0.
+
+**Validación**: `type-check`/`lint`/`vitest 26/26` en cada milestone + smoke E2E Playwright (11 pasos, modo demo forzado con `NEXT_PUBLIC_SUPABASE_URL=` vacío): login, lista, navegación lista↔perfil, 7 StatCards, notas/mensaje/regalo/puntos con toast, cliente inexistente, búsqueda vacía — 11/11 PASS, 0 console errors. Modo Supabase real verificado a nivel SSR/ruta/middleware; recorrido manual interactivo en real a cargo del usuario (única parte con credenciales).
+
+**Excepción documentada**: `client-memberships-card.tsx:26` conserva un `STATUS_LABEL` propio (estados de membresía, no de citas) con aliases legacy del Badge (`default`/`secondary`/`outline`). No viola la Bible (labels de texto visibles, aliases mapean a tints ORNO, cero colores raw); renombrarlo o canonizar los aliases es refactor cosmético fuera del alcance de CRM-4 — registrado en [07_TECH_DEBT.md](07_TECH_DEBT.md).
+
+**Consequences**: el CRM habla el idioma del sistema — una máquina de estados de datos (`AsyncPane`), un canal de feedback (`notify()`), un vocabulario de estados (`StatusBadge`, el mismo de la Agenda), un patrón de métricas (`StatCard`). Huérfanos: **ninguno** — la migración editó in place; los 8 componentes de `components/admin/clients/` tienen consumidores (`ClientAvatar` también lo usa POS), verificado por búsqueda de referencias. Sin archivos eliminados en CRM-4.
+
+**Status**: Implemented (2026-07-09) — CRM-4 es este cierre documental (ADR + sync del Brain, sin cambios funcionales ni visuales). El módulo CRM queda oficialmente cerrado; siguiente dominio: POS o Inventario según hoja de ruta, previo Readiness Report.
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)

@@ -120,6 +120,8 @@ Full analysis and duplication findings: [07_TECH_DEBT.md](07_TECH_DEBT.md). Sequ
 
 M5 CRM (Phases A-C) is now feature-complete. Scripts 32-34 have been run against the live Supabase instance (per user confirmation, 2026-07-06) — pending items are only the open follow-ups listed in [07_TECH_DEBT.md](07_TECH_DEBT.md).
 
+**Framework migration — closed 2026-07-09** ([ADR-024](04_DECISIONS.md)): the whole module now runs on the ORNO framework, presentation-only (data layer byte-identical). CRM-0 `3fb0dc7` (ActionMenu evolved in the framework first, per the ADR-023 rule) → CRM-1 `14996d6` (list) → CRM-2A `9ffcd4b` + CRM-2B `1f68cc9` (full profile: AsyncPane, shaped skeletons, StatusBadge, StatCard ×7, notify(), Textarea, zero raw-palette colors) → loyalty demo hotfix `22bda7c` → CRM-4 (this documentation closure, no code changes). The CRM module is officially closed; next domain (POS or Inventario) opens with its own Readiness Report.
+
 ---
 
 ## Billing / Integrations — Phase A (shipped 2026-07-06)
