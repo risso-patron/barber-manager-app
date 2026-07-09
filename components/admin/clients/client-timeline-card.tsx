@@ -52,7 +52,7 @@ export function ClientTimelineCard({ appointments, messages, gifts, posSales }: 
       id: `appt-${a.id}`,
       date: new Date(`${a.appointment_date}T${a.appointment_time}`),
       icon: Scissors,
-      iconClassName: "text-blue-500",
+      iconClassName: "text-sage-600",
       title: a.service?.name ?? "Cita",
       subtitle: a.status,
     })),
@@ -60,7 +60,7 @@ export function ClientTimelineCard({ appointments, messages, gifts, posSales }: 
       id: `msg-${m.id}`,
       date: new Date(m.created_at),
       icon: MessageSquare,
-      iconClassName: "text-sky-500",
+      iconClassName: "text-dustyblue-text",
       title: m.subject ?? "Mensaje enviado",
       subtitle: m.message,
     })),
@@ -68,7 +68,7 @@ export function ClientTimelineCard({ appointments, messages, gifts, posSales }: 
       id: `gift-${g.id}`,
       date: new Date(g.created_at),
       icon: Gift,
-      iconClassName: "text-purple-500",
+      iconClassName: "text-lavender-text",
       title: g.title,
       subtitle: "Regalo / descuento",
     })),
@@ -76,7 +76,7 @@ export function ClientTimelineCard({ appointments, messages, gifts, posSales }: 
       id: `pos-${s.id}`,
       date: new Date(s.created_at),
       icon: ShoppingCart,
-      iconClassName: "text-amber-600",
+      iconClassName: "text-warning-text",
       title: `Compra en tienda — $${s.total}`,
       subtitle: "Venta POS",
     })),
@@ -99,7 +99,7 @@ export function ClientTimelineCard({ appointments, messages, gifts, posSales }: 
               const Icon = event.icon
               return (
                 <div key={event.id} className="flex items-start gap-3">
-                  <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${event.iconClassName}`} />
+                  <Icon className={`size-4 mt-0.5 shrink-0 ${event.iconClassName}`} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{event.title}</p>
                     {event.subtitle && (

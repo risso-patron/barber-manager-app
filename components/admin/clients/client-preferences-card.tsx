@@ -5,7 +5,9 @@ import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { useNotify } from "@/components/ui/notify"
 import { Loader2, Save, Heart } from "lucide-react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -37,7 +39,7 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
   const [preferredEmployeeId, setPreferredEmployeeId] = useState(initial.preferredEmployeeId ?? "")
   const [employees, setEmployees] = useState<EmployeeOption[]>([])
   const [isSaving, setIsSaving] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  const notify = useNotify()
 
   useEffect(() => {
     if (!supabase) return
@@ -53,7 +55,6 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
 
   const handleSave = async () => {
     setIsSaving(true)
-    setSaveSuccess(false)
     if (supabase) {
       await supabase
         .from("users")
@@ -66,15 +67,14 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
         .eq("id", clientId)
     }
     setIsSaving(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 2500)
+    notify({ title: "Preferencias guardadas." })
   }
 
   return (
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Heart className="h-4 w-4" />
+          <Heart className="size-4" aria-hidden="true" />
           Preferencias del cliente
         </CardTitle>
         <CardDescription className="text-xs">
@@ -109,10 +109,10 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
 
         <div className="space-y-1">
           <Label htmlFor="pref-allergies">Alergias</Label>
-          <textarea
+          <Textarea
             id="pref-allergies"
-            className="w-full border rounded-md p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             rows={3}
+            className="resize-none"
             placeholder="Ej: alérgico a productos con amoníaco"
             value={allergies}
             onChange={(e) => setAllergies(e.target.value)}
@@ -124,7 +124,7 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
             type="checkbox"
             checked={marketingConsent}
             onChange={(e) => setMarketingConsent(e.target.checked)}
-            className="h-4 w-4"
+            className="size-4"
           />
           Acepta recibir promociones y novedades
         </label>
@@ -133,14 +133,11 @@ export function ClientPreferencesCard({ clientId, initial }: Props) {
           onClick={handleSave}
           disabled={isSaving}
           className="w-full gap-2"
-          variant={saveSuccess ? "outline" : "default"}
         >
           {isSaving ? (
-            <><Loader2 className="h-4 w-4 animate-spin" />Guardando…</>
-          ) : saveSuccess ? (
-            <><Save className="h-4 w-4 text-green-600" /><span className="text-green-600">Guardado</span></>
+            <><Loader2 className="size-4 animate-spin" aria-hidden="true" />Guardando…</>
           ) : (
-            <><Save className="h-4 w-4" />Guardar preferencias</>
+            <><Save className="size-4" aria-hidden="true" />Guardar preferencias</>
           )}
         </Button>
       </CardContent>
