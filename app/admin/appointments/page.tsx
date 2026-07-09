@@ -28,7 +28,6 @@ import {
   Clock,
   User,
   Scissors,
-  MoreVertical,
   Edit,
   Trash2,
   CheckCircle,
@@ -46,6 +45,7 @@ import { StatCard, StatStrip } from "@/components/ui/stat-card"
 import { StatusBadge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
 import { useNotify } from "@/components/ui/notify"
 import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
@@ -160,7 +160,6 @@ export default function AppointmentsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const PAGE_SIZE = 25
@@ -522,7 +521,6 @@ export default function AppointmentsPage() {
   const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
     if (!supabase) {
       setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt)))
-      setActiveDropdown(null)
       return
     }
 
@@ -542,8 +540,57 @@ export default function AppointmentsPage() {
         )
       }
     }
-    setActiveDropdown(null)
   }
+
+  /** Acciones por cita — la lógica de negocio vive acá; ActionMenu solo la presenta. */
+  const buildAppointmentActions = (appointment: Appointment): ActionMenuAction[][] => [
+    [
+      { label: "Editar", icon: Edit, onSelect: () => setEditingAppointment(appointment) },
+      ...(appointment.status === "pending"
+        ? [{ label: "Confirmar", icon: CheckCircle, onSelect: () => handleStatusChange(appointment.id, "confirmed") }]
+        : []),
+      ...(appointment.status === "confirmed"
+        ? [
+            {
+              label: "Marcar como completada",
+              icon: CheckCircle,
+              onSelect: () => handleStatusChange(appointment.id, "completed"),
+            },
+          ]
+        : []),
+      ...(appointment.status === "confirmed" || appointment.status === "completed"
+        ? [
+            {
+              label: "Cobrar en POS",
+              icon: ShoppingCart,
+              tone: "info" as const,
+              onSelect: () => router.push(`/admin/pos?appointment_id=${appointment.id}`),
+            },
+          ]
+        : []),
+      ...(appointment.status === "confirmed"
+        ? [
+            {
+              label: "No se presentó",
+              icon: XCircle,
+              tone: "warning" as const,
+              onSelect: () => handleStatusChange(appointment.id, "no_show"),
+            },
+          ]
+        : []),
+      ...(appointment.status === "pending" || appointment.status === "confirmed"
+        ? [{ label: "Cancelar", icon: XCircle, onSelect: () => handleStatusChange(appointment.id, "cancelled") }]
+        : []),
+    ],
+    [
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        tone: "danger" as const,
+        onSelect: () => setDeletingAppointment(appointment),
+      },
+    ],
+  ]
 
   /* ── Board: mover (drag / ⇧-flechas) — optimista + Deshacer ────────────── */
 
@@ -899,99 +946,11 @@ export default function AppointmentsPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="relative ml-4">
-                          <Button
-                            variant="ghost"
-                            size="icon-md"
-                            aria-label="Acciones de la cita"
-                            onClick={() => setActiveDropdown(activeDropdown === appointment.id ? null : appointment.id)}
-                          >
-                            <MoreVertical aria-hidden="true" />
-                          </Button>
-
-                          {activeDropdown === appointment.id && (
-                            <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-border bg-card py-1 shadow-overlay">
-                              <button
-                                onClick={() => {
-                                  setEditingAppointment(appointment)
-                                  setActiveDropdown(null)
-                                }}
-                                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-foreground transition-colors duration-micro hover:bg-secondary"
-                              >
-                                <Edit className="size-4" aria-hidden="true" />
-                                Editar
-                              </button>
-
-                              {appointment.status === "pending" && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.id, "confirmed")}
-                                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-foreground transition-colors duration-micro hover:bg-secondary"
-                                >
-                                  <CheckCircle className="size-4 text-success" aria-hidden="true" />
-                                  Confirmar
-                                </button>
-                              )}
-
-                              {appointment.status === "confirmed" && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.id, "completed")}
-                                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-foreground transition-colors duration-micro hover:bg-secondary"
-                                >
-                                  <CheckCircle className="size-4 text-dustyblue-text" aria-hidden="true" />
-                                  Marcar como completada
-                                </button>
-                              )}
-
-                              {(appointment.status === "confirmed" || appointment.status === "completed") && (
-                                <button
-                                  onClick={() => {
-                                    setActiveDropdown(null)
-                                    router.push(`/admin/pos?appointment_id=${appointment.id}`)
-                                  }}
-                                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-dustyblue-text transition-colors duration-micro hover:bg-secondary"
-                                >
-                                  <ShoppingCart className="size-4" aria-hidden="true" />
-                                  Cobrar en POS
-                                </button>
-                              )}
-
-                              {appointment.status === "confirmed" && (
-                                <button
-                                  onClick={() => {
-                                    handleStatusChange(appointment.id, "no_show")
-                                    setActiveDropdown(null)
-                                  }}
-                                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-warning-text transition-colors duration-micro hover:bg-secondary"
-                                >
-                                  <XCircle className="size-4" aria-hidden="true" />
-                                  No se presentó
-                                </button>
-                              )}
-
-                              {(appointment.status === "pending" || appointment.status === "confirmed") && (
-                                <button
-                                  onClick={() => handleStatusChange(appointment.id, "cancelled")}
-                                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-ink-600 transition-colors duration-micro hover:bg-secondary"
-                                >
-                                  <XCircle className="size-4 text-danger" aria-hidden="true" />
-                                  Cancelar
-                                </button>
-                              )}
-
-                              <div className="my-1 h-px bg-border" role="separator" />
-
-                              <button
-                                onClick={() => {
-                                  setDeletingAppointment(appointment)
-                                  setActiveDropdown(null)
-                                }}
-                                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium text-danger-text transition-colors duration-micro hover:bg-danger-tint"
-                              >
-                                <Trash2 className="size-4" aria-hidden="true" />
-                                Eliminar
-                              </button>
-                            </div>
-                          )}
+                        <div className="ml-4">
+                          <ActionMenu
+                            label={`Acciones de la cita de ${appointment.clientName}`}
+                            groups={buildAppointmentActions(appointment)}
+                          />
                         </div>
                       </div>
                     </div>
