@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils"
 const VARIANTS = {
   primary: "bg-sage-500 text-white hover:bg-sage-600",
   secondary: "border border-border bg-card text-foreground hover:bg-surface-2",
+  /** Para fondos ink (CTA final): borde y texto claros sobre oscuro. */
+  "ghost-dark": "border border-surface/25 text-surface hover:bg-surface/10",
 } as const
 
 const SIZES = {

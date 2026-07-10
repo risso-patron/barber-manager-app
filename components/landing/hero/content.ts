@@ -1,12 +1,10 @@
-// LAND-1A · Hero. Copy CONGELADO (blueprint v1.2 + plan §2.1).
-// Nota de implementación aprobada: "Ver cómo funciona" apunta a #funciones
-// hasta que la sección #como (audiencias) exista en LAND-1B.
+// LAND-1 · Hero. Copy CONGELADO (blueprint v1.2 + plan §2.1).
 
 export const HERO = {
   badge: "Hecho para barberías reales",
   title: "La forma más simple de controlar tu barbería.",
   sub: "Citas, barberos, clientes, ingresos e inventario en un solo lugar. No más WhatsApp, libretas ni memoria.",
-  secondaryCta: { label: "Ver cómo funciona", href: "#funciones" },
+  secondaryCta: { label: "Ver cómo funciona", href: "#como" },
   photoHint:
     "Barbero profesional atendiendo a un cliente en una barbería boutique moderna, luz cálida, estilo editorial",
 } as const

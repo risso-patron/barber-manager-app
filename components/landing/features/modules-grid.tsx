@@ -8,8 +8,8 @@ import { MODULES } from "./content"
 
 export function ModulesGrid() {
   return (
-    <Section id="modulos" tinted innerClassName="py-16 md:py-20">
-      <SectionHeading title={MODULES.title} className="mb-11" />
+    <Section id="modulos" tinted innerClassName="py-16 md:py-[88px]">
+      <SectionHeading title={MODULES.title} className="mb-12" />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {MODULES.cards.map((card) => (
           <ModuleCard key={card.title} {...card} />

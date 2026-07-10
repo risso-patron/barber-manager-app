@@ -8,7 +8,7 @@ import { SOLUTION } from "./content"
 export function SolutionGrid() {
   return (
     <Section id="funciones" tinted innerClassName="py-16 md:py-[88px]">
-      <SectionHeading title={SOLUTION.title} className="mb-11" />
+      <SectionHeading title={SOLUTION.title} className="mb-12" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {SOLUTION.cards.map((card) => (
           <FeatureCard key={card.title} {...card} />

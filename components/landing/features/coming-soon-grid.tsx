@@ -8,8 +8,8 @@ import { COMING_SOON } from "./content"
 
 export function ComingSoonGrid() {
   return (
-    <Section id="en-desarrollo" innerClassName="py-16 md:py-20">
-      <SectionHeading title={COMING_SOON.title} className="mb-11" />
+    <Section id="en-desarrollo" innerClassName="py-16 md:py-[88px]">
+      <SectionHeading title={COMING_SOON.title} className="mb-12" />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {COMING_SOON.items.map((item) => (
           <ModuleCard key={item.title} {...item} badge={COMING_SOON.badge} soon />

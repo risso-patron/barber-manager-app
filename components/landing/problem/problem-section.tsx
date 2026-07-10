@@ -1,6 +1,7 @@
 import { X } from "lucide-react"
 
 import { Section } from "@/components/landing/shared/section"
+import { SectionHeading } from "@/components/landing/shared/section-heading"
 import { ImagePlaceholder } from "@/components/landing/shared/image-placeholder"
 import { PROBLEM, PROBLEMS } from "./content"
 
@@ -10,10 +11,7 @@ export function ProblemSection() {
   return (
     <Section id="problema" width="wide" innerClassName="flex flex-wrap items-center gap-10 py-16 md:py-[88px] lg:flex-nowrap lg:gap-14">
       <div className="min-w-0 flex-1 basis-[340px]">
-        <h2 className="mb-3.5 text-balance text-[28px] font-semibold leading-tight tracking-[-0.02em] text-foreground md:text-[32px]">
-          {PROBLEM.title}
-        </h2>
-        <p className="mb-6 text-[15px] leading-relaxed text-ink-600">{PROBLEM.sub}</p>
+        <SectionHeading align="left" title={PROBLEM.title} sub={PROBLEM.sub} className="mb-6" />
         <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {PROBLEMS.map((p) => (
             <li key={p} className="flex items-start gap-2 text-[13.5px] leading-snug text-ink-600">

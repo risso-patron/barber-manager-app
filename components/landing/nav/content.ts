@@ -1,11 +1,12 @@
-// LAND-1A · Navegación pública. Regla: SOLO secciones implementadas —
-// "Cómo funciona", "Planes" y "FAQ" entran recién en LAND-1B con sus secciones.
+// LAND-1B · Navegación pública definitiva (aprobación 2026-07-10):
+// 7 links sin "Inicio" (el logo cumple esa función). Solo secciones existentes.
 
 export const NAV_LINKS = [
-  { label: "Inicio", href: "#inicio" },
   { label: "Problema", href: "#problema" },
   { label: "Solución", href: "#funciones" },
-  { label: "Un día con ORNO", href: "#barberias" },
+  { label: "Cómo funciona", href: "#como" },
   { label: "Módulos", href: "#modulos" },
   { label: "En desarrollo", href: "#en-desarrollo" },
+  { label: "Planes", href: "#planes" },
+  { label: "FAQ", href: "#faq" },
 ] as const
