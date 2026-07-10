@@ -372,4 +372,18 @@ The product-architecture milestones originally described (tenant schema, white-l
 
 ---
 
+### ADR-026 — Módulo Servicios migrado al framework ORNO; `activeDropdown` extinto en todo el repositorio
+
+**Context**: `app/admin/services/page.tsx` (325 líneas pre-migración) era el último módulo del núcleo admin con el dropdown artesanal (`activeDropdown` + `useState` + hover manual, sin keyboard ni roles ARIA) y conservaba stat cards y búsqueda ad hoc. El modal (`components/admin/services/service-modal.tsx`) ya corría sobre `FormModal` + `Field` desde M3.
+
+**Decision** (usuario, 2026-07-09): SVC-1 (`0ee6528`) — migración de presentación solamente, mismo patrón que CRM/Empleados: queries, handlers y permisos byte-idénticos. La página adopta `ActionMenu`, `StatStrip`/`StatCard`, `SearchInput`, `AsyncPane` + `paneState` + `SkeletonList`, `EmptyState` y `notify()` en los flujos CRUD. Resultado: 325 → 269 líneas (−156/+99), grep de paleta cruda / hex / estilos inline / hover JS = 0 en el módulo.
+
+**Hito repo-wide**: con SVC-1, `git grep activeDropdown` = 0 en código — la familia de dropdowns artesanales que motivó la creación de `ActionMenu` (CRM-0, `3fb0dc7`) queda extinta en el repositorio. Las únicas menciones restantes son documentales (este archivo).
+
+**Consequences**: el núcleo de gestión del admin (Agenda, CRM, Empleados, Servicios) corre 100% sobre el framework ORNO con cero deuda visual medible por grep. Huérfanos: ninguno — SVC-1 editó una sola página in place; `ServiceModal` conserva sus consumidores. Superficies admin restantes con deuda: Dashboard ("Panel general", pre-ORNO), POS, Inventario, Reportes, Settings, Share — cada una abre con su propio Readiness Report.
+
+**Status**: Implemented (2026-07-09) — SVC-2 es este cierre documental (ADR + sync del Brain, sin cambios funcionales ni visuales). El módulo Servicios queda oficialmente cerrado. Siguiente frente (decisión del usuario, 2026-07-10): producto — Landing v1.2 (LAND-0/1/2) antes de retomar DASH-1.
+
+---
+
 **Related**: [01_CURRENT_STATE.md](01_CURRENT_STATE.md) · [02_TARGET_ARCHITECTURE.md](02_TARGET_ARCHITECTURE.md) · [07_TECH_DEBT.md](07_TECH_DEBT.md)
