@@ -19,7 +19,8 @@ const EnqueueSchema = z
 
 /**
  * POST /api/notifications/queue
- * Encola una notificación para envío asíncrono por la Edge Function.
+ * Encola una notificación para envío asíncrono por el cron de Vercel
+ * (/api/cron/send-reminders — NotificationProcessor, ADR-028).
  */
 export async function POST(request: NextRequest) {
   try {

@@ -27,7 +27,7 @@ There is **no multi-tenant schema**: a repo-wide search for `tenant_id`/`busines
 - **Backend**: Supabase (`@supabase/ssr`, `@supabase/supabase-js`) — Postgres + Auth + RLS
 - **State**: Zustand
 - **Forms/validation**: React Hook Form + Zod
-- **Notifications**: Resend (email) + Twilio (WhatsApp) via `notification_queue` table (`scripts/31-notification-queue.sql`) processed by a Supabase Edge Function (`supabase/functions/process-notification-queue`)
+- **Notifications**: Resend (email) + Twilio (WhatsApp) via `notification_queue` table (`scripts/31-notification-queue.sql` + `scripts/36-notification-queue-tenant.sql`), processed by the Vercel Cron endpoint `app/api/cron/send-reminders` (single-architecture ruling, [ADR-028](04_DECISIONS.md)) — ReminderScheduler (`lib/notifications/scheduler.ts`) discovers due reminders per tenant, NotificationProcessor (`lib/notifications/processor.ts`) claims and delivers. The undeployed Supabase Edge Function was deleted in R-1; tenant seam in `lib/tenants.ts`
 - **Rate limiting**: dual backend in `lib/rate-limit.ts` — `UpstashRateLimiter` (Redis) when `UPSTASH_REDIS_REST_URL`/`TOKEN` are set, `InMemoryRateLimiter` (Map-based) fallback otherwise; logs a warning if running in-memory under `NODE_ENV=production`
 - **Reports/export**: Recharts, jsPDF, XLSX
 - **Testing**: Vitest + Testing Library (unit), Playwright (e2e)

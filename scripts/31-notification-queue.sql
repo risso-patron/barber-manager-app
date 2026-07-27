@@ -2,6 +2,9 @@
 -- Script 31 — Cola de notificaciones (notification_queue)
 -- Almacena notificaciones pendientes de envío (email / SMS).
 -- Procesada por la Edge Function process-notification-queue.
+-- [2026-07-10, R-1/ADR-028] La Edge Function fue eliminada del repo;
+-- la cola la procesa el cron de Vercel (/api/cron/send-reminders).
+-- Ver scripts/36-notification-queue-tenant.sql.
 -- Ejecutar en Supabase SQL Editor DESPUÉS del script 30.
 -- ================================================================
 

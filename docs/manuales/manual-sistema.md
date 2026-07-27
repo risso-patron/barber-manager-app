@@ -875,6 +875,13 @@ Respuesta exitosa (201):
 
 ## 8.1. Edge Functions
 
+> ⚠️ **SECCIÓN OBSOLETA (2026-07-10, R-1/ADR-028)**: la Edge Function
+> `process-notification-queue` fue **eliminada del repositorio** sin haberse
+> desplegado nunca. NO ejecutar los comandos de despliegue de esta sección.
+> La cola `notification_queue` la procesa el cron de Vercel
+> `/api/cron/send-reminders` (`lib/notifications/processor.ts`), con las
+> variables de entorno configuradas en **Vercel**, no en Supabase.
+
 Las Edge Functions de Supabase corren en el runtime Deno y se despliegan con la CLI de Supabase.
 
 ### `process-notification-queue`

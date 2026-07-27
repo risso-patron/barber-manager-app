@@ -31,7 +31,7 @@ No asumas que "está en el código" significa "está verificado en producción".
 - **Backend:** Supabase (`@supabase/ssr`, `@supabase/supabase-js`) — Postgres + Auth + RLS
 - **Estado:** Zustand
 - **Formularios/validación:** React Hook Form + Zod
-- **Notificaciones:** Resend (email) + Twilio (WhatsApp) vía cola asíncrona y Edge Function
+- **Notificaciones:** Resend (email) + Twilio (WhatsApp) vía cola asíncrona (`notification_queue`) procesada por Vercel Cron (`/api/cron/send-reminders`)
 - **Rate limiting:** Upstash Redis (con fallback en memoria)
 - **Reportes/exportación:** Recharts, jsPDF, XLSX
 - **Testing:** Vitest + Testing Library (unitarios), Playwright (e2e)
@@ -178,7 +178,7 @@ Solo válidas en modo demo (sin Supabase configurado). Todas usan password `Demo
 |---|---|
 | Registro, login, reserva de citas, selección de empleado, historial | ✅ |
 | Calificaciones de citas (1-5 estrellas) | ✅ |
-| Notificaciones por email/WhatsApp (cola asíncrona + Edge Function) | ✅ |
+| Notificaciones por email/WhatsApp (cola asíncrona + Vercel Cron) | ✅ |
 | Agenda diaria, control de jornada (clock in/out), bloqueos de agenda | ✅ |
 | Estadísticas y comisiones por empleado | ✅ |
 | Gestión de empleados y clientes (admin) | ✅ |

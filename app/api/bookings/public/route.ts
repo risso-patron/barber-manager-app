@@ -194,7 +194,7 @@ if (hasOverlap) {
       createdAt: appointment.created_at,
     }
 
-    // Encolar notificación (procesada de forma asíncrona por la Edge Function)
+    // Encolar notificación (procesada de forma asíncrona por el cron de Vercel — ADR-028)
     try {
       const shopName = data.barbershop
         .replace(/-/g, " ")

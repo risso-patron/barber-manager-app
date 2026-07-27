@@ -53,7 +53,7 @@ Read against the current build, two of these differentiators are real *today* an
 - **Modern architecture** — real: Next.js 15 / React 19 / Supabase is a genuinely current stack ([01_CURRENT_STATE.md §2](01_CURRENT_STATE.md#2-stack)).
 - **Superior UX** — partially real: a deliberate visual identity exists (the `orno-admin` token scaffold, the 2026-05 rebrand), though inconsistently applied — see [02_TARGET_ARCHITECTURE.md §§1-3](02_TARGET_ARCHITECTURE.md).
 - **Premium experience** — in progress, tied to the Design Constitution target.
-- **Automation** — largely aspirational today. Real automation that exists: async notification queue (email/WhatsApp via `notification_queue` + Edge Function). Automations like Google Calendar sync or WhatsApp-driven booking flows are listed under `ai/context/roadmap.md`'s "Fase 2," not built.
+- **Automation** — largely aspirational today. Real automation that exists: async notification queue (email/WhatsApp via `notification_queue`) plus tenant-aware appointment reminders, both processed by the Vercel Cron pipeline (`/api/cron/send-reminders`, [ADR-028](04_DECISIONS.md)). Automations like Google Calendar sync or WhatsApp-driven booking flows are listed under `ai/context/roadmap.md`'s "Fase 2," not built.
 - **Artificial intelligence** — aspirational only; zero AI code exists in the repository today ([02_TARGET_ARCHITECTURE.md §14](02_TARGET_ARCHITECTURE.md)).
 
 ## Why ORNO exists
