@@ -196,19 +196,33 @@ export default function InventoryPage() {
     setItemToDelete(null)
   }
 
-  const handleRestock = (item: InventoryItem) => {
-    setItems(items.map(i => {
-      if (i.id === item.id) {
-        const newQuantity = i.quantity + i.minStock * 2
-        return {
-          ...i,
-          quantity: newQuantity,
-          lastRestocked: new Date().toISOString().split('T')[0],
-          status: newQuantity === 0 ? "agotado" : newQuantity < i.minStock ? "bajo" : "disponible"
+  const handleRestock = async (item: InventoryItem) => {
+    setError(null)
+    const newQuantity = item.quantity + item.minStock * 2
+    if (!supabase) {
+      setItems(items.map(i => {
+        if (i.id === item.id) {
+          return {
+            ...i,
+            quantity: newQuantity,
+            lastRestocked: new Date().toISOString().split('T')[0],
+            status: newQuantity === 0 ? "agotado" : newQuantity < i.minStock ? "bajo" : "disponible"
+          }
         }
-      }
-      return i
-    }))
+        return i
+      }))
+      return
+    }
+    const { data, error } = await supabase.from("inventory")
+      .update({ quantity: newQuantity })
+      .eq("id", item.id)
+      .select()
+      .single()
+    if (error || !data) {
+      setError(`Error al reabastecer producto: ${error?.message ?? "no se recibió confirmación del servidor"}`)
+      return
+    }
+    setItems(items.map(i => i.id === item.id ? mapDbToItem(data) : i))
   }
 
   const getCategoryColor = (category: string) => {

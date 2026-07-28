@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useNotify } from "@/components/ui/notify"
 import { CreditCard, Plus, Loader2 } from "lucide-react"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -42,6 +43,7 @@ export function ClientMembershipsCard({ clientId, adminUserId }: Props) {
   const [price, setPrice] = useState("")
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly")
   const [isSaving, setIsSaving] = useState(false)
+  const notify = useNotify()
 
   useEffect(() => {
     if (!supabase) {
@@ -78,13 +80,20 @@ export function ClientMembershipsCard({ clientId, adminUserId }: Props) {
       return
     }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("memberships")
       .insert({ ...newMembership, client_id: clientId, created_by: adminUserId })
       .select("id, plan_name, status, billing_cycle, price, starts_at, ends_at")
       .single()
 
-    if (data) setMemberships((prev) => [data as Membership, ...prev])
+    if (error || !data) {
+      console.error("[ClientMembershipsCard] insert failed:", error)
+      notify({ kind: "error", title: "No se pudo crear la membresía.", description: "Intentá de nuevo en unos segundos." })
+      setIsSaving(false)
+      return
+    }
+
+    setMemberships((prev) => [data as Membership, ...prev])
     setPlanName(""); setPrice(""); setShowForm(false); setIsSaving(false)
   }
 

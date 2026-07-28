@@ -80,7 +80,7 @@ export function ClientAttachmentsCard({ clientId, uploadedBy }: Props) {
       return
     }
 
-    const { data } = await supabase
+    const { data, error: insertError } = await supabase
       .from("client_attachments")
       .insert({
         client_id: clientId,
@@ -94,10 +94,14 @@ export function ClientAttachmentsCard({ clientId, uploadedBy }: Props) {
       .select("id, kind, file_name, storage_path, created_at")
       .single()
 
-    if (data) {
-      const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60)
-      setAttachments((prev) => [{ ...(data as Attachment), url: signed?.signedUrl }, ...prev])
+    if (insertError || !data) {
+      setError("No se pudo guardar el archivo. Intentá de nuevo en unos segundos.")
+      setIsUploading(false)
+      return
     }
+
+    const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60)
+    setAttachments((prev) => [{ ...(data as Attachment), url: signed?.signedUrl }, ...prev])
     setIsUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
