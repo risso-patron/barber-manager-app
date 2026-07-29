@@ -135,6 +135,20 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
+    const { data: block } = await supabase
+      .from("schedule_blocks")
+      .select("barber_id")
+      .eq("id", blockId)
+      .single()
+
+    if (!block) return NextResponse.json({ error: "Bloqueo no encontrado" }, { status: 404 })
+
+    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
+    const isPrivileged = profile?.role === "admin"
+    if (!isPrivileged && block.barber_id !== user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    }
+
     const { error } = await supabase
       .from("schedule_blocks")
       .delete()

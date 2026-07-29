@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 import { signActivationToken } from "@/lib/booking-activation-token"
 
@@ -81,8 +83,24 @@ export async function POST(request: NextRequest) {
     // Buscar o crear cliente por teléfono/email
     let clientId: string
 
-    // Si viene un clientId (usuario logueado), usarlo directamente
+    // Si viene un clientId (usuario logueado), verificar que corresponda a
+    // la sesión real que hace la request antes de confiar en él (RR-S3).
     if (data.clientId) {
+      const cookieStore = await cookies()
+      const sessionClient = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { cookies: { getAll: () => cookieStore.getAll() } }
+      )
+      const { data: { user: sessionUser } } = await sessionClient.auth.getUser()
+
+      if (!sessionUser || sessionUser.id !== data.clientId) {
+        return NextResponse.json(
+          { success: false, error: "No autorizado para reservar en nombre de este cliente" },
+          { status: 403 }
+        )
+      }
+
       clientId = data.clientId
     } else {
     // Buscar usuario existente por email o teléfono
