@@ -46,25 +46,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: authError.message }, { status: 400 })
   }
 
-  // Insert public.users profile
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("users")
-    .insert({
-      id: authData.user.id,
-      name,
-      email,
-      phone,
-      role,
-      specialty: specialty || null,
-      avatar_url: avatar_url || null,
-    })
-    .select()
-    .single()
+  // RH-003: on_auth_user_created ya crea la fila en public.users al
+  // crearse el auth user — UPDATE la completa; INSERT solo si esa fila
+  // no existe (0 filas afectadas por el UPDATE).
+  const profileFields = {
+    name,
+    email,
+    phone,
+    role,
+    specialty: specialty || null,
+    avatar_url: avatar_url || null,
+  }
 
-  if (profileError) {
-    // Rollback: delete the auth user
+  const { data: updatedProfile, error: updateError } = await supabaseAdmin
+    .from("users")
+    .update(profileFields)
+    .eq("id", authData.user.id)
+    .select()
+    .maybeSingle()
+
+  if (updateError) {
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-    return NextResponse.json({ error: profileError.message }, { status: 400 })
+    return NextResponse.json({ error: updateError.message }, { status: 400 })
+  }
+
+  let profile = updatedProfile
+  if (!profile) {
+    const { data: insertedProfile, error: profileError } = await supabaseAdmin
+      .from("users")
+      .insert({ id: authData.user.id, ...profileFields })
+      .select()
+      .single()
+
+    if (profileError) {
+      // Rollback: delete the auth user
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json({ error: profileError.message }, { status: 400 })
+    }
+    profile = insertedProfile
   }
 
   return NextResponse.json({ employee: profile, tempPassword })

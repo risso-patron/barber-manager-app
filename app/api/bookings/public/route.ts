@@ -112,16 +112,36 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "Error creando cliente" }, { status: 500 })
       }
 
-      const { error: profileError } = await supabase.from("users").insert({
-        id: authData.user.id,
+      // RH-003: on_auth_user_created ya crea la fila en public.users al
+      // crearse el auth user — UPDATE la completa; INSERT solo si esa
+      // fila no existe (0 filas afectadas por el UPDATE).
+      const profileFields = {
         name: data.clientName,
         email: data.clientEmail || `${data.clientPhone.replace(/\D/g, "")}@guest.barber`,
         phone: data.clientPhone,
         role: "client",
-      })
+      }
 
-      if (profileError) {
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from("users")
+        .update(profileFields)
+        .eq("id", authData.user.id)
+        .select()
+        .maybeSingle()
+
+      if (updateError) {
         return NextResponse.json({ success: false, error: "Error creando perfil" }, { status: 500 })
+      }
+
+      if (!updatedProfile) {
+        const { error: profileError } = await supabase.from("users").insert({
+          id: authData.user.id,
+          ...profileFields,
+        })
+
+        if (profileError) {
+          return NextResponse.json({ success: false, error: "Error creando perfil" }, { status: 500 })
+        }
       }
 
       clientId = authData.user.id
