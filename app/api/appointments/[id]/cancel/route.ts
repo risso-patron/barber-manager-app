@@ -1,47 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import twilio from 'twilio';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { withRateLimit, strictLimiter } from '@/lib/rate-limit';
+import { sanitizeHTML } from '@/lib/validation';
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withRateLimit(request, strictLimiter, async () => {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { reason, clientName, clientEmail, clientPhone, appointment } = body;
+    const { reason } = body;
+
+    // ── Autenticación (RH-002 · A3) ─────────────────────────────────────────
+    const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 });
+    }
+
+    const adminClient = createAdminSupabaseClient();
+
+    // ── Cargar la cita real (nunca confiar en datos del body) ───────────────
+    const { data: appointmentRow, error: fetchError } = await adminClient
+      .from('appointments')
+      .select(
+        `id, client_id, status, appointment_date, appointment_time,
+         client:users!appointments_client_id_fkey(id, name, email, phone),
+         barber:users!appointments_barber_id_fkey(name),
+         service:services(name)`
+      )
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !appointmentRow) {
+      return NextResponse.json({ success: false, error: 'Cita no encontrada' }, { status: 404 });
+    }
+
+    // ── Verificar permisos (solo el cliente dueño o admin) ──────────────────
+    const { data: profile } = await adminClient.from('users').select('role').eq('id', user.id).single();
+    const isAdmin = profile?.role === 'admin';
+    const isOwner = appointmentRow.client_id === user.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ success: false, error: 'Sin permiso para cancelar esta cita' }, { status: 403 });
+    }
+
+    const client = (appointmentRow as unknown as { client: { name: string; email: string; phone: string } | null }).client;
+    const barber = (appointmentRow as unknown as { barber: { name: string } | null }).barber;
+    const service = (appointmentRow as unknown as { service: { name: string } | null }).service;
+    const clientName = client?.name ?? 'Cliente';
+    const clientEmail = client?.email;
+    const clientPhone = client?.phone ?? '';
+    const appointment = {
+      date: appointmentRow.appointment_date,
+      time: appointmentRow.appointment_time,
+      serviceName: service?.name ?? 'Servicio',
+      employeeName: barber?.name ?? 'Barbero',
+    };
 
     // Actualizar estado en la base de datos
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: () => {},
-        },
-      }
-    );
-
-    const { error: dbError } = await supabase
+    const { data: updated, error: dbError } = await adminClient
       .from('appointments')
       .update({ status: 'cancelled' })
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (dbError) {
+    if (dbError || !updated) {
       console.error('❌ Error cancelando cita en DB:', dbError);
       return NextResponse.json(
-        { success: false, error: dbError.message },
+        { success: false, error: dbError?.message ?? 'Error al cancelar la cita' },
         { status: 400 }
       );
     }
 
     console.log('📅 Cita cancelada en DB:', { id, reason: reason || 'Sin motivo' });
 
-    // Preparar detalles para las notificaciones
+    // Preparar detalles para las notificaciones (reason es texto libre del
+    // usuario ya autenticado — se sanitiza antes de interpolar en HTML)
+    const safeReason = typeof reason === 'string' && reason.trim() ? sanitizeHTML(reason) : '';
     const appointmentDate = new Date(appointment.date).toLocaleDateString('es-ES', {
       weekday: 'long',
       day: 'numeric',
@@ -75,7 +116,7 @@ export async function POST(
                   <li>✂️ <strong>Servicio:</strong> ${appointment.serviceName}</li>
                   <li>👤 <strong>Barbero:</strong> ${appointment.employeeName}</li>
                 </ul>
-                ${reason ? `<p><strong>Motivo:</strong> ${reason}</p>` : ''}
+                ${safeReason ? `<p><strong>Motivo:</strong> ${safeReason}</p>` : ''}
               </div>
               
               <p>Esperamos verte pronto. Puedes agendar una nueva cita cuando lo desees.</p>
@@ -114,7 +155,7 @@ Cliente: ${clientName}
 Servicio: ${appointment.serviceName}
 Fecha: ${appointmentDate}
 Hora: ${appointment.time}
-${reason ? `\nMotivo: ${reason}` : ''}
+${safeReason ? `\nMotivo: ${safeReason}` : ''}
 
 Este espacio ahora está disponible para otros clientes.`
         });
@@ -166,11 +207,12 @@ Tu cita ha sido cancelada:
   } catch (error) {
     console.error('Error cancelando cita:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error al cancelar la cita' 
+      {
+        success: false,
+        error: 'Error al cancelar la cita'
       },
       { status: 500 }
     );
   }
+  });
 }

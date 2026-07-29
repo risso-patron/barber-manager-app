@@ -22,9 +22,11 @@ interface SignupPromptModalProps {
     email?: string
     phone: string
   }
+  /** Emitido por POST /api/bookings/public al completar la reserva (RH-002 · A1). */
+  activationToken: string
 }
 
-export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptModalProps) {
+export function SignupPromptModal({ isOpen, onClose, guestData, activationToken }: SignupPromptModalProps) {
   const router = useRouter()
   const [email, setEmail] = useState(guestData.email || "")
   const [password, setPassword] = useState("")
@@ -60,7 +62,7 @@ export function SignupPromptModal({ isOpen, onClose, guestData }: SignupPromptMo
     const res = await fetch("/api/auth/activate-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: guestData.phone, email, password }),
+      body: JSON.stringify({ phone: guestData.phone, email, password, token: activationToken }),
     })
 
     const result = await res.json()

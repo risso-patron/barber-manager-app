@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
+import { signActivationToken } from "@/lib/booking-activation-token"
 
 /**
  * API Route para crear reservas desde el enlace público
@@ -194,6 +195,10 @@ if (hasOverlap) {
       createdAt: appointment.created_at,
     }
 
+    // Token de activación de cuenta (RH-002 · A1) — válido solo para este
+    // cliente/teléfono, 15 minutos, sin almacenamiento adicional.
+    const activationToken = signActivationToken(clientId, data.clientPhone)
+
     // Encolar notificación (procesada de forma asíncrona por el cron de Vercel — ADR-028)
     try {
       const shopName = data.barbershop
@@ -236,6 +241,7 @@ if (hasOverlap) {
     return NextResponse.json({
       success: true,
       booking,
+      activationToken,
       message: "Reserva creada exitosamente"
     })
 
@@ -243,94 +249,6 @@ if (hasOverlap) {
     console.error("Error creando reserva pública:", error)
     return NextResponse.json(
       { success: false, error: "Error procesando la reserva" },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * GET /api/bookings/public?phone=xxx
- * Obtener reservas por teléfono (para clientes sin cuenta)
- */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const phone = searchParams.get("phone")
-
-    if (!phone) {
-      return NextResponse.json(
-        { success: false, error: "Teléfono requerido" },
-        { status: 400 }
-      )
-    }
-
-    const hasSupabaseConfig = Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-    if (!hasSupabaseConfig) {
-      return NextResponse.json({ success: true, bookings: [] })
-    }
-
-    const supabase = createAdminSupabaseClient()
-
-    // Buscar cliente por teléfono
-    const { data: client } = await supabase
-      .from("users")
-      .select("id")
-      .eq("phone", phone)
-      .eq("role", "client")
-      .maybeSingle()
-
-    if (!client) {
-      return NextResponse.json({ success: true, bookings: [] })
-    }
-
-    const { data: bookings, error } = await supabase
-      .from("appointments")
-      .select(`
-        id,
-        appointment_date,
-        appointment_time,
-        status,
-        notes,
-        services ( name, price ),
-        users!appointments_barber_id_fkey ( name )
-      `)
-      .eq("client_id", client.id)
-      .order("appointment_date", { ascending: false })
-
-    if (error) {
-      return NextResponse.json({ success: false, error: "Error consultando reservas" }, { status: 500 })
-    }
-
-    interface BookingRow {
-      id: string
-      appointment_date: string
-      appointment_time: string
-      status: string
-      notes?: string | null
-      services?: { name?: string; price?: number }[] | null
-      users?: { name?: string }[] | null
-    }
-    const formatted = (bookings as unknown as BookingRow[] || []).map((b) => ({
-      id: b.id,
-      serviceName: b.services?.[0]?.name,
-      employeeName: b.users?.[0]?.name,
-      date: b.appointment_date,
-      time: b.appointment_time,
-      status: b.status,
-      price: b.services?.[0]?.price,
-    }))
-
-    return NextResponse.json({
-      success: true,
-      bookings: formatted
-    })
-
-  } catch (error) {
-    console.error("Error obteniendo reservas:", error)
-    return NextResponse.json(
-      { success: false, error: "Error obteniendo reservas" },
       { status: 500 }
     )
   }

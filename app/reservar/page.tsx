@@ -65,6 +65,7 @@ export default function ReservarPage() {
   const [step, setStep] = useState<Step>("service")
   const [booking, setBooking] = useState<BookingData>({ services: [] })
   const [showSignupModal, setShowSignupModal] = useState(false)
+  const [activationToken, setActivationToken] = useState("")
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState({ services: true, employees: true })
@@ -191,13 +192,14 @@ export default function ReservarPage() {
         }),
       })
 
-      const result = await res.json() as { success?: boolean; error?: string }
+      const result = await res.json() as { success?: boolean; error?: string; activationToken?: string }
       if (!res.ok || !result.success) {
         setSubmitError(result.error ?? "Error al guardar la reserva. Intenta nuevamente.")
         setIsSubmitting(false)
         return
       }
 
+      if (result.activationToken) setActivationToken(result.activationToken)
       currentTime = addTime(currentTime, svc.duration)
     }
 
@@ -651,7 +653,7 @@ export default function ReservarPage() {
       </div>
 
       {/* Signup Prompt Modal */}
-      {booking.name && booking.phone && (
+      {booking.name && booking.phone && activationToken && (
         <SignupPromptModal
           isOpen={showSignupModal}
           onClose={() => setShowSignupModal(false)}
@@ -660,6 +662,7 @@ export default function ReservarPage() {
             email: booking.email,
             phone: booking.phone
           }}
+          activationToken={activationToken}
         />
       )}
     </div>
