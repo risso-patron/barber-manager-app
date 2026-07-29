@@ -173,6 +173,11 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
 
   const todayLabel = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
 
+  // Clases literales completas — Tailwind necesita el string estático en el
+  // código fuente para generar el CSS de un valor arbitrario (no funciona
+  // con interpolación dinámica).
+  const KPI_DELAY_CLASS = ["[animation-delay:50ms]", "[animation-delay:150ms]", "[animation-delay:250ms]", "[animation-delay:350ms]"]
+
   const kpiCards = [
     { label: "INGRESOS DEL MES",  value: `$${stats.monthlyRevenue.toLocaleString()}`, trend: null, trendUp: null },
     { label: "CITAS HOY",         value: String(stats.todayAppointments),             trend: `${stats.totalAppointments} total`,    trendUp: null },
@@ -181,84 +186,21 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
   ]
 
   return (
-    <div
-      className="p-4 lg:p-8"
-      style={{
-        fontFamily: "var(--font-dm-sans), sans-serif",
-        color: "#F0F0F0",
-      }}
-    >
-      <style>{`
-        @keyframes ornoFadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .orno-kpi { animation: ornoFadeUp 0.5s ease forwards; opacity: 0; }
-        .orno-kpi:nth-child(1) { animation-delay: 0.05s; }
-        .orno-kpi:nth-child(2) { animation-delay: 0.15s; }
-        .orno-kpi:nth-child(3) { animation-delay: 0.25s; }
-        .orno-kpi:nth-child(4) { animation-delay: 0.35s; }
-        .orno-kpi:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
-        .orno-mod-btn { transition: background 0.15s, box-shadow 0.15s; }
-        .orno-mod-btn:hover { background: #252525 !important; }
-        .orno-mod-btn:hover .orno-arrow { color: #E53935 !important; transform: translateX(3px); }
-        .orno-arrow { transition: color 0.15s, transform 0.15s; display: inline-block; }
-      `}</style>
+    <div className="p-4 lg:p-8 text-foreground">
 
       {/* ── Page header ─────────────────────── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginBottom: 32,
-        }}
-      >
+      <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 22,
-              fontWeight: 600,
-              color: "#F0F0F0",
-              lineHeight: 1.3,
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
+          <h1 className="m-0 text-[22px] font-semibold leading-[1.3] text-foreground">
             Panel general
           </h1>
-          <p
-            style={{
-              margin: "4px 0 0",
-              fontSize: 13,
-              color: "#8A8A8A",
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
+          <p className="mt-1 text-[13px] text-ink-600">
             {todayLabel}
           </p>
         </div>
         <button
           onClick={() => router.push("/admin/appointments")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: "#E53935",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "0 16px",
-            height: 36,
-            fontFamily: "var(--font-dm-sans), sans-serif",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: "pointer",
-            boxShadow: "0 0 20px rgba(229,57,53,0.25)",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#FF4444" }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#E53935" }}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-colors duration-micro hover:bg-sage-600"
         >
           <Plus size={14} />
           Nueva cita
@@ -266,63 +208,22 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
       </div>
 
       {/* ── KPI Cards ───────────────────────── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        {kpiCards.map((card) => (
+      <div className="mb-6 grid grid-cols-4 gap-4">
+        {kpiCards.map((card, i) => (
           <div
             key={card.label}
-            className="orno-kpi"
-            style={{
-              background: "#1A1A1A",
-              border: "1px solid #2E2E2E",
-              borderRadius: 12,
-              padding: "20px 24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              cursor: "default",
-            }}
+            className={`animate-fade-up cursor-default rounded-xl border border-border bg-card px-6 py-5 shadow-raised transition-shadow duration-micro ${KPI_DELAY_CLASS[i] ?? ""}`}
           >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "#8A8A8A",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                marginBottom: 10,
-                fontFamily: "var(--font-dm-sans), sans-serif",
-              }}
-            >
+            <div className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-600">
               {card.label}
             </div>
-            <div
-              style={{
-                fontFamily: "var(--font-dm-mono), 'DM Mono', monospace",
-                fontSize: 32,
-                fontWeight: 700,
-                color: "#F0F0F0",
-                lineHeight: 1,
-                marginBottom: 8,
-              }}
-            >
+            <div className="mb-2 font-mono text-[32px] font-bold leading-none text-foreground">
               {card.value}
             </div>
             {card.trend && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {card.trendUp === true && <TrendingUp size={12} style={{ color: "#22C55E" }} />}
-                <span
-                  style={{
-                    fontFamily: "var(--font-dm-sans), sans-serif",
-                    fontSize: 12,
-                    color: card.trendUp === true ? "#22C55E" : "#8A8A8A",
-                  }}
-                >
+              <div className="flex items-center gap-1">
+                {card.trendUp === true && <TrendingUp size={12} className="text-success-text" />}
+                <span className={`text-xs ${card.trendUp === true ? "text-success-text" : "text-ink-600"}`}>
                   {card.trend}
                 </span>
               </div>
@@ -332,69 +233,25 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
       </div>
 
       {/* ── Módulos ─────────────────────────── */}
-      <div
-        style={{
-          fontSize: 11,
-          color: "#555555",
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          marginBottom: 12,
-          fontFamily: "var(--font-dm-sans), sans-serif",
-        }}
-      >
+      <div className="mb-3 text-[11px] uppercase tracking-[0.14em] text-ink-600">
         Accesos rápidos
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 12,
-          marginBottom: 24,
-        }}
-      >
+      <div className="mb-6 grid grid-cols-4 gap-3">
         {modules.map((mod) => (
           <button
             key={mod.href}
             onClick={() => router.push(mod.href)}
-            className="orno-mod-btn"
-            style={{
-              textAlign: "left",
-              background: "#1A1A1A",
-              border: "1px solid #2E2E2E",
-              borderRadius: 12,
-              padding: "16px 20px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
+            className="group flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-micro hover:bg-secondary"
           >
             <div>
-              <p
-                style={{
-                  fontFamily: "var(--font-cormorant), serif",
-                  fontSize: 18,
-                  fontWeight: 400,
-                  color: "#F0F0F0",
-                  lineHeight: 1.2,
-                  margin: 0,
-                }}
-              >
+              <p className="m-0 font-serif text-lg font-normal leading-[1.2] text-foreground">
                 {mod.label}
               </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-dm-sans), sans-serif",
-                  fontSize: 11,
-                  color: mod.alert ? "#E53935" : "#8A8A8A",
-                  marginTop: 4,
-                }}
-              >
+              <p className={`mt-1 text-[11px] ${mod.alert ? "text-danger-text" : "text-ink-600"}`}>
                 {mod.sub}
               </p>
             </div>
-            <span className="orno-arrow" style={{ color: "#555555", fontSize: 14, marginTop: 3, flexShrink: 0 }}>
+            <span className="mt-0.5 shrink-0 text-sm text-ink-600 transition-all duration-micro group-hover:translate-x-1 group-hover:text-foreground">
               →
             </span>
           </button>
@@ -402,49 +259,25 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
       </div>
 
       {/* ── Activity + Alerts ───────────────── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-        }}
-      >
+      <div className="grid grid-cols-2 gap-4">
         {/* Actividad reciente */}
-        <div
-          style={{
-            background: "#1A1A1A",
-            border: "1px solid #2E2E2E",
-            borderRadius: 12,
-            padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "#8A8A8A",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: 16,
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
+        <div className="rounded-xl border border-border bg-card px-6 py-5 shadow-raised">
+          <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-600">
             Actividad reciente
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="flex flex-col gap-3.5">
             {recentActivity.length === 0 ? (
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "#555555" }}>
+              <p className="text-xs text-ink-600">
                 Sin actividad reciente
               </p>
             ) : recentActivity.map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: 12 }}>
-                <div style={{ width: 1, background: "#252525", alignSelf: "stretch", flexShrink: 0 }} />
+              <div key={i} className="flex gap-3">
+                <div className="w-px shrink-0 self-stretch bg-border" />
                 <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#F0F0F0" }}>
+                  <p className="text-[13px] text-foreground">
                     {item.title}
                   </p>
-                  <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, color: "#8A8A8A", marginTop: 2 }}>
+                  <p className="mt-0.5 text-[11px] text-ink-600">
                     {item.detail}
                   </p>
                 </div>
@@ -454,60 +287,28 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
         </div>
 
         {/* Alertas */}
-        <div
-          style={{
-            background: "#1A1A1A",
-            border: "1px solid #2E2E2E",
-            borderRadius: 12,
-            padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "#8A8A8A",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: 16,
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
+        <div className="rounded-xl border border-border bg-card px-6 py-5 shadow-raised">
+          <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-600">
             Alertas
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="flex flex-col gap-3.5">
             {alerts.length > 0 ? (
               alerts.slice(0, 4).map((alert) => (
-                <div key={alert.id} style={{ display: "flex", gap: 12 }}>
+                <div key={alert.id} className="flex gap-3">
                   <div
-                    style={{
-                      width: 3,
-                      borderRadius: 2,
-                      background: alert.rating === 1 ? "#E53935" : "#F59E0B",
-                      alignSelf: "stretch",
-                      flexShrink: 0,
-                    }}
+                    className={`w-[3px] shrink-0 self-stretch rounded-sm ${alert.rating === 1 ? "bg-danger" : "bg-warning"}`}
                   />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#F0F0F0" }}>
+                  <div className="flex-1">
+                    <p className="text-[13px] text-foreground">
                       {"★".repeat(alert.rating)}{"☆".repeat(5 - alert.rating)}{" "}
                       {alert.client?.name ?? "Cliente"}
                     </p>
                     {alert.review_text && (
-                      <p
-                        style={{
-                          fontFamily: "var(--font-dm-sans), sans-serif",
-                          fontSize: 11,
-                          color: "#8A8A8A",
-                          marginTop: 2,
-                          fontStyle: "italic",
-                        }}
-                      >
+                      <p className="mt-0.5 text-[11px] italic text-ink-600">
                         &ldquo;{alert.review_text}&rdquo;
                       </p>
                     )}
-                    <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 10, color: "#555555", marginTop: 3 }}>
+                    <p className="mt-1 text-[10px] text-ink-600">
                       {alert.employee?.name ?? ""} ·{" "}
                       {new Date(alert.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
                     </p>
@@ -515,26 +316,18 @@ const [alerts, setAlerts] = useState<LowRatingAlert[]>([])
                 </div>
               ))
             ) : (
-              <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 12, color: "#555555" }}>
+              <p className="text-xs text-ink-600">
                 Sin alertas pendientes
               </p>
             )}
             {stats.pendingAppointments > 0 && (
-              <div style={{ display: "flex", gap: 12 }}>
-                <div
-                  style={{
-                    width: 3,
-                    borderRadius: 2,
-                    background: "#2E2E2E",
-                    alignSelf: "stretch",
-                    flexShrink: 0,
-                  }}
-                />
+              <div className="flex gap-3">
+                <div className="w-[3px] shrink-0 self-stretch rounded-sm bg-border" />
                 <div>
-                  <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#F0F0F0" }}>
+                  <p className="text-[13px] text-foreground">
                     Citas pendientes
                   </p>
-                  <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 11, color: "#8A8A8A", marginTop: 2 }}>
+                  <p className="mt-0.5 text-[11px] text-ink-600">
                     {stats.pendingAppointments} esperando confirmación
                   </p>
                 </div>

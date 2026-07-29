@@ -257,15 +257,15 @@ export default function InventoryPage() {
   return (
     <div className="p-4 lg:p-8">
       {error && (
-        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#1F1212", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 13, display: "flex", justifyContent: "space-between" }}>
+        <div className="mb-4 flex items-center justify-between rounded-[10px] border border-danger/25 bg-danger-tint px-4 py-3 text-[13px] text-danger-text">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} style={{ fontWeight: 700, marginLeft: 16, background: "none", border: "none", color: "#EF4444", cursor: "pointer" }}>✕</button>
+          <button type="button" onClick={() => setError(null)} className="ml-4 cursor-pointer border-none bg-transparent font-bold text-danger-text">✕</button>
         </div>
       )}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Inventario</h1>
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Gestiona productos, herramientas y suministros</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">Inventario</h1>
+          <p className="mt-1 text-[13px] text-ink-600">Gestiona productos, herramientas y suministros</p>
         </div>
         <Button onClick={() => { setSelectedItem(null); setIsModalOpen(true) }}>
           <Plus className="mr-2 h-4 w-4" />
@@ -289,10 +289,10 @@ export default function InventoryPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
-            <AlertTriangle className="h-4 w-4" style={{ color: "#F59E0B" }} />
+            <AlertTriangle className="h-4 w-4 text-warning-text" />
           </CardHeader>
           <CardContent>
-            <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, color: "#F59E0B" }}>{stats.lowStock}</div>
+            <div className="font-mono text-[28px] font-bold text-warning-text">{stats.lowStock}</div>
             <p className="text-xs text-muted-foreground">Requieren atención</p>
           </CardContent>
         </Card>
@@ -300,10 +300,10 @@ export default function InventoryPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agotados</CardTitle>
-            <TrendingDown className="h-4 w-4" style={{ color: "#EF4444" }} />
+            <TrendingDown className="h-4 w-4 text-danger-text" />
           </CardHeader>
           <CardContent>
-            <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, color: "#EF4444" }}>{stats.outOfStock}</div>
+            <div className="font-mono text-[28px] font-bold text-danger-text">{stats.outOfStock}</div>
             <p className="text-xs text-muted-foreground">Sin stock</p>
           </CardContent>
         </Card>
@@ -342,7 +342,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por categoría"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md text-sm" style={{ background: "hsl(var(--input))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
+              className="rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground"
             >
               <option value="all">Todas las categorías</option>
               <option value="producto">Productos</option>
@@ -353,7 +353,7 @@ export default function InventoryPage() {
               aria-label="Filtrar por estado"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border rounded-md text-sm" style={{ background: "hsl(var(--input))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}
+              className="rounded-md border border-border bg-input px-3 py-2 text-sm text-foreground"
             >
               <option value="all">Todos los estados</option>
               <option value="disponible">Disponible</option>
@@ -398,7 +398,7 @@ export default function InventoryPage() {
               </thead>
               <tbody>
                 {pagedItems.map((item) => (
-                  <tr key={item.id} className="border-b" style={{ borderColor: "#252525" }} onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "#222222" }} onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent" }}>
+                  <tr key={item.id} className="border-b border-border transition-colors duration-micro hover:bg-secondary">
                     <td className="py-3 px-4">
                       <div>
                         <div className="font-medium">{item.name}</div>
@@ -423,18 +423,18 @@ export default function InventoryPage() {
                     <td className="py-3 px-4">${item.price.toFixed(2)}</td>
                     <td className="py-3 px-4">
                       {item.salePrice ? (
-                        <span style={{ color: "#22C55E", fontWeight: 500 }}>${item.salePrice.toFixed(2)}</span>
+                        <span className="font-medium text-success-text">${item.salePrice.toFixed(2)}</span>
                       ) : (
-                        <span style={{ color: "#555" }}>—</span>
+                        <span className="text-ink-600">—</span>
                       )}
                     </td>
                     <td className="py-3 px-4">
                       {item.salePrice && item.salePrice > item.price ? (
-                        <span style={{ color: "#00C896", fontSize: 12, fontWeight: 600 }}>
+                        <span className="text-xs font-semibold text-success-text">
                           {(((item.salePrice - item.price) / item.salePrice) * 100).toFixed(0)}%
                         </span>
                       ) : (
-                        <span style={{ color: "#555" }}>—</span>
+                        <span className="text-ink-600">—</span>
                       )}
                     </td>                    <td className="py-3 px-4 text-sm text-muted-foreground">{item.supplier || "N/A"}</td>
                     <td className="py-3 px-4">
