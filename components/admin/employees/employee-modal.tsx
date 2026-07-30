@@ -1,13 +1,24 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { X, Check } from "lucide-react"
-import type { Employee } from "@/lib/demo-appointments"
+// M3 · Migrated onto FormModal + Field. Same props, same payloads, same
+// native-select validation semantics (radix Select deferred: swapping would
+// drop the native `required` behavior — that's a business-rule change).
 
-interface EmployeeWithCommission extends Employee {
+import { useState } from "react"
+import { FormModal } from "@/components/ui/form-modal"
+import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { NativeSelect } from "@/components/ui/native-select"
+import { Label } from "@/components/ui/label"
+import { Check } from "lucide-react"
+
+interface EmployeeWithCommission {
+  id?: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  avatar?: string
   specialty?: string | null
   commission_rate?: number | null
 }
@@ -66,8 +77,7 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     setFormData({ ...formData, specialty: value, role: spec.role })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     const payload = {
       ...formData,
       commission_rate: formData.commission_rate > 0
@@ -81,156 +91,119 @@ export function EmployeeModal({ isOpen, onClose, onSave, employee }: EmployeeMod
     }
   }
 
-  if (!isOpen) return null
-
   const selectedSpec = SPECIALTIES.find(s => s.value === formData.specialty)
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-      <div className="bg-white rounded-lg max-w-lg w-full flex flex-col max-h-[90vh]">
-        {/* Header fijo */}
-        <div className="border-b px-6 py-4 flex items-center justify-between rounded-t-lg flex-shrink-0">
-          <h2 className="text-xl font-bold">
-            {employee ? "Editar Empleado" : "Nuevo Empleado"}
-          </h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+    <FormModal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={employee ? "Editar Empleado" : "Nuevo Empleado"}
+      submitLabel={employee ? "Guardar Cambios" : "Crear Empleado"}
+      onSubmit={handleSubmit}
+      size="md"
+    >
+      <Field label="Nombre Completo" htmlFor="name" required>
+        <Input
+          id="name"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="Ej: Roberto Gómez"
+        />
+      </Field>
+
+      <Field label="Email" htmlFor="email" required>
+        <Input
+          id="email"
+          type="email"
+          required
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          placeholder="roberto@barbershop.com"
+          autoComplete="email"
+        />
+      </Field>
+
+      <Field label="Teléfono" htmlFor="phone" required>
+        <Input
+          id="phone"
+          type="tel"
+          required
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          placeholder="555-0200"
+          autoComplete="tel"
+        />
+      </Field>
+
+      <Field label="Especialidad / Puesto" htmlFor="specialty" required help={selectedSpec?.desc}>
+        <NativeSelect
+          id="specialty"
+          aria-label="Especialidad"
+          required
+          value={formData.specialty}
+          onValueChange={handleSpecialtyChange}
+          options={SPECIALTIES.map((s) => ({ value: s.value, label: s.label }))}
+        />
+      </Field>
+
+      <Field
+        label="Comisión (% sobre servicio, opcional)"
+        htmlFor="commission_rate"
+        help={
+          formData.commission_rate > 0
+            ? `En una cita de $100 → comisión $${formData.commission_rate.toFixed(2)}`
+            : "Sin comisión configurada"
+        }
+      >
+        <div className="relative">
+          <Input
+            id="commission_rate"
+            type="number"
+            min={0}
+            max={100}
+            step={0.5}
+            value={formData.commission_rate}
+            onChange={(e) =>
+              setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })
+            }
+            className="pr-9"
+            placeholder="0"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
         </div>
+      </Field>
 
-        {/* Scroll body */}
-        <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            {/* Nombre */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Nombre Completo *</Label>
-              <Input
-                id="name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Roberto Gómez"
-              />
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="roberto@barbershop.com"
-                autoComplete="email"
-              />
-            </div>
-
-            {/* Teléfono */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono *</Label>
-              <Input
-                id="phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="555-0200"
-                autoComplete="tel"
-              />
-            </div>
-
-            {/* Especialidad */}
-            <div className="space-y-2">
-              <Label htmlFor="specialty">Especialidad / Puesto *</Label>
-              <select
-                id="specialty"
-                aria-label="Especialidad"
-                required
-                value={formData.specialty}
-                onChange={(e) => handleSpecialtyChange(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {SPECIALTIES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-              {selectedSpec && (
-                <p className="text-xs text-gray-500">{selectedSpec.desc}</p>
+      {/* Avatar — 15 presets */}
+      <div className="flex flex-col gap-3">
+        <Label>Avatar</Label>
+        <div className="grid grid-cols-5 gap-3">
+          {PRESET_AVATARS.map((url, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setFormData({ ...formData, avatar: url })}
+              className={`relative mx-auto block size-14 overflow-hidden rounded-full border-2 transition-all ${
+                formData.avatar === url
+                  ? "border-primary ring-2 ring-ring ring-offset-2"
+                  : "border-border hover:border-ink-300"
+              }`}
+            >
+              <img src={url} alt={`Avatar ${i + 1}`} className="h-full w-full bg-secondary object-cover" />
+              {formData.avatar === url && (
+                <div className="absolute inset-0 flex items-center justify-center bg-foreground/20">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
               )}
-            </div>
-
-            {/* Comisión */}
-            <div className="space-y-2">
-              <Label htmlFor="commission_rate">
-                Comisión{" "}
-                <span className="text-muted-foreground font-normal">(% sobre servicio, opcional)</span>
-              </Label>
-              <div className="relative">
-                <input
-                  id="commission_rate"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  value={formData.commission_rate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm"
-                  placeholder="0"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-              </div>
-              <p className="text-xs text-gray-400">
-                {formData.commission_rate > 0
-                  ? `En una cita de $100 → comisión $${formData.commission_rate.toFixed(2)}`
-                  : "Sin comisión configurada"}
-              </p>
-            </div>
-
-            {/* Avatar — 15 presets */}
-            <div className="space-y-3">
-              <Label>Avatar</Label>
-              <div className="grid grid-cols-5 gap-3">
-                {PRESET_AVATARS.map((url, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, avatar: url })}
-                    className={`relative rounded-full overflow-hidden border-2 transition-all w-14 h-14 mx-auto block ${
-                      formData.avatar === url
-                        ? "border-black ring-2 ring-black ring-offset-2"
-                        : "border-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    <img src={url} alt={`Avatar ${i + 1}`} className="w-full h-full object-cover bg-gray-100" />
-                    {formData.avatar === url && (
-                      <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {!formData.avatar && (
-                <p className="text-xs text-gray-400">Seleccioná un avatar (opcional)</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {employee ? "Guardar Cambios" : "Crear Empleado"}
-              </Button>
-            </div>
-          </form>
+            </button>
+          ))}
         </div>
+        {!formData.avatar && (
+          <p className="text-[13px] text-ink-400">Seleccioná un avatar (opcional)</p>
+        )}
       </div>
-    </div>
+    </FormModal>
   )
 }

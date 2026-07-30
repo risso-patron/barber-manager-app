@@ -13,6 +13,10 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
 
+  const { data: caller } = await supabase.from("users").select("role").eq("id", user.id).single()
+  if (caller?.role !== "admin")
+    return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
+
   const admin = createAdminSupabaseClient()
   const today = new Date().toISOString().split("T")[0]
   const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)

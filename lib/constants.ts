@@ -11,7 +11,6 @@ export const APP_DESCRIPTION = "Sistema de gestión para barberías"
 export const USER_ROLES = {
   ADMIN: "admin",
   EMPLOYEE: "employee",
-  BARBER: "barber",
   CLIENT: "client",
 } as const
 
@@ -43,7 +42,6 @@ export const ROUTES = {
   REGISTER: "/auth/register",
   DASHBOARD: "/dashboard",
   ADMIN: "/admin",
-  BARBER: "/barber",
   EMPLOYEE: "/employee",
   CLIENT: "/client",
 } as const
@@ -53,8 +51,7 @@ export const ROUTES = {
  */
 export const DASHBOARD_BY_ROLE = {
   admin: ROUTES.ADMIN,
-  employee: ROUTES.BARBER,
-  barber: ROUTES.BARBER,
+  employee: ROUTES.EMPLOYEE,
   client: ROUTES.CLIENT,
 } as const
 

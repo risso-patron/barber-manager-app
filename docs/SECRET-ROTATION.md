@@ -1,20 +1,22 @@
 # 🔐 Guía de Rotación de Secrets
 
-> Auditado y corregido el 2026-06-30. **La versión anterior de este documento contenía los valores reales de los secrets expuestos, en texto plano.** Esos valores fueron eliminados en esta revisión — nunca deben volver a pegarse acá, ni siquiera parcialmente. Si necesitás confirmar si un valor coincide con el expuesto, comparalo manualmente desde el dashboard del proveedor, no lo escribas en ningún archivo versionado.
+> Auditado y corregido el 2026-06-30. Actualizado el 2026-07-07 para reflejar rotación ejecutada.
+>
+> **La versión anterior de este documento contenía los valores reales de los secrets expuestos, en texto plano.** Esos valores fueron eliminados en la revisión del 30/06. Nunca deben volver a pegarse acá, ni siquiera parcialmente.
 
-## 🚨 URGENTE: Secrets expuestos — rotación vencida
+## ✅ Rotación EJECUTADA (actualizado 2026-07-07)
 
-Los siguientes 3 secrets fueron expuestos en texto plano en este repositorio (en commits anteriores de este mismo archivo y de `docs/EXECUTIVE-SUMMARY.md`) y **deben rotarse de inmediato**:
+Los siguientes 3 secrets estaban expuestos en texto plano en commits anteriores de este repositorio y **fueron rotados ~2026-06-30**:
 
-1. **Resend API Key** (`RESEND_API_KEY`)
-2. **Twilio Auth Token** (`TWILIO_AUTH_TOKEN`)
-3. **CRON Secret** (`CRON_SECRET`)
+1. ✅ **Resend API Key** (`RESEND_API_KEY`) — rotada
+2. ✅ **Twilio Auth Token** (`TWILIO_AUTH_TOKEN`) — rotado  
+3. ✅ **CRON Secret** (`CRON_SECRET`) — regenerado
 
-🔴 **Estado real:** la rotación programada para el 27 de febrero de 2026 **no se ejecutó** — a la fecha de esta auditoría (30 de junio de 2026) lleva más de 4 meses de atraso. Mientras no se rote, estos 3 secrets deben considerarse comprometidos.
+🟢 **Estado confirmado (2026-07-07):** los tres valores fueron regenerados en los dashboards de Resend/Twilio, actualizados en Vercel (producción) y en `.env.local` (laptop personal del usuario + esta máquina). `pnpm validate-env` confirma que los tres pasan validación en esta máquina. No verificable independientemente por el agente — acciones manuales externas a git, registradas según reporte del usuario.
 
-> 🔴🔴 **Hallazgo crítico de esta auditoría — exposición ACTIVA, no solo histórica:** `scripts/validate-env.js` (líneas 145-149) tiene los tres valores reales de estos secrets **hardcodeados en texto plano**, en un archivo de código trackeado por git y vigente en el commit `9aaf6dd` (2026-06-23). Esto significa que la exposición **no es solo del historial de git** — está en el árbol de trabajo actual. Esta auditoría es exclusivamente de documentación y no modifica código funcional, por lo que **este archivo no fue corregido acá**. Recomendación clara para el equipo de desarrollo: reemplazar la comparación de valores en texto plano por un hash (ej. SHA-256) de cada secret expuesto, de forma que el script pueda seguir detectando si alguien reutiliza el valor filtrado sin tener que guardar ese valor en texto plano en el repositorio. Este cambio debe tratarse como código funcional y hacerse en una tarea aparte, no como parte de esta revisión documental.
+> ✅ **Corrección:** una versión anterior de este doc afirmaba que `scripts/validate-env.js` tenía los 3 valores reales hardcodeados "hoy" (2026-06-30). Eso ya no es así — fue corregido en commit `1fa6145` (2026-06-30), mismo día, unas horas después de escribir esa advertencia. El archivo actual usa detección de patrones, sin valores reales (verificado leyendo el archivo 2026-07-07).
 
-> ⚠️ **Importante:** rotar el valor en el dashboard del proveedor no "borra" la exposición. El valor anterior queda igual en el historial de git de este repositorio. Si el repositorio es o fue público, o tuvo colaboradores externos, los valores viejos deben tratarse como filtrados permanentemente — la única mitigación real es invalidarlos en el proveedor.
+> ⚠️ **Historial de git:** rotar el valor en el dashboard no "borra" la exposición histórica. Los valores viejos quedan en commits previos a `1fa6145`. Purgar historial fue excluido del alcance (`openspec/changes/archive/2026-07-07-rotate-secrets/proposal.md`).
 
 ---
 
@@ -194,5 +196,5 @@ git commit -m "chore: rotar API keys por seguridad"
 
 ---
 
-**Última rotación documentada:** 29 de noviembre de 2025 (la única registrada hasta la fecha)
-**Próxima rotación programada:** vencida desde el 27 de febrero de 2026 — **pendiente de ejecutar**
+**Última rotación documentada:** ~2026-06-30 (Twilio Auth Token, Resend API Key, CRON Secret — confirmado 2026-07-07)  
+**Próxima rotación programada:** 2026-09-28 (90 días desde la última, según mejores prácticas de este documento)

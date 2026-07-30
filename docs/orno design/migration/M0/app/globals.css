@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ORNO Design Tokens · M0
+   Source of truth: ORNO Product Design Constitution
+   Warm, elegant, premium, human. Light is the product.
+   ════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Fonts */
+    --font-sans: var(--font-inter);
+    --font-serif: var(--font-cormorant);
+    --font-mono: var(--font-geist-mono);
+
+    /* Surfaces — warm off-whites */
+    --background: 40 23% 97%;            /* #FAF9F7 */
+    --foreground: 34 10% 14%;            /* #26231F ink-900 */
+    --card: 0 0% 100%;                   /* #FFFFFF */
+    --card-foreground: 34 10% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 34 10% 14%;
+
+    /* Primary — soft sage green */
+    --primary: 143 25% 50%;              /* #5F9F77 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary surface */
+    --secondary: 40 21% 95%;             /* #F4F2EE */
+    --secondary-foreground: 34 10% 14%;
+
+    --muted: 40 21% 95%;                 /* #F4F2EE */
+    --muted-foreground: 38 7% 51%;       /* #8A847A ink-400 — large text only */
+
+    --accent: 143 24% 93%;               /* #EAF2ED sage-100 */
+    --accent-foreground: 144 30% 35%;    /* #3E7354 sage-700 */
+
+    /* Destructive — semantic danger (NEVER brand red) */
+    --destructive: 6 52% 51%;            /* #C24E42 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 18% 89%;                /* #E8E4DE */
+    --input: 36 18% 89%;
+    --ring: 143 25% 50%;                 /* sage focus ring */
+
+    --chart-1: 143 25% 50%;              /* sage */
+    --chart-2: 20 49% 56%;               /* terracotta */
+    --chart-3: 208 27% 60%;              /* dusty blue */
+    --chart-4: 36 34% 69%;               /* warm beige */
+    --chart-5: 258 22% 68%;              /* lavender */
+
+    /* Radius — controls 14px (cards 20 / modals 24 via utilities) */
+    --radius: 0.875rem;
+
+    /* Sidebar — tonal warm panel */
+    --sidebar-background: 40 21% 95%;    /* #F4F2EE */
+    --sidebar-foreground: 40 7% 32%;     /* #57534B ink-600 */
+    --sidebar-primary: 143 25% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 143 24% 93%;       /* sage-100 active pill */
+    --sidebar-accent-foreground: 144 30% 35%;
+    --sidebar-border: 36 18% 89%;
+    --sidebar-ring: 143 25% 50%;
+  }
+
+  /* Future dark theme = remap of the SAME variables (warm dark, not blue-black).
+     Intentionally left as the shadcn default until the Dark milestone. */
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 15px;
+  }
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Focus ring global — accessibility (sage, per Constitution) ── */
+*:focus-visible {
+  outline: 2px solid #5F9F77;
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Status pills — SAME class names as before, retokened warm-light.
+   Estado nunca solo por color: los componentes añaden icono/texto.
+   ════════════════════════════════════════════════════════════════ */
+
+.orno-status-pending   { background: #F7EFDD; color: #8F6A1F; border-color: rgba(185, 138, 46, 0.28); }
+.orno-status-confirmed { background: #EAF2ED; color: #3E7354; border-color: rgba(95, 159, 119, 0.30); }
+.orno-status-completed { background: #F4F2EE; color: #57534B; border-color: #E8E4DE; }
+.orno-status-cancelled { background: #FBF3F2; color: #A93F34; border-color: rgba(194, 78, 66, 0.25); }
+.orno-status-no_show   { background: #F6EBE4; color: #9A5A3B; border-color: rgba(197, 123, 87, 0.30); }
+
+/* Inventory category tokens — accents apagados */
+.orno-cat-producto    { background: #EAEFF4; color: #4A6B87; }
+.orno-cat-herramienta { background: #EFEAF6; color: #6D5F91; }
+.orno-cat-suministro  { background: #EAF2ED; color: #3E7354; }
+.orno-cat-default     { background: #F4F2EE; color: #57534B; }
+
+/* Stock level tokens */
+.orno-stock-ok    { background: #EAF2ED; color: #3E7354; }
+.orno-stock-low   { background: #F7EFDD; color: #8F6A1F; }
+.orno-stock-out   { background: #FBF3F2; color: #A93F34; }

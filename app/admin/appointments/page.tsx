@@ -1,81 +1,114 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { maskPhone } from "@/lib/utils"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+// ORNO · Agenda (admin) — reconstruida sobre el M4 Scheduling Kit.
+//
+// Dos representaciones de la MISMA fuente de datos, filtros y permisos:
+//   · Board (predeterminada) — operación del día: columnas por barbero,
+//     drag-to-move con commit optimista + Deshacer, huecos sugeridos,
+//     bloqueos, línea de "ahora".
+//   · Lista — búsqueda histórica, auditoría y gestión masiva (paginada).
+//
+// Sustitución de infraestructura, NO reescritura funcional:
+//   · Mismas queries Supabase (select con joins client/barber/service).
+//   · Mismas rutas API (/api/appointments/admin, /api/clients,
+//     /api/appointments/form-data, /api/schedule-blocks).
+//   · Mismos handlers CRUD y transiciones de estado.
+//   · Mismo modelo de permisos y RLS (mover = update de fecha/hora/barbero,
+//     la misma mutación que ya ejercía handleUpdateAppointment).
+//   · Resize deshabilitado (allowResize=false): la cita no persiste duración.
+
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { createBrowserClient } from "@supabase/ssr"
 import {
   Calendar,
   CalendarDays,
   List,
   Plus,
-  Search,
   Clock,
   User,
   Scissors,
-  MoreVertical,
   Edit,
   Trash2,
   CheckCircle,
   XCircle,
-  ArrowLeft,
   ShoppingCart,
-  Loader2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
+
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { SearchInput } from "@/components/ui/search-input"
+import { StatCard, StatStrip } from "@/components/ui/stat-card"
+import { StatusBadge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { NativeSelect } from "@/components/ui/native-select"
+import { useNotify } from "@/components/ui/notify"
+import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+
+import { AppointmentTimeline } from "@/components/scheduling/appointment-timeline"
+import type {
+  SchedAppointment,
+  SchedResource,
+  ScheduleBlock as SchedBlock,
+  ScheduleConfig,
+} from "@/components/scheduling/types"
+
 import {
   type Appointment,
   type AppointmentStatus,
   type Service,
   type Employee,
   type Client,
-} from "@/lib/demo-appointments"
-import { createBrowserClient } from "@supabase/ssr"
-import { DEMO_APPOINTMENTS, DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_CLIENTS } from "@/lib/demo-appointments"
+  DEMO_APPOINTMENTS,
+  DEMO_SERVICES,
+  DEMO_EMPLOYEES,
+  DEMO_CLIENTS,
+} from "@/lib/demo"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
-import { AppointmentModal } from "@/components/admin/appointments/appointment-modal"
-import { DeleteConfirmModal } from "@/components/admin/appointments/delete-confirm-modal"
-
-const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending:   "orno-status-pending   border",
-  confirmed: "orno-status-confirmed border",
-  completed: "orno-status-completed border",
-  cancelled: "orno-status-cancelled border",
-  no_show:   "orno-status-no_show   border",
+const BLOCK_TYPE_LABELS: Record<string, string> = {
+  break: "Descanso",
+  absence: "Ausencia",
+  personal: "Personal",
+  vacation: "Vacaciones",
 }
 
-const STATUS_LABELS: Record<AppointmentStatus, string> = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-  no_show:   "No se presentó",
+// Ventana visible del board — alineada con la agenda de employee (8:00–20:00).
+const DAY_START_MIN = 8 * 60
+const DAY_END_MIN = 20 * 60
+
+function toDateStr(d: Date) {
+  return d.toISOString().split("T")[0]!
 }
 
-function getWeekDays(date: Date): Date[] {
-  const monday = new Date(date)
-  const day = monday.getDay()
-  monday.setDate(date.getDate() - ((day + 6) % 7))
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
-    return d
-  })
+/** Postgres `time` llega como "HH:MM:SS"; la UI y los inputs usan "HH:MM". */
+function hhmm(t: string) {
+  return t.slice(0, 5)
 }
 
-function toDateStr(d: Date) { return d.toISOString().split("T")[0]! }
+function minToHHMM(min: number) {
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
+}
 
-const WEEK_DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+/** ISO local naive — se interpreta en la tz del navegador, la misma del cfg. */
+function localIso(date: string, time: string) {
+  return `${date}T${hhmm(time)}:00`
+}
+
+function addMinutes(time: string, minutes: number) {
+  const [h, m] = hhmm(time).split(":").map(Number)
+  return minToHHMM(h! * 60 + (m ?? 0) + minutes)
+}
 
 interface AppointmentRow {
   id: string
@@ -89,18 +122,44 @@ interface AppointmentRow {
   service?: { id: string; name: string; price?: number; duration?: number } | null
 }
 
+interface ApiBlock {
+  id: string
+  barber_id: string
+  block_date: string
+  start_time: string
+  end_time: string
+  reason: string
+  block_type: string
+}
+
 export default function AppointmentsPage() {
   const router = useRouter()
-  const user = useRequireAuth(["admin", "manager"])
+  const user = useRequireAuth(["admin"])
+  const notify = useNotify()
+
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [clients, setClients] = useState<Client[]>([])
+  const [blocks, setBlocks] = useState<ApiBlock[]>([])
+
+  // Filtros — compartidos por ambas vistas (la vista solo cambia la representación).
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | "all">("all")
   const [filterDate, setFilterDate] = useState("")
   const [filterEmployeeId, setFilterEmployeeId] = useState("")
   const [filterEmployeeName, setFilterEmployeeName] = useState("")
+
+  const [viewMode, setViewMode] = useState<"board" | "list">("board")
+  const [boardDate, setBoardDate] = useState(() => new Date())
+  const [nowIso, setNowIso] = useState(() => new Date().toISOString())
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
+  const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
+  const [page, setPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const PAGE_SIZE = 25
 
   // Pre-fill filters from query params (e.g. coming from "Ver Agenda" in employees)
   useEffect(() => {
@@ -113,23 +172,20 @@ export default function AppointmentsPage() {
     const q = params.get("q")
     if (q) setSearchTerm(q)
   }, [])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
-  const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<"list" | "week">("list")
-  const [calendarDate, setCalendarDate] = useState(new Date())
-  const PAGE_SIZE = 25
 
-  // Load appointments from Supabase (or demo data)
+  // Línea de "ahora" — tick por minuto.
+  useEffect(() => {
+    const t = setInterval(() => setNowIso(new Date().toISOString()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Load appointments from Supabase (or demo data) — misma query que siempre.
   useEffect(() => {
     if (!supabase) {
       setAppointments(DEMO_APPOINTMENTS)
       setServices(DEMO_SERVICES)
       setEmployees(DEMO_EMPLOYEES)
-      setClients(DEMO_CLIENTS.map(c => ({ ...c, email: c.email ?? "" })))
+      setClients(DEMO_CLIENTS.map((c) => ({ ...c, email: c.email ?? "" })))
       setIsLoading(false)
       return
     }
@@ -150,56 +206,101 @@ export default function AppointmentsPage() {
       .order("appointment_date", { ascending: false })
       .then(({ data }) => {
         if (data) {
-          setAppointments((data as unknown as AppointmentRow[]).map((raw) => {
-            const client = raw.client
-            const barber = raw.barber
-            const service = raw.service
-            return {
-              id: raw.id,
-              clientId: client?.id || "",
-              clientName: client?.name || "",
-              clientPhone: client?.phone || "",
-              employeeId: barber?.id || "",
-              employeeName: barber?.name || "",
-              serviceId: service?.id || "",
-              serviceName: service?.name || "",
-              date: raw.appointment_date,
-              time: raw.appointment_time,
-              duration: service?.duration || 0,
-              price: service?.price || 0,
-              status: raw.status,
-              notes: raw.notes || undefined,
-              createdAt: raw.created_at,
-            }
-          }))
+          setAppointments(
+            (data as unknown as AppointmentRow[]).map((raw) => {
+              const client = raw.client
+              const barber = raw.barber
+              const service = raw.service
+              return {
+                id: raw.id,
+                clientId: client?.id || "",
+                clientName: client?.name || "",
+                clientPhone: client?.phone || "",
+                employeeId: barber?.id || "",
+                employeeName: barber?.name || "",
+                serviceId: service?.id || "",
+                serviceName: service?.name || "",
+                date: raw.appointment_date,
+                time: hhmm(raw.appointment_time),
+                duration: service?.duration || 0,
+                price: service?.price || 0,
+                status: raw.status,
+                notes: raw.notes || undefined,
+                createdAt: raw.created_at,
+              }
+            })
+          )
         }
         setIsLoading(false)
       })
-    // Cargar servicios, empleados y clientes para los modales
-// Cargar datos del modal vía API (service_role para evitar RLS)
+
+    // Cargar datos del modal vía API (service_role para evitar RLS)
     fetch("/api/appointments/form-data")
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(({ clients, employees, services }) => {
-        if (services) setServices(services.map((s: { id: string; name: string; price: number; duration: number }) => ({
-          id: s.id, name: s.name, price: s.price, duration: s.duration,
-        })))
-        if (employees) setEmployees(employees.map((e: { id: string; name: string; phone: string | null }) => ({
-          id: e.id, name: e.name, email: "", phone: e.phone || "", role: "employee" as const,
-        })))
-        if (clients) setClients(clients.map((c: { id: string; name: string; phone: string | null }) => ({
-          id: c.id, name: c.name, email: "", phone: c.phone || "",
-        })))
+        if (services)
+          setServices(
+            services.map((s: { id: string; name: string; price: number; duration: number }) => ({
+              id: s.id,
+              name: s.name,
+              price: s.price,
+              duration: s.duration,
+            }))
+          )
+        if (employees)
+          setEmployees(
+            employees.map((e: { id: string; name: string; phone: string | null }) => ({
+              id: e.id,
+              name: e.name,
+              email: "",
+              phone: e.phone || "",
+              role: "employee" as const,
+            }))
+          )
+        if (clients)
+          setClients(
+            clients.map((c: { id: string; name: string; phone: string | null }) => ({
+              id: c.id,
+              name: c.name,
+              email: "",
+              phone: c.phone || "",
+            }))
+          )
       })
       .catch(console.error)
-
   }, [])
 
-  // Filter appointments
+  const boardDateStr = toDateStr(boardDate)
+  const todayStr = toDateStr(new Date())
+
+  // Bloqueos del día del board — misma API por barbero que usa employee/schedule.
+  useEffect(() => {
+    if (employees.length === 0) {
+      setBlocks([])
+      return
+    }
+    let cancelled = false
+    Promise.all(
+      employees.map((e) =>
+        fetch(`/api/schedule-blocks?barber_id=${e.id}&date=${boardDateStr}`)
+          .then((r) => (r.ok ? (r.json() as Promise<{ blocks: ApiBlock[] }>) : { blocks: [] }))
+          .catch(() => ({ blocks: [] as ApiBlock[] }))
+      )
+    ).then((results) => {
+      if (!cancelled) setBlocks(results.flatMap((r) => r.blocks ?? []))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [employees, boardDateStr])
+
+  // Filter appointments — lógica compartida por Board y Lista.
   const filteredAppointments = useMemo(() => {
-    return appointments.filter(apt => {
+    return appointments.filter((apt) => {
       const matchesEmployee = !filterEmployeeId || apt.employeeId === filterEmployeeId
 
-      const matchesSearch = !searchTerm ||
+      const matchesSearch =
+        !searchTerm ||
         apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         apt.serviceName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -212,39 +313,116 @@ export default function AppointmentsPage() {
   }, [appointments, searchTerm, filterStatus, filterDate, filterEmployeeId])
 
   useEffect(() => {
-    if (!filterEmployeeId) { setFilterEmployeeName(""); return }
-    const match = appointments.find(apt => apt.employeeId === filterEmployeeId)
-    setFilterEmployeeName(match?.employeeName ?? "")
-  }, [filterEmployeeId, appointments])
+    if (!filterEmployeeId) {
+      setFilterEmployeeName("")
+      return
+    }
+    const fromCatalog = employees.find((e) => e.id === filterEmployeeId)
+    const fromAppointments = appointments.find((apt) => apt.employeeId === filterEmployeeId)
+    setFilterEmployeeName(fromCatalog?.name ?? fromAppointments?.employeeName ?? "")
+  }, [filterEmployeeId, employees, appointments])
 
   // Reset page when filters change
-  useEffect(() => { setPage(0) }, [searchTerm, filterStatus, filterDate])
+  useEffect(() => {
+    setPage(0)
+  }, [searchTerm, filterStatus, filterDate])
 
   const totalPages = Math.ceil(filteredAppointments.length / PAGE_SIZE)
   const pagedAppointments = filteredAppointments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   // Statistics
   const stats = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0]
-    const todayAppointments = appointments.filter(apt => apt.date === today)
-    
+    const today = new Date().toISOString().split("T")[0]
+    const todayAppointments = appointments.filter((apt) => apt.date === today)
+
     return {
       total: appointments.length,
       today: todayAppointments.length,
-      pending: appointments.filter(apt => apt.status === "pending").length,
-      confirmed: appointments.filter(apt => apt.status === "confirmed").length,
+      pending: appointments.filter((apt) => apt.status === "pending").length,
+      confirmed: appointments.filter((apt) => apt.status === "confirmed").length,
     }
   }, [appointments])
 
-  const weekDays = useMemo(() => getWeekDays(calendarDate), [calendarDate])
-  const weekLabel = useMemo(() => {
-    const first = weekDays[0]!
-    const last = weekDays[6]!
-    const fmt = (d: Date) => d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })
-    return first.getFullYear() === last.getFullYear()
-      ? `${fmt(first)} – ${fmt(last)} ${first.getFullYear()}`
-      : `${fmt(first)} ${first.getFullYear()} – ${fmt(last)} ${last.getFullYear()}`
-  }, [weekDays])
+  /* ── Board: mapeo al dominio del Scheduling Kit ────────────────────────── */
+
+  const cfg = useMemo<Partial<ScheduleConfig>>(
+    () => ({
+      // La DB guarda fecha+hora naive (sin tz): interpretamos en la tz del
+      // navegador para que el round-trip sea identidad.
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      dayStartMin: DAY_START_MIN,
+      dayEndMin: DAY_END_MIN,
+      snapMinutes: 15,
+      pxPerMinute: 1.2,
+    }),
+    []
+  )
+
+  const boardDayAppointments = useMemo(
+    () => filteredAppointments.filter((a) => a.date === boardDateStr),
+    [filteredAppointments, boardDateStr]
+  )
+
+  const resources = useMemo<SchedResource[]>(() => {
+    const base = filterEmployeeId ? employees.filter((e) => e.id === filterEmployeeId) : employees
+    const list: SchedResource[] = base.map((e) => ({ id: e.id, locationId: "default", name: e.name }))
+    // Barberos con citas ese día que no estén en el catálogo (p. ej. dados de baja)
+    for (const apt of boardDayAppointments) {
+      if (apt.employeeId && !list.some((r) => r.id === apt.employeeId)) {
+        list.push({ id: apt.employeeId, locationId: "default", name: apt.employeeName || "Sin asignar" })
+      }
+    }
+    return list
+  }, [employees, filterEmployeeId, boardDayAppointments])
+
+  const schedAppointments = useMemo<SchedAppointment[]>(
+    () =>
+      boardDayAppointments.map((apt) => ({
+        id: apt.id,
+        locationId: "default",
+        resourceId: apt.employeeId,
+        clientId: apt.clientId,
+        clientName: apt.clientName,
+        serviceName: apt.serviceName,
+        startsAt: localIso(apt.date, apt.time),
+        endsAt: localIso(apt.date, addMinutes(apt.time, apt.duration || 30)),
+        state: apt.status, // los 5 estados del repo son subconjunto de los 7 del kit
+        note: apt.notes,
+      })),
+    [boardDayAppointments]
+  )
+
+  const schedBlocks = useMemo<SchedBlock[]>(
+    () =>
+      blocks
+        .filter((b) => b.block_date === boardDateStr)
+        .map((b) => ({
+          id: b.id,
+          resourceId: b.barber_id,
+          locationId: "default",
+          startsAt: localIso(b.block_date, b.start_time),
+          endsAt: localIso(b.block_date, b.end_time),
+          label: b.reason || BLOCK_TYPE_LABELS[b.block_type] || "Bloqueo",
+        })),
+    [blocks, boardDateStr]
+  )
+
+  const gapServices = useMemo(
+    () => services.map((s) => ({ name: s.name, minutes: s.duration || 30 })),
+    [services]
+  )
+
+  const boardLabel = useMemo(
+    () =>
+      boardDate.toLocaleDateString("es-ES", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
+    [boardDate]
+  )
+
+  /* ── Handlers CRUD — preservados de la página anterior ─────────────────── */
 
   const handleCreateAppointment = async (appointment: Omit<Appointment, "id" | "createdAt">) => {
     // Demo mode: crear cita local
@@ -254,7 +432,7 @@ export default function AppointmentsPage() {
         id: `demo-${Date.now()}`,
         createdAt: new Date().toISOString(),
       }
-      setAppointments(prev => [newAppt, ...prev])
+      setAppointments((prev) => [newAppt, ...prev])
       setIsCreateModalOpen(false)
       return
     }
@@ -271,7 +449,10 @@ export default function AppointmentsPage() {
       const json = await res.json()
       if (!res.ok || !json.client) return
       clientId = json.client.id
-      setClients(prev => [...prev, { id: clientId, name: appointment.clientName, phone: appointment.clientPhone, email: json.client.email || "" }])
+      setClients((prev) => [
+        ...prev,
+        { id: clientId, name: appointment.clientName, phone: appointment.clientPhone, email: json.client.email || "" },
+      ])
     }
 
     // Crear la cita vía API (service role para evitar RLS de INSERT)
@@ -290,7 +471,10 @@ export default function AppointmentsPage() {
     })
     const json = await res.json()
     if (res.ok && json.appointment) {
-      setAppointments([{ ...appointment, clientId, id: json.appointment.id, createdAt: json.appointment.created_at }, ...appointments])
+      setAppointments((prev) => [
+        { ...appointment, clientId, id: json.appointment.id, createdAt: json.appointment.created_at },
+        ...prev,
+      ])
     }
     setIsCreateModalOpen(false)
   }
@@ -298,9 +482,7 @@ export default function AppointmentsPage() {
   const handleUpdateAppointment = async (appointment: Appointment | Omit<Appointment, "id" | "createdAt">) => {
     const updatedAppointment = appointment as Appointment
     if (!supabase) {
-      setAppointments(appointments.map(apt =>
-        apt.id === updatedAppointment.id ? updatedAppointment : apt
-      ))
+      setAppointments((prev) => prev.map((apt) => (apt.id === updatedAppointment.id ? updatedAppointment : apt)))
       setEditingAppointment(null)
       return
     }
@@ -317,77 +499,205 @@ export default function AppointmentsPage() {
       })
       .eq("id", updatedAppointment.id)
     if (!error) {
-      setAppointments(appointments.map(apt =>
-        apt.id === updatedAppointment.id ? updatedAppointment : apt
-      ))
+      setAppointments((prev) => prev.map((apt) => (apt.id === updatedAppointment.id ? updatedAppointment : apt)))
     }
     setEditingAppointment(null)
   }
 
   const handleDeleteAppointment = async (id: string) => {
     if (!supabase) {
-      setAppointments(appointments.filter(apt => apt.id !== id))
+      setAppointments((prev) => prev.filter((apt) => apt.id !== id))
       setDeletingAppointment(null)
       return
     }
     const { error } = await supabase.from("appointments").delete().eq("id", id)
-    if (!error) setAppointments(appointments.filter(apt => apt.id !== id))
+    if (!error) setAppointments((prev) => prev.filter((apt) => apt.id !== id))
     setDeletingAppointment(null)
   }
 
   const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
     if (!supabase) {
-      setAppointments(appointments.map(apt =>
-        apt.id === id ? { ...apt, status: newStatus } : apt
-      ))
-      setActiveDropdown(null)
+      setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt)))
       return
     }
 
     const { error } = await supabase.from("appointments").update({ status: newStatus }).eq("id", id)
 
     if (!error) {
-      setAppointments(appointments.map(apt =>
-        apt.id === id ? { ...apt, status: newStatus } : apt
-      ))
+      setAppointments((prev) => prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt)))
     } else {
-      const { data: fresh } = await supabase
-        .from("appointments")
-        .select("status")
-        .eq("id", id)
-        .single()
+      const { data: fresh } = await supabase.from("appointments").select("status").eq("id", id).single()
 
       if (fresh) {
-        setAppointments(prev =>
-          prev.map(apt => apt.id === id ? { ...apt, status: fresh.status as AppointmentStatus } : apt)
+        setAppointments((prev) =>
+          prev.map((apt) => (apt.id === id ? { ...apt, status: fresh.status as AppointmentStatus } : apt))
         )
         console.warn(
           `No se pudo cambiar el estado. La cita ya fue marcada como "${fresh.status}" y el listado fue actualizado.`
         )
       }
     }
-    setActiveDropdown(null)
   }
+
+  /** Acciones por cita — la lógica de negocio vive acá; ActionMenu solo la presenta. */
+  const buildAppointmentActions = (appointment: Appointment): ActionMenuAction[][] => [
+    [
+      { label: "Editar", icon: Edit, onSelect: () => setEditingAppointment(appointment) },
+      ...(appointment.status === "pending"
+        ? [{ label: "Confirmar", icon: CheckCircle, onSelect: () => handleStatusChange(appointment.id, "confirmed") }]
+        : []),
+      ...(appointment.status === "confirmed"
+        ? [
+            {
+              label: "Marcar como completada",
+              icon: CheckCircle,
+              onSelect: () => handleStatusChange(appointment.id, "completed"),
+            },
+          ]
+        : []),
+      ...(appointment.status === "confirmed" || appointment.status === "completed"
+        ? [
+            {
+              label: "Cobrar en POS",
+              icon: ShoppingCart,
+              tone: "info" as const,
+              onSelect: () => router.push(`/admin/pos?appointment_id=${appointment.id}`),
+            },
+          ]
+        : []),
+      ...(appointment.status === "confirmed"
+        ? [
+            {
+              label: "No se presentó",
+              icon: XCircle,
+              tone: "warning" as const,
+              onSelect: () => handleStatusChange(appointment.id, "no_show"),
+            },
+          ]
+        : []),
+      ...(appointment.status === "pending" || appointment.status === "confirmed"
+        ? [{ label: "Cancelar", icon: XCircle, onSelect: () => handleStatusChange(appointment.id, "cancelled") }]
+        : []),
+    ],
+    [
+      {
+        label: "Eliminar",
+        icon: Trash2,
+        tone: "danger" as const,
+        onSelect: () => setDeletingAppointment(appointment),
+      },
+    ],
+  ]
+
+  /* ── Board: mover (drag / ⇧-flechas) — optimista + Deshacer ────────────── */
+
+  const handleMove = useCallback(
+    async (change: { appointmentId: string; resourceId: string; startMin: number; endMin: number; duplicate: boolean }) => {
+      const appt = appointments.find((a) => a.id === change.appointmentId)
+      if (!appt) return
+
+      const newTime = minToHHMM(change.startMin)
+      const newEmployeeName =
+        employees.find((e) => e.id === change.resourceId)?.name ??
+        resources.find((r) => r.id === change.resourceId)?.name ??
+        appt.employeeName
+
+      // ⌥-duplicar: crea una cita nueva por el MISMO camino que "Nueva Cita".
+      if (change.duplicate) {
+        const { id: _id, createdAt: _createdAt, ...rest } = appt
+        await handleCreateAppointment({
+          ...rest,
+          employeeId: change.resourceId,
+          employeeName: newEmployeeName,
+          date: boardDateStr,
+          time: newTime,
+          status: "pending", // una cita duplicada es una reserva nueva
+        })
+        notify({ title: `Cita de ${appt.clientName} duplicada a las ${newTime} con ${newEmployeeName}.` })
+        return
+      }
+
+      const prev = {
+        date: appt.date,
+        time: appt.time,
+        employeeId: appt.employeeId,
+        employeeName: appt.employeeName,
+      }
+      const apply = (patch: typeof prev) =>
+        setAppointments((list) => list.map((a) => (a.id === change.appointmentId ? { ...a, ...patch } : a)))
+      const next = { date: boardDateStr, time: newTime, employeeId: change.resourceId, employeeName: newEmployeeName }
+
+      // Optimista: la UI se mueve ya; reconciliamos detrás.
+      apply(next)
+
+      const title = `Cita de ${appt.clientName} movida a las ${newTime} con ${newEmployeeName}.`
+
+      if (!supabase) {
+        notify({ title, onUndo: () => apply(prev) })
+        return
+      }
+
+      // Misma tabla, misma mutación y mismo modelo RLS que handleUpdateAppointment.
+      const { error } = await supabase
+        .from("appointments")
+        .update({
+          barber_id: change.resourceId,
+          appointment_date: boardDateStr,
+          appointment_time: newTime,
+        })
+        .eq("id", change.appointmentId)
+
+      if (error) {
+        apply(prev)
+        notify({ kind: "error", title: "No pudimos mover la cita.", description: "Quedó en su horario original." })
+        return
+      }
+
+      notify({
+        title,
+        onUndo: () => {
+          apply(prev)
+          void supabase
+            .from("appointments")
+            .update({
+              barber_id: prev.employeeId,
+              appointment_date: prev.date,
+              appointment_time: prev.time,
+            })
+            .eq("id", change.appointmentId)
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appointments, employees, resources, boardDateStr, notify]
+  )
+
+  const handleSelectFromBoard = useCallback(
+    (item: SchedAppointment) => {
+      const appt = appointments.find((a) => a.id === item.id)
+      if (appt) setEditingAppointment(appt)
+    },
+    [appointments]
+  )
 
   if (!user) return null
 
   return (
     <div className="space-y-6 p-4 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 22, fontWeight: 600, color: "#F0F0F0", margin: 0 }}>Citas</h1>
-          <p style={{ fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 13, color: "#8A8A8A", marginTop: 4 }}>Administra todas las citas de la barbería</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">Agenda</h1>
+          <p className="mt-1 text-[13px] text-ink-600">Administra todas las citas de la barbería</p>
           {filterEmployeeId && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs px-2 py-1 rounded" style={{ background: "rgba(229,57,53,0.1)", color: "#E53935", border: "1px solid rgba(229,57,53,0.3)" }}>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="inline-flex h-6 items-center rounded-full bg-accent px-2.5 text-xs font-semibold text-accent-foreground">
                 Agenda de {filterEmployeeName || "empleado"}
               </span>
               <button
                 type="button"
                 onClick={() => setFilterEmployeeId("")}
-                className="text-xs underline"
-                style={{ color: "#8A8A8A" }}
+                className="text-xs text-ink-600 underline underline-offset-2 hover:text-foreground"
               >
                 Quitar filtro
               </button>
@@ -395,443 +705,281 @@ export default function AppointmentsPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "#2E2E2E" }}>
+          <div className="flex overflow-hidden rounded-xl border border-border" role="group" aria-label="Modo de vista">
+            <button
+              type="button"
+              onClick={() => setViewMode("board")}
+              title="Vista día (board)"
+              aria-pressed={viewMode === "board"}
+              className={`flex h-10 items-center gap-1.5 px-3 text-[13px] font-semibold transition-colors duration-micro ${
+                viewMode === "board" ? "bg-primary text-primary-foreground" : "bg-card text-ink-600 hover:bg-secondary"
+              }`}
+            >
+              <CalendarDays className="size-4" aria-hidden="true" />
+              Día
+            </button>
             <button
               type="button"
               onClick={() => setViewMode("list")}
               title="Vista lista"
-              className="p-2 transition-colors"
-              style={{ background: viewMode === "list" ? "#E53935" : "transparent", color: viewMode === "list" ? "#fff" : "#8A8A8A" }}
+              aria-pressed={viewMode === "list"}
+              className={`flex h-10 items-center gap-1.5 px-3 text-[13px] font-semibold transition-colors duration-micro ${
+                viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-card text-ink-600 hover:bg-secondary"
+              }`}
             >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("week")}
-              title="Vista semanal"
-              className="p-2 transition-colors"
-              style={{ background: viewMode === "week" ? "#E53935" : "transparent", color: viewMode === "week" ? "#fff" : "#8A8A8A" }}
-            >
-              <CalendarDays className="h-4 w-4" />
+              <List className="size-4" aria-hidden="true" />
+              Lista
             </button>
           </div>
           <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" aria-hidden="true" />
             Nueva Cita
           </Button>
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Total Citas</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.total}</p>
-              </div>
-              <Calendar className="h-7 w-7" style={{ color: "#E53935" }} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Hoy</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.today}</p>
-              </div>
-              <Clock className="h-7 w-7" style={{ color: "#22C55E" }} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Pendientes</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.pending}</p>
-              </div>
-              <Clock className="h-7 w-7" style={{ color: "#F59E0B" }} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm" style={{ color: "#8A8A8A" }}>Confirmadas</p>
-                <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 28, fontWeight: 700, lineHeight: 1, marginTop: 4 }}>{stats.confirmed}</p>
-              </div>
-              <CheckCircle className="h-7 w-7" style={{ color: "#818CF8" }} />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistics */}
+      <StatStrip>
+        <StatCard label="Total citas" value={stats.total} loading={isLoading} />
+        <StatCard label="Hoy" value={stats.today} loading={isLoading} />
+        <StatCard label="Pendientes" value={stats.pending} loading={isLoading} />
+        <StatCard label="Confirmadas" value={stats.confirmed} loading={isLoading} />
+      </StatStrip>
+
+      {/* Filtros compartidos */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <SearchInput
+          value={searchTerm}
+          onValueChange={setSearchTerm}
+          placeholder="Buscar por cliente, empleado o servicio…"
+          className="w-full sm:w-80"
+        />
+        <NativeSelect
+          aria-label="Filtrar por estado"
+          value={filterStatus}
+          onValueChange={(v) => setFilterStatus(v as AppointmentStatus | "all")}
+          className="w-auto"
+        >
+          <option value="all">Todos los estados</option>
+          <option value="pending">Pendientes</option>
+          <option value="confirmed">Confirmadas</option>
+          <option value="completed">Completadas</option>
+          <option value="cancelled">Canceladas</option>
+        </NativeSelect>
+        {viewMode === "list" && (
+          <Input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            aria-label="Filtrar por fecha"
+            className="w-auto"
+          />
+        )}
       </div>
 
-      {viewMode === "week" ? (
+      {viewMode === "board" ? (
         <>
-          {/* Week navigation */}
-          <div className="flex items-center justify-between rounded-lg px-4 py-3" style={{ background: "#1A1A1A", border: "1px solid #2E2E2E" }}>
-            <button
-              type="button"
-              onClick={() => { const d = new Date(calendarDate); d.setDate(d.getDate() - 7); setCalendarDate(d) }}
-              className="p-1.5 rounded transition-colors"
-              style={{ color: "#8A8A8A" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#F0F0F0" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A" }}
-              aria-label="Semana anterior"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <span className="text-sm font-medium" style={{ color: "#F0F0F0" }}>{weekLabel}</span>
-            <button
-              type="button"
-              onClick={() => { const d = new Date(calendarDate); d.setDate(d.getDate() + 7); setCalendarDate(d) }}
-              className="p-1.5 rounded transition-colors"
-              style={{ color: "#8A8A8A" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#F0F0F0" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#8A8A8A" }}
-              aria-label="Semana siguiente"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+          {/* Navegación del día */}
+          <div className="flex items-center justify-between rounded-[14px] border border-border bg-card px-4 py-2.5">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon-md"
+                aria-label="Día anterior"
+                onClick={() => {
+                  const d = new Date(boardDate)
+                  d.setDate(d.getDate() - 1)
+                  setBoardDate(d)
+                }}
+              >
+                <ChevronLeft aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-md"
+                aria-label="Día siguiente"
+                onClick={() => {
+                  const d = new Date(boardDate)
+                  d.setDate(d.getDate() + 1)
+                  setBoardDate(d)
+                }}
+              >
+                <ChevronRight aria-hidden="true" />
+              </Button>
+              {boardDateStr !== todayStr && (
+                <Button variant="secondary" size="sm" onClick={() => setBoardDate(new Date())}>
+                  Hoy
+                </Button>
+              )}
+            </div>
+            <span className="text-[14.5px] font-semibold capitalize text-foreground">{boardLabel}</span>
+            <span className="nums hidden text-xs text-ink-600 sm:block">
+              {boardDayAppointments.length} {boardDayAppointments.length === 1 ? "cita" : "citas"}
+            </span>
           </div>
 
-          {/* Week grid */}
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-7 gap-2" style={{ minWidth: 700 }}>
-              {weekDays.map((day, idx) => {
-                const dateStr = toDateStr(day)
-                const isToday = dateStr === toDateStr(new Date())
-                const dayApts = appointments
-                  .filter(a => a.date === dateStr)
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                return (
-                  <div
-                    key={dateStr}
-                    className="rounded-lg p-2"
-                    style={{
-                      background: isToday ? "rgba(229,57,53,0.06)" : "#1A1A1A",
-                      border: `1px solid ${isToday ? "#E53935" : "#2E2E2E"}`,
-                      minHeight: 120,
-                    }}
-                  >
-                    <div className="text-center mb-2 pb-1" style={{ borderBottom: "1px solid #252525" }}>
-                      <p className="text-[11px] uppercase tracking-wide" style={{ color: "#555" }}>{WEEK_DAY_LABELS[idx]}</p>
-                      <p className="text-base font-bold leading-tight" style={{ color: isToday ? "#E53935" : "#F0F0F0" }}>
-                        {day.getDate()}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      {isLoading ? (
-                        <div className="flex justify-center py-2">
-                          <Loader2 className="h-4 w-4 animate-spin" style={{ color: "#555" }} />
-                        </div>
-                      ) : dayApts.length === 0 ? (
-                        <p className="text-[11px] text-center py-3" style={{ color: "#444" }}>Sin citas</p>
-                      ) : (
-                        dayApts.map(apt => (
-                          <button
-                            key={apt.id}
-                            type="button"
-                            onClick={() => setEditingAppointment(apt)}
-                            className="w-full text-left rounded p-1.5 transition-colors"
-                            style={{ background: "#252525", border: "1px solid #2E2E2E" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#303030" }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }}
-                          >
-                            <p className="text-[11px] font-semibold" style={{ color: "#F0F0F0" }}>{apt.time}</p>
-                            <p className="text-[11px] truncate" style={{ color: "#A0A0A0" }}>{apt.clientName}</p>
-                            <p className="text-[10px] truncate" style={{ color: "#666" }}>{apt.serviceName}</p>
-                            <Badge className={`${STATUS_COLORS[apt.status]} text-[9px] px-1 py-0 mt-0.5 leading-tight`}>
-                              {STATUS_LABELS[apt.status]}
-                            </Badge>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          {/* Board M4 */}
+          <div className="overflow-x-auto rounded-card border border-border bg-card">
+            <AppointmentTimeline
+              variant="board"
+              cfg={cfg}
+              resources={resources}
+              appointments={schedAppointments}
+              blocks={schedBlocks}
+              nowIso={boardDateStr === todayStr ? nowIso : undefined}
+              state={isLoading ? "loading" : "success"}
+              services={gapServices}
+              onMove={handleMove}
+              allowResize={false}
+              onSelect={handleSelectFromBoard}
+              onCreateAt={() => setIsCreateModalOpen(true)}
+              onBookGap={() => setIsCreateModalOpen(true)}
+              selectedId={editingAppointment?.id ?? null}
+            />
           </div>
         </>
       ) : (
-        <>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por cliente, empleado o servicio..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <select
-              aria-label="Filtrar por estado"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as AppointmentStatus | "all")}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="pending">Pendientes</option>
-              <option value="confirmed">Confirmadas</option>
-              <option value="completed">Completadas</option>
-              <option value="cancelled">Canceladas</option>
-            </select>
-
-            <Input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              placeholder="Filtrar por fecha"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Appointments List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Citas ({filteredAppointments.length})
-            {totalPages > 1 && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
-                — página {page + 1} de {totalPages}
-              </span>
-            )}
-          </CardTitle>
-          <CardDescription>
-            {filterDate ? `Mostrando citas para ${filterDate}` : "Mostrando todas las citas"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : filteredAppointments.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No se encontraron citas</p>
-              </div>
-            ) : (
-              <>
-                {pagedAppointments.map((appointment) => (
-                <div
-                  key={appointment.id}
-                    className="border rounded-lg p-4 transition-colors" style={{ borderColor: "#2E2E2E", background: "#1A1A1A" }} onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#222222" }} onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#1A1A1A" }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      {/* Header */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={STATUS_COLORS[appointment.status]}>
-                          {STATUS_LABELS[appointment.status]}
-                        </Badge>
-                        <span className="text-sm text-gray-600 hidden sm:inline">
-                          {new Date(appointment.date).toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </span>
-                        <span className="text-sm text-gray-600 sm:hidden">
-                          {new Date(appointment.date).toLocaleDateString('es-ES', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                          })}
-                        </span>
-                      </div>
-
-                      {/* Details */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-start gap-2">
-                          <User className="h-4 w-4 text-gray-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">{appointment.clientName}</p>
-                            <p className="text-xs text-gray-600">
-                              {user?.role === "manager" ? maskPhone(appointment.clientPhone) : appointment.clientPhone}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-2">
-                          <Scissors className="h-4 w-4 text-gray-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">{appointment.serviceName}</p>
-                            <p className="text-xs text-gray-600">
-                              {appointment.duration} min · ${appointment.price}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-2">
-                          <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">{appointment.time}</p>
-                            <p className="text-xs text-gray-600">{appointment.employeeName}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Notes */}
-                      {appointment.notes && (
-                        <div className="bg-gray-50 rounded p-2">
-                          <p className="text-sm text-gray-700">
-                            <span className="font-medium">Notas:</span> {appointment.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="relative ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveDropdown(activeDropdown === appointment.id ? null : appointment.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-
-                      {activeDropdown === appointment.id && (
-                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg border z-50" style={{ background: "#1A1A1A", borderColor: "#2E2E2E" }}>
-                          <div className="py-1">
-                            <button
-                              onClick={() => {
-                                setEditingAppointment(appointment)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F0F0F0" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                            >
-                              <Edit className="h-4 w-4" />
-                              Editar
-                            </button>
-
-                            {appointment.status === "pending" && (
-                              <button
-                                onClick={() => handleStatusChange(appointment.id, "confirmed")}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                Confirmar
-                              </button>
-                            )}
-
-                            {appointment.status === "confirmed" && (
-                              <button
-                                onClick={() => handleStatusChange(appointment.id, "completed")}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                              >
-                                <CheckCircle className="h-4 w-4 text-blue-600" />
-                                Marcar como completada
-                              </button>
-                            )}
-
-                            {(appointment.status === "confirmed" || appointment.status === "completed") && (
-                              <button
-                                onClick={() => {
-                                  setActiveDropdown(null)
-                                  router.push(`/admin/pos?appointment_id=${appointment.id}`)
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#818CF8" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                              >
-                                <ShoppingCart className="h-4 w-4" style={{ color: "#818CF8" }} />
-                                Cobrar en POS
-                              </button>
-                            )}
-
-                            {appointment.status === "confirmed" && (
-                              <button
-                                onClick={() => {
-                                  handleStatusChange(appointment.id, "no_show")
-                                  setActiveDropdown(null)
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#F97316" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2A1500" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                              >
-                                <XCircle className="h-4 w-4" />
-                                No se presentó
-                              </button>
-                            )}
-
-                            {(appointment.status === "pending" || appointment.status === "confirmed") && (
-                              <button
-                                onClick={() => handleStatusChange(appointment.id, "cancelled")}
-                                className="w-full text-left px-4 py-2 text-sm flex items-center gap-2" style={{ color: "#8A8A8A" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#252525" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                              >
-                                <XCircle className="h-4 w-4" style={{ color: "#EF4444" }} />
-                                Cancelar
-                              </button>
-                            )}
-
-                            <div style={{ height: 1, background: "#252525", margin: "4px 0" }} />
-
-                            <button
-                              onClick={() => {
-                                setDeletingAppointment(appointment)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2 font-medium" style={{ color: "#EF4444" }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#1F1212" }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent" }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Pagination controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Citas ({filteredAppointments.length})
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">
-                    {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredAppointments.length)} de {filteredAppointments.length}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 0}
-                      onClick={() => setPage(p => p - 1)}
-                    >
-                      ← Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages - 1}
-                      onClick={() => setPage(p => p + 1)}
-                    >
-                      Siguiente →
-                    </Button>
-                  </div>
-                </div>
+                <span className="ml-2 text-sm font-normal text-ink-600">
+                  — página {page + 1} de {totalPages}
+                </span>
               )}
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardTitle>
+            <CardDescription>
+              {filterDate ? `Mostrando citas para ${filterDate}` : "Mostrando todas las citas"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="space-y-3" role="status" aria-label="Cargando citas">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-24 animate-pulse rounded-[14px] bg-secondary" />
+                  ))}
+                </div>
+              ) : filteredAppointments.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No se encontraron citas"
+                  description="Ajusta los filtros o crea una cita nueva."
+                  action={
+                    <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                      <Plus className="size-4" aria-hidden="true" />
+                      Nueva Cita
+                    </Button>
+                  }
+                  size="compact"
+                />
+              ) : (
+                <>
+                  {pagedAppointments.map((appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="rounded-[14px] border border-border bg-card p-4 transition-colors duration-micro hover:bg-secondary/60"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-3">
+                          {/* Header */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={appointment.status} />
+                            <span className="hidden text-sm text-ink-600 sm:inline">
+                              {new Date(appointment.date).toLocaleDateString("es-ES", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <span className="text-sm text-ink-600 sm:hidden">
+                              {new Date(appointment.date).toLocaleDateString("es-ES", {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                          </div>
 
-        </>
+                          {/* Details */}
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="flex items-start gap-2">
+                              <User className="mt-0.5 size-4 text-ink-400" aria-hidden="true" />
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{appointment.clientName}</p>
+                                <p className="text-xs text-ink-600">{appointment.clientPhone}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <Scissors className="mt-0.5 size-4 text-ink-400" aria-hidden="true" />
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{appointment.serviceName}</p>
+                                <p className="text-xs text-ink-600">
+                                  {appointment.duration} min · ${appointment.price}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-2">
+                              <Clock className="mt-0.5 size-4 text-ink-400" aria-hidden="true" />
+                              <div>
+                                <p className="nums text-sm font-medium text-foreground">{appointment.time}</p>
+                                <p className="text-xs text-ink-600">{appointment.employeeName}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          {appointment.notes && (
+                            <div className="rounded-lg bg-secondary p-2">
+                              <p className="text-sm text-ink-600">
+                                <span className="font-medium text-foreground">Notas:</span> {appointment.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="ml-4">
+                          <ActionMenu
+                            label={`Acciones de la cita de ${appointment.clientName}`}
+                            groups={buildAppointmentActions(appointment)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Pagination controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-border pt-4">
+                      <span className="nums text-sm text-ink-600">
+                        {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredAppointments.length)} de{" "}
+                        {filteredAppointments.length}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+                          ← Anterior
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={page >= totalPages - 1}
+                          onClick={() => setPage((p) => p + 1)}
+                        >
+                          Siguiente →
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Modals */}
@@ -859,11 +1007,22 @@ export default function AppointmentsPage() {
       )}
 
       {deletingAppointment && (
-        <DeleteConfirmModal
-          isOpen={!!deletingAppointment}
-          onClose={() => setDeletingAppointment(null)}
+        <ConfirmDialog
+          open={!!deletingAppointment}
+          onOpenChange={(open) => {
+            if (!open) setDeletingAppointment(null)
+          }}
+          title="¿Eliminar esta cita?"
+          description={
+            <>
+              {`${deletingAppointment.clientName} - ${deletingAppointment.serviceName}`}. Esta acción no se puede
+              deshacer y el horario quedará libre.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener cita"
+          tone="danger"
           onConfirm={() => handleDeleteAppointment(deletingAppointment.id)}
-          appointmentInfo={`${deletingAppointment.clientName} - ${deletingAppointment.serviceName}`}
         />
       )}
     </div>

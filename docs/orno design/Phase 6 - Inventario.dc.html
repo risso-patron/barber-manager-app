@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    * { box-sizing: border-box; }
+    @keyframes orno-pop { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F">
+  <div style="display: flex; min-height: 100vh; background: #FAF9F7">
+
+    <!-- Rail -->
+    <aside style="width: 76px; flex-shrink: 0; background: #F4F2EE; border-right: 1px solid #E8E4DE; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 6px">
+      <span style="width: 38px; height: 38px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600; margin-bottom: 10px">O<span style="color: #E53935">.</span></span>
+      <span title="Tu día" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="sun" style="width: 20px; height: 20px"></i></span>
+      <span title="Agenda" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="calendar-days" style="width: 20px; height: 20px"></i></span>
+      <span title="Caja" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="shopping-bag" style="width: 20px; height: 20px"></i></span>
+      <span title="Inventario" style="width: 44px; height: 44px; border-radius: 12px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; cursor: pointer"><i data-lucide="package" style="width: 20px; height: 20px"></i></span>
+      <span title="Análisis" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="line-chart" style="width: 20px; height: 20px"></i></span>
+      <span style="flex: 1"></span>
+      <span title="Configuración" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="settings-2" style="width: 20px; height: 20px"></i></span>
+    </aside>
+
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+      <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: rgba(250,249,247,.85); backdrop-filter: blur(12px); border-bottom: 1px solid #E8E4DE; position: sticky; top: 0; z-index: 40">
+        <span style="font-size: 14px; font-weight: 600">Inventario</span>
+        <span style="height: 30px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E8E4DE; font-size: 13px; color: #57534B; display: inline-flex; align-items: center; gap: 8px"><i data-lucide="wallet" style="width: 14px; height: 14px; color: #4A6B87"></i>En estantería: <strong style="color: #26231F; font-variant-numeric: tabular-nums">$318.400</strong></span>
+        <div style="flex: 1"></div>
+        <button style="height: 42px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="arrow-left-right" style="width: 16px; height: 16px; color: #57534B"></i>Ajuste manual</button>
+        <button style="height: 42px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="plus" style="width: 17px; height: 17px"></i>Producto</button>
+      </header>
+
+      <main style="flex: 1">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px">
+
+          <div style="margin-bottom: 28px">
+            <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px">Inventario</h1>
+            <p style="font-size: 15px; color: #57534B; margin: 0">Dos productos se acaban esta semana · un pedido a Distribuidora Sur lo resuelve · <span style="font-weight: 600; color: #26231F; font-variant-numeric: tabular-nums">$318.400</span> en estantería</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start">
+
+            <!-- LEFT column -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+
+              <!-- PARA HOY: reorder recommendation -->
+              <div style="border: 1px solid #DCE9E1; border-radius: 20px; background: #F3F8F5; padding: 26px">
+                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 6px">
+                  <i data-lucide="sparkles" style="width: 17px; height: 17px; color: #3E7354"></i>
+                  <h2 style="font-size: 17px; font-weight: 600; margin: 0">Pedido sugerido para hoy</h2>
+                </div>
+                <p style="font-size: 13.5px; color: #57534B; margin: 0 0 18px">Agrupado por proveedor: un solo pedido cubre lo que se acaba. Distribuidora Sur entrega en ~3 días.</p>
+                <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 14px; overflow: hidden; margin-bottom: 14px">
+                  <sc-for list="{{ reorder }}" as="r" hint-placeholder-count="3">
+                    <div style="display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid #F4F2EE">
+                      <span style="width: 34px; height: 34px; border-radius: 11px; background: {{ r.iconBg }}; color: {{ r.iconFg }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><i data-lucide="{{ r.icon }}" style="width: 15px; height: 15px"></i></span>
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: 14px; font-weight: 600">{{ r.name }}</div>
+                        <div style="font-size: 12.5px; color: {{ r.whyFg }}; font-weight: 500">{{ r.why }}</div>
+                      </div>
+                      <span style="font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums">× {{ r.qty }}</span>
+                      <span style="font-size: 13.5px; color: #57534B; font-variant-numeric: tabular-nums; width: 72px; text-align: right">{{ r.cost }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="display: flex; justify-content: space-between; padding: 13px 18px; background: #FAF9F7">
+                    <span style="font-size: 13.5px; font-weight: 600">Total del pedido</span>
+                    <span style="font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums">$74.300</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                  <button style="height: 44px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="message-circle" style="width: 16px; height: 16px"></i>Pedir por WhatsApp a Distribuidora Sur</button>
+                  <button style="height: 44px; padding: 0 16px; border-radius: 14px; border: none; background: transparent; color: #57534B; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer" style-hover="background: #EAF2ED">Editar pedido</button>
+                </div>
+              </div>
+
+              <!-- STOCK LIST with health bars -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px">
+                  <h2 style="font-size: 18px; font-weight: 600; margin: 0">Estantería</h2>
+                  <div style="display: flex; gap: 8px">
+                    <button style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #5F9F77; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer">Todo · 24</button>
+                    <button style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Por acabarse · 2</button>
+                    <button style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Dormidos · 3</button>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column">
+                  <sc-for list="{{ stock }}" as="p" hint-placeholder-count="6">
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid #F4F2EE; cursor: pointer; margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 12px; transition: background 120ms" style-hover="background: #FAF9F7">
+                      <span style="width: 40px; height: 40px; border-radius: 12px; background: {{ p.iconBg }}; color: {{ p.iconFg }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><i data-lucide="{{ p.icon }}" style="width: 17px; height: 17px"></i></span>
+                      <div style="flex: 1; min-width: 0">
+                        <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 14.5px; font-weight: 600">{{ p.name }}</span><span style="font-size: 12.5px; color: #8A847A">{{ p.meta }}</span></div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px">
+                          <div style="flex: 1; max-width: 180px; height: 6px; border-radius: 999px; background: #F4F2EE; overflow: hidden"><div style="width: {{ p.pct }}; height: 100%; border-radius: 999px; background: {{ p.barColor }}"></div></div>
+                          <span style="font-size: 12.5px; font-weight: 600; color: {{ p.daysFg }}">{{ p.days }}</span>
+                        </div>
+                      </div>
+                      <div style="text-align: right; flex-shrink: 0">
+                        <div style="font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">{{ p.units }}</div>
+                        <div style="font-size: 12px; color: #8A847A">{{ p.velocity }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <!-- MOVEMENTS feed -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 26px">
+                <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 16px">Movimientos</h2>
+                <div style="display: flex; flex-direction: column">
+                  <sc-for list="{{ movements }}" as="m" hint-placeholder-count="4">
+                    <div style="display: flex; gap: 14px; padding: 9px 0; align-items: baseline">
+                      <span style="width: 48px; flex-shrink: 0; font-size: 12.5px; color: #8A847A; font-variant-numeric: tabular-nums; text-align: right">{{ m.time }}</span>
+                      <span style="width: 8px; height: 8px; border-radius: 999px; background: {{ m.dot }}; flex-shrink: 0; align-self: center"></span>
+                      <span style="font-size: 14px; line-height: 1.5">{{ m.text }} <span style="color: #8A847A">{{ m.sub }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT rail -->
+            <div style="display: flex; flex-direction: column; gap: 20px">
+
+              <!-- Performance -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 16px">Qué funciona</h2>
+                <div style="display: flex; flex-direction: column; gap: 12px">
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <span style="width: 34px; height: 34px; border-radius: 11px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center"><i data-lucide="trending-up" style="width: 15px; height: 15px"></i></span>
+                    <div style="flex: 1; font-size: 13.5px; line-height: 1.5"><strong>Cera mate</strong> es tu motor: $68.000 este mes, margen 52%.</div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <span style="width: 34px; height: 34px; border-radius: 11px; background: #F7EFDD; color: #8F6A1F; display: flex; align-items: center; justify-content: center"><i data-lucide="moon" style="width: 15px; height: 15px"></i></span>
+                    <div style="flex: 1; font-size: 13.5px; line-height: 1.5"><strong>3 dormidos</strong> ($42.600 parados): shampoo sólido, matizador, kit viaje. Sin ventas en 60+ días.</div>
+                  </div>
+                  <button style="height: 38px; border-radius: 11px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Armar promo con los dormidos</button>
+                </div>
+              </div>
+
+              <!-- Service consumption -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 6px">Consumo por servicio</h2>
+                <p style="font-size: 12.5px; color: #8A847A; margin: 0 0 14px">Insumos que cada servicio gasta — para poner el precio bien.</p>
+                <div style="display: flex; flex-direction: column; gap: 10px">
+                  <sc-for list="{{ consumption }}" as="c" hint-placeholder-count="3">
+                    <div style="display: flex; align-items: center; gap: 10px">
+                      <span style="font-size: 13.5px; font-weight: 600; width: 110px; flex-shrink: 0">{{ c.service }}</span>
+                      <div style="flex: 1; height: 6px; border-radius: 999px; background: #F4F2EE; overflow: hidden"><div style="width: {{ c.pct }}; height: 100%; border-radius: 999px; background: #7E9BB4"></div></div>
+                      <span style="font-size: 12.5px; color: #57534B; font-variant-numeric: tabular-nums; width: 88px; text-align: right">{{ c.cost }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <!-- Suppliers -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 14px">Proveedores</h2>
+                <div style="display: flex; flex-direction: column; gap: 12px">
+                  <sc-for list="{{ suppliers }}" as="sp" hint-placeholder-count="2">
+                    <div style="display: flex; align-items: center; gap: 12px">
+                      <span style="width: 38px; height: 38px; border-radius: 999px; background: {{ sp.bg }}; color: {{ sp.fg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">{{ sp.initials }}</span>
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: 13.5px; font-weight: 600">{{ sp.name }}</div>
+                        <div style="font-size: 12px; color: #8A847A">{{ sp.meta }}</div>
+                      </div>
+                      <button title="WhatsApp" style="width: 36px; height: 36px; border-radius: 11px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0" style-hover="background: #EAF2ED; color: #3E7354"><i data-lucide="message-circle" style="width: 15px; height: 15px"></i></button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <!-- Transfers (future) -->
+              <div style="border: 1.5px dashed #D8D3CA; border-radius: 20px; padding: 24px; text-align: center">
+                <span style="width: 40px; height: 40px; border-radius: 13px; background: #F4F2EE; color: #8A847A; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px"><i data-lucide="arrow-left-right" style="width: 18px; height: 18px"></i></span>
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px">Traslados entre locales</div>
+                <div style="font-size: 12.5px; color: #8A847A; line-height: 1.5">Cuando abras tu segundo local, moverás stock entre sucursales desde aquí.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 960}}">
+class Component extends DCLogic {
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+  renderVals() {
+    return {
+      reorder: [
+        { icon: 'package', iconBg: '#EAEFF4', iconFg: '#4A6B87', name: 'Cera mate', why: 'Se acaba el jueves — vendes ~1 por día', whyFg: '#A93F34', qty: 12, cost: '$49.200' },
+        { icon: 'droplet', iconBg: '#F7EFDD', iconFg: '#8F6A1F', name: 'Crema de afeitar', why: 'Quedan 2 — 6 servicios de hoy la usan', whyFg: '#8F6A1F', qty: 6, cost: '$16.800' },
+        { icon: 'spray-can', iconBg: '#EFEAF6', iconFg: '#6D5F91', name: 'Talco barbero', why: 'Conviene sumarlo: envío gratis desde $70.000', whyFg: '#8A847A', qty: 4, cost: '$8.300' },
+      ],
+      stock: [
+        { icon: 'package', iconBg: '#EAEFF4', iconFg: '#4A6B87', name: 'Cera mate', meta: '$8.500 venta · $4.100 costo', pct: '12%', barColor: '#C24E42', days: 'se acaba el jueves', daysFg: '#A93F34', units: '2 u.', velocity: '~1/día' },
+        { icon: 'droplet', iconBg: '#F7EFDD', iconFg: '#8F6A1F', name: 'Crema de afeitar', meta: 'insumo · no se vende', pct: '18%', barColor: '#B98A2E', days: '~4 días', daysFg: '#8F6A1F', units: '2 u.', velocity: '6 usos/día' },
+        { icon: 'droplets', iconBg: '#F6EBE4', iconFg: '#9A5A3B', name: 'Aceite de barba', meta: '$9.800 venta', pct: '62%', barColor: '#5F9F77', days: '~5 semanas', daysFg: '#57534B', units: '11 u.', velocity: '~2/semana' },
+        { icon: 'droplet', iconBg: '#EFEAF6', iconFg: '#6D5F91', name: 'Gel fijación fuerte', meta: '$6.200 venta', pct: '78%', barColor: '#5F9F77', days: '~2 meses', daysFg: '#57534B', units: '18 u.', velocity: '~2/semana' },
+        { icon: 'moon', iconBg: '#F4F2EE', iconFg: '#8A847A', name: 'Shampoo sólido', meta: '$7.400 venta', pct: '95%', barColor: '#C6C0B6', days: 'dormido · 74 días sin venta', daysFg: '#8A847A', units: '9 u.', velocity: '$66.600 parados' },
+      ],
+      movements: [
+        { time: '12:05', dot: '#4E8A64', text: 'Caja descontó 1 Cera mate', sub: '— venta de Julián Torres (Nico).' },
+        { time: '11:20', dot: '#7E9BB4', text: 'Servicio consumió Crema de afeitar', sub: '— corte + barba de Walk-in.' },
+        { time: '10:12', dot: '#4E8A64', text: 'María cargó 12 Ceras mate', sub: '— pedido #48 de Distribuidora Sur recibido.' },
+        { time: 'ayer', dot: '#C9A24B', text: 'Ajuste manual: −1 Gel fijación', sub: '— «frasco roto» (Rama).' },
+      ],
+      consumption: [
+        { service: 'Corte + barba', pct: '84%', cost: '$1.850/serv.' },
+        { service: 'Afeitado clásico', pct: '65%', cost: '$1.420/serv.' },
+        { service: 'Corte clásico', pct: '32%', cost: '$690/serv.' },
+      ],
+      suppliers: [
+        { initials: 'DS', bg: '#EAEFF4', fg: '#4A6B87', name: 'Distribuidora Sur', meta: 'Entrega ~3 días · último pedido hace 3 sem' },
+        { initials: 'BP', bg: '#F6EBE4', fg: '#9A5A3B', name: 'BarberPro Import', meta: 'Entrega ~7 días · aceites y ceras premium' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

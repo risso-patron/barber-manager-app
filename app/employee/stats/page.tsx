@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createBrowserClient } from "@supabase/ssr"
-import { getAppointmentsByEmployee } from "@/lib/demo-appointments"
+import { getAppointmentsByEmployee } from "@/lib/demo"
 import {
   BarChart,
   Bar,

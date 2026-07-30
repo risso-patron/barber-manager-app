@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
-import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES } from "@/lib/demo-appointments"
+import { DEMO_APPOINTMENTS, DEMO_EMPLOYEES } from "@/lib/demo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 
 // PATCH /api/attendance/[id] — clock-out: closes an open attendance session

@@ -18,7 +18,7 @@ async function getCallerRole() {
 
 export async function POST(request: Request) {
   const role = await getCallerRole()
-  if (!role || !["admin", "manager"].includes(role))
+  if (role !== "admin")
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
 
   const { name, phone, email } = await request.json()
@@ -36,15 +36,36 @@ export async function POST(request: Request) {
   if (authError)
     return NextResponse.json({ error: authError.message }, { status: 400 })
 
-  const { data: client, error: profileError } = await admin
-    .from("users")
-    .insert({ id: authData.user.id, name, email: tempEmail, phone, role: "client" })
-    .select()
-    .single()
+  // RH-003: on_auth_user_created ya crea la fila en public.users al
+  // crearse el auth user — UPDATE la completa; INSERT solo si esa fila
+  // no existe (0 filas afectadas por el UPDATE).
+  const profileFields = { name, email: tempEmail, phone, role: "client" }
 
-  if (profileError) {
+  const { data: updatedClient, error: updateError } = await admin
+    .from("users")
+    .update(profileFields)
+    .eq("id", authData.user.id)
+    .select()
+    .maybeSingle()
+
+  if (updateError) {
     await admin.auth.admin.deleteUser(authData.user.id)
-    return NextResponse.json({ error: profileError.message }, { status: 400 })
+    return NextResponse.json({ error: updateError.message }, { status: 400 })
+  }
+
+  let client = updatedClient
+  if (!client) {
+    const { data: insertedClient, error: profileError } = await admin
+      .from("users")
+      .insert({ id: authData.user.id, ...profileFields })
+      .select()
+      .single()
+
+    if (profileError) {
+      await admin.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json({ error: profileError.message }, { status: 400 })
+    }
+    client = insertedClient
   }
 
   return NextResponse.json({ client })

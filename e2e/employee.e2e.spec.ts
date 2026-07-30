@@ -103,33 +103,26 @@ test.describe('Flujo de Empleado - E2E', () => {
     await page.fill('input[type="password"]', testPass);
     await page.click('button[type="submit"]');
 
-    // 2. Redirección automática y carga del workspace de empleado
-    await expect(page).toHaveURL(/\/(dashboard|barber)/, { timeout: 15000 });
-    await page.goto('/barber');
-    await expect(page.getByText('Mi Espacio de Trabajo')).toBeVisible({ timeout: 15000 });
+    // 2. Redirección automática al dashboard de empleado (/barber ya no existe —
+    // era una ruta huérfana, ver project-brain/07_TECH_DEBT.md)
+    await expect(page).toHaveURL(/\/employee\/dashboard/, { timeout: 15000 });
 
     // 3. Gestión de Jornada (Clock in / Clock out)
-    const btnIniciarJornada = page.getByRole('button', { name: /Marcar Entrada/i });
+    const btnIniciarJornada = page.getByRole('button', { name: /^Iniciar$/i });
     if (await btnIniciarJornada.isVisible()) {
       await btnIniciarJornada.click();
-      await expect(page.getByText('Jornada Activa')).toBeVisible();
+      await expect(page.getByRole('button', { name: /^Finalizar$/i })).toBeVisible();
     }
-    
-    // 4. Gestión de citas
-    await expect(page.getByText(testClientName)).toBeVisible();
-    
-    // El estado inicial creado fue 'confirmed', así que el botón debe ser "Iniciar"
-    const btnIniciar = page.locator('button:has-text("Iniciar")').first();
-    await expect(btnIniciar).toBeVisible();
-    await btnIniciar.click();
 
-    // Luego debe cambiar a "Completar" (estado in-progress)
+    // 4. Gestión de citas — el dashboard actual completa una cita 'confirmed'
+    // directamente con un botón "Completar" (sin paso intermedio "Iniciar" por cita).
+    await expect(page.getByText(testClientName)).toBeVisible();
+
     const btnCompletar = page.locator('button:has-text("Completar")').first();
-    await expect(btnCompletar).toBeVisible({ timeout: 5000 });
+    await expect(btnCompletar).toBeVisible();
     await btnCompletar.click();
 
-    // Verificar que la cita pasa a completada (aparece el badge de Completada)
-    await expect(page.getByText('Completada')).toBeVisible({ timeout: 5000 });
-    await expect(btnCompletar).toBeHidden();
+    // Verificar que el botón desaparece al completarse la cita
+    await expect(btnCompletar).toBeHidden({ timeout: 5000 });
   });
 });

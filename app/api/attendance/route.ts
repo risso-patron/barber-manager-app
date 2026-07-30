@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 
 // POST /api/attendance — clock-in: creates an open attendance log for the authenticated employee

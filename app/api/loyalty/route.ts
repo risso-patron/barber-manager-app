@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
 import { adjustLoyaltySchema } from "@/lib/schemas"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 
 // GET /api/loyalty?user_id=... — get points balance + recent transactions
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const targetId = url.searchParams.get("user_id") ?? user.id
 
     // Non-admin clients can only read their own data
-    if (!(["admin", "manager"].includes(caller?.role ?? "")) && targetId !== user.id) {
+    if (caller?.role !== "admin" && targetId !== user.id) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 
@@ -62,16 +62,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cuerpo de la petición inválido" }, { status: 400 })
     }
 
+    // Demo primero, como en GET: los ids demo ('c1'…) no son UUID, así que
+    // el schema estricto de abajo aplica únicamente a Supabase real.
+    if (isDemoMode()) {
+      return NextResponse.json({ success: true })
+    }
+
     const parsed = adjustLoyaltySchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Datos inválidos", details: parsed.error.flatten() },
         { status: 422 }
       )
-    }
-
-    if (isDemoMode()) {
-      return NextResponse.json({ success: true })
     }
 
     const supabase = await createServerSupabaseClient()
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (!["admin", "manager"].includes(caller?.role ?? "")) {
+    if (caller?.role !== "admin") {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 

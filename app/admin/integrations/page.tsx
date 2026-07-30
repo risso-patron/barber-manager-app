@@ -1,49 +1,50 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Search, Settings, Clock, CheckCircle } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { createBrowserClient } from "@supabase/ssr"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { Search, Clock, Info } from "lucide-react"
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const T = {
-  card:   "#1A1A1A",
-  border: "#252525",
-  text:   "#F0F0F0",
-  muted:  "#8A8A8A",
-  teal:   "#00C896",
-  font:   "var(--font-dm-sans), 'DM Sans', sans-serif",
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 const CATEGORIES = ["Todos", "Comunicación", "Pagos", "Automatización", "Marketing", "Analítica"]
 
-type Status = "connected" | "disconnected" | "available"
+type Status = "configured" | "not_configured" | "coming_soon"
 
 interface Integration {
   name: string; category: string; description: string; status: Status; emoji: string
 }
 
-const INITIAL_INTEGRATIONS: Integration[] = [
-  { name: "WhatsApp Business",  category: "Comunicación",   description: "Envía recordatorios automáticos.",         status: "connected",    emoji: "💬" },
-  { name: "Google Calendar",    category: "Comunicación",   description: "Sincroniza citas automáticamente.",         status: "disconnected", emoji: "📅" },
-  { name: "Stripe",             category: "Pagos",          description: "Recibe pagos online.",                      status: "connected",    emoji: "💳" },
-  { name: "Mercado Pago",       category: "Pagos",          description: "Acepta pagos locales.",                     status: "available",    emoji: "💰" },
-  { name: "OpenAI",             category: "Automatización", description: "Automatiza respuestas y asistentes.",       status: "available",    emoji: "🤖" },
-  { name: "Zapier",             category: "Automatización", description: "Crea automatizaciones sin código.",         status: "available",    emoji: "⚡" },
-  { name: "Mailchimp",          category: "Marketing",      description: "Envía campañas de email marketing.",        status: "available",    emoji: "📧" },
-  { name: "Google Analytics",   category: "Analítica",      description: "Analiza el comportamiento de clientes.",    status: "available",    emoji: "📊" },
-  { name: "Slack",              category: "Comunicación",   description: "Recibe notificaciones en tu workspace.",    status: "available",    emoji: "🔔" },
-  { name: "Instagram Business", category: "Marketing",      description: "Gestiona mensajes directos.",               status: "available",    emoji: "📷" },
-  { name: "Twilio",             category: "Comunicación",   description: "Envía SMS a tus clientes.",                 status: "available",    emoji: "📱" },
-  { name: "HubSpot",            category: "Marketing",      description: "Sincroniza contactos y leads.",             status: "available",    emoji: "🎯" },
+// Only WhatsApp has real backend infrastructure today (Twilio, notification_queue).
+// Everything else is a real future integration, not yet started — never shown as "connected".
+const BASE_INTEGRATIONS: Integration[] = [
+  { name: "WhatsApp Business",  category: "Comunicación",   description: "Envía recordatorios automáticos por WhatsApp vía Twilio.", status: "not_configured", emoji: "💬" },
+  { name: "Google Calendar",    category: "Comunicación",   description: "Sincroniza citas automáticamente.",         status: "coming_soon", emoji: "📅" },
+  { name: "Stripe",             category: "Pagos",          description: "Recibe pagos online.",                      status: "coming_soon", emoji: "💳" },
+  { name: "Mercado Pago",       category: "Pagos",          description: "Acepta pagos locales.",                     status: "coming_soon", emoji: "💰" },
+  { name: "OpenAI",             category: "Automatización", description: "Automatiza respuestas y asistentes.",       status: "coming_soon", emoji: "🤖" },
+  { name: "Zapier",             category: "Automatización", description: "Crea automatizaciones sin código.",         status: "coming_soon", emoji: "⚡" },
+  { name: "Mailchimp",          category: "Marketing",      description: "Envía campañas de email marketing.",        status: "coming_soon", emoji: "📧" },
+  { name: "Google Analytics",   category: "Analítica",      description: "Analiza el comportamiento de clientes.",    status: "coming_soon", emoji: "📊" },
+  { name: "Slack",              category: "Comunicación",   description: "Recibe notificaciones en tu workspace.",    status: "coming_soon", emoji: "🔔" },
+  { name: "Instagram Business", category: "Marketing",      description: "Gestiona mensajes directos.",               status: "coming_soon", emoji: "📷" },
+  { name: "Twilio",             category: "Comunicación",   description: "Envía SMS a tus clientes.",                 status: "coming_soon", emoji: "📱" },
+  { name: "HubSpot",            category: "Marketing",      description: "Sincroniza contactos y leads.",             status: "coming_soon", emoji: "🎯" },
 ]
 
-const ALL_LOGS = [
-  { minutesAgo: 28, integration: "WhatsApp Business", event: "Mensaje enviado",  status: "success" },
-  { minutesAgo: 45, integration: "Stripe",            event: "Pago recibido",    status: "success" },
-  { minutesAgo: 62, integration: "WhatsApp Business", event: "Mensaje enviado",  status: "success" },
-  { minutesAgo: 89, integration: "Stripe",            event: "Pago procesando",  status: "pending" },
-]
+interface NotificationLogEntry {
+  id: string
+  type: string
+  status: string
+  recipient_name: string | null
+  created_at: string
+}
 
-function relativeTime(minutesAgo: number): string {
+function relativeTime(iso: string): string {
+  const minutesAgo = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
   if (minutesAgo < 60) return `Hace ${minutesAgo} min`
   const h = Math.floor(minutesAgo / 60)
   return `Hace ${h}h ${minutesAgo % 60}min`
@@ -51,65 +52,81 @@ function relativeTime(minutesAgo: number): string {
 
 function StatusBadge({ status }: { status: Status }) {
   const s = {
-    connected:    { bg: `${T.teal}22`, color: T.teal,  label: "Conectado"    },
-    disconnected: { bg: T.border,      color: T.muted, label: "Sin conectar" },
-    available:    { bg: T.border,      color: T.muted, label: "Disponible"   },
+    configured:     { className: "bg-success-tint text-success-text", label: "Configurado"    },
+    not_configured: { className: "bg-secondary text-ink-600",         label: "No configurado" },
+    coming_soon:    { className: "bg-secondary text-ink-600",         label: "Próximamente"   },
   }[status]
   return (
-    <span style={{ background: s.bg, color: s.color, fontSize: 11, fontWeight: 600, borderRadius: 20, padding: "2px 10px" }}>
+    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${s.className}`}>
       {s.label}
     </span>
   )
 }
 
-function IntegrationCard({ item, onToggle }: { item: Integration; onToggle: (name: string) => void }) {
-  const isConnected = item.status === "connected"
+function IntegrationCard({ item }: { item: Integration }) {
+  const isConfigured = item.status === "configured"
+  const isComingSoon = item.status === "coming_soon"
   return (
-    <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20, display: "flex", flexDirection: "column" }}>
-      <div style={{ fontSize: 28, marginBottom: 10 }}>{item.emoji}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: T.text, marginBottom: 6 }}>{item.name}</div>
-      <div style={{ marginBottom: 8 }}><StatusBadge status={item.status} /></div>
-      <div style={{ fontSize: 13, color: T.muted, marginBottom: 16, flex: 1 }}>{item.description}</div>
+    <div className="flex flex-col rounded-xl border border-border bg-card p-5">
+      <div className="mb-2.5 text-[28px]">{item.emoji}</div>
+      <div className="mb-1.5 text-[15px] font-semibold text-foreground">{item.name}</div>
+      <div className="mb-2"><StatusBadge status={item.status} /></div>
+      <div className="mb-4 flex-1 text-[13px] text-ink-600">{item.description}</div>
       <button
-        onClick={() => onToggle(item.name)}
-        style={{
-          width: "100%",
-          background: isConnected ? "transparent" : T.teal,
-          border: isConnected ? `1px solid ${T.border}` : "none",
-          borderRadius: 8, padding: "9px",
-          color: isConnected ? T.muted : "#000",
-          fontSize: 13, fontWeight: 600, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          fontFamily: T.font,
-        }}
+        disabled
+        title={
+          isComingSoon
+            ? "Próximamente — todavía no hay trabajo de backend iniciado para esta integración"
+            : isConfigured
+              ? "Configurado vía variables de entorno del servidor"
+              : "Requiere configurar TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM en el servidor"
+        }
+        className="w-full cursor-not-allowed rounded-lg border border-border bg-transparent p-2.5 text-[13px] font-semibold text-ink-600"
       >
-        {isConnected ? <><Settings size={13} /> Configurar</> : "Conectar"}
+        {isComingSoon ? "Próximamente" : isConfigured ? "Configurado" : "No configurado"}
       </button>
     </div>
   )
 }
 
 export default function IntegrationsPage() {
-  const [integrations, setIntegrations] = useState<Integration[]>(INITIAL_INTEGRATIONS)
+  useRequireAuth(["admin"])
+  const [whatsappConfigured, setWhatsappConfigured] = useState(false)
+  const [logs, setLogs] = useState<NotificationLogEntry[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("Todos")
   const [search, setSearch] = useState("")
 
-  const activeCount = integrations.filter((i) => i.status === "connected").length
+  useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false)
+      return
+    }
+    Promise.all([
+      fetch("/api/integrations/status").then((r) => (r.ok ? r.json() : { whatsapp: false })),
+      supabase
+        .from("notification_queue")
+        .select("id, type, status, recipient_name, created_at")
+        .not("recipient_phone", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]).then(([statusRes, { data: logRows }]) => {
+      setWhatsappConfigured(Boolean(statusRes?.whatsapp))
+      if (logRows) setLogs(logRows as NotificationLogEntry[])
+      setIsLoading(false)
+    })
+  }, [])
 
-  const connectedNames = useMemo(
-    () => new Set(integrations.filter(i => i.status === "connected").map(i => i.name)),
-    [integrations]
+  const integrations = useMemo(
+    () => BASE_INTEGRATIONS.map((i) =>
+      i.name === "WhatsApp Business"
+        ? { ...i, status: (whatsappConfigured ? "configured" : "not_configured") as Status }
+        : i
+    ),
+    [whatsappConfigured]
   )
 
-  const visibleLogs = useMemo(
-    () => ALL_LOGS.filter(l => connectedNames.has(l.integration)),
-    [connectedNames]
-  )
-
-  const toggle = (name: string) =>
-    setIntegrations((prev) =>
-      prev.map((i) => i.name === name ? { ...i, status: i.status === "connected" ? "available" : "connected" } : i)
-    )
+  const configuredCount = integrations.filter((i) => i.status === "configured").length
 
   const filtered = integrations.filter((i) => {
     const matchCat    = activeCategory === "Todos" || i.category === activeCategory
@@ -119,58 +136,60 @@ export default function IntegrationsPage() {
   })
 
   return (
-    <div style={{ padding: "32px 40px", color: T.text, fontFamily: T.font, maxWidth: 980 }}>
+    <div className="max-w-[980px] px-10 py-8 text-foreground">
 
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>Integraciones</h1>
-        <p style={{ fontSize: 14, color: T.muted, margin: "4px 0 0" }}>Conecta Ornō con tus herramientas favoritas.</p>
+      <div className="mb-7">
+        <h1 className="m-0 text-[28px] font-semibold">Integraciones</h1>
+        <p className="mt-1 text-sm text-ink-600">Conecta Ornō con tus herramientas favoritas.</p>
       </div>
 
+      {!supabase && (
+        <div className="mb-6 flex items-center gap-2.5 rounded-[10px] border border-border bg-secondary px-4 py-3">
+          <Info size={15} className="shrink-0 text-ink-600" />
+          <span className="text-[13px] text-ink-600">
+            Modo demo — el estado de las integraciones no se puede verificar sin Supabase configurado.
+          </span>
+        </div>
+      )}
+
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        {[
-          { label: "Integraciones activas", value: String(activeCount) },
-          { label: "Eventos recientes",     value: String(visibleLogs.length) },
-          { label: "Errores detectados",    value: "0 ✓", color: T.teal },
-          { label: "Tiempo promedio",       value: activeCount > 0 ? "—" : "—" },
-        ].map((card) => (
-          <div key={card.label} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px 24px" }}>
-            <div style={{ fontSize: 11, color: T.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{card.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: card.color ?? T.text }}>{card.value}</div>
-          </div>
-        ))}
+      <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border bg-card px-6 py-5">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-ink-600">Integraciones configuradas</div>
+          <div className="text-[28px] font-bold text-foreground">{configuredCount} / 1 disponible hoy</div>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-6 py-5">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-ink-600">Eventos recientes (WhatsApp)</div>
+          <div className="text-[28px] font-bold text-foreground">{logs.length}</div>
+        </div>
       </div>
 
       {/* Search */}
-      <div style={{ position: "relative", marginBottom: 14 }}>
-        <Search size={15} color={T.muted} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+      <div className="relative mb-3.5">
+        <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-600" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar integraciones..."
-          style={{
-            width: "100%", background: T.card, border: `1px solid ${T.border}`,
-            borderRadius: 10, padding: "10px 14px 10px 40px",
-            color: T.text, fontSize: 13, outline: "none",
-            boxSizing: "border-box", fontFamily: T.font,
-          }}
+          className="box-border w-full rounded-[10px] border border-border bg-card py-2.5 pl-10 pr-3.5 text-[13px] text-foreground outline-none"
         />
       </div>
 
       {/* Category Tabs */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+      <div className="mb-6 flex flex-wrap gap-2">
         {CATEGORIES.map((cat) => {
           const active = activeCategory === cat
           return (
-            <button key={cat} onClick={() => setActiveCategory(cat)} style={{
-              background: active ? T.teal : T.card,
-              border: `1px solid ${active ? T.teal : T.border}`,
-              borderRadius: 8, padding: "6px 14px",
-              color: active ? "#000" : T.muted,
-              fontSize: 13, fontWeight: active ? 700 : 400,
-              cursor: "pointer", fontFamily: T.font,
-            }}>
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={
+                active
+                  ? "rounded-lg border border-success/25 bg-success-tint px-3.5 py-1.5 text-[13px] font-bold text-success-text"
+                  : "rounded-lg border border-border bg-card px-3.5 py-1.5 text-[13px] text-ink-600"
+              }
+            >
               {cat}
             </button>
           )
@@ -179,52 +198,43 @@ export default function IntegrationsPage() {
 
       {/* Integration Cards Grid */}
       {filtered.length > 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="grid grid-cols-2 gap-4">
           {filtered.map((item) => (
-            <IntegrationCard key={item.name} item={item} onToggle={toggle} />
+            <IntegrationCard key={item.name} item={item} />
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: "60px 0", color: T.muted, fontSize: 14 }}>
+        <div className="py-[60px] text-center text-sm text-ink-600">
           No se encontraron integraciones para &quot;{search}&quot;
         </div>
       )}
 
-      {/* Logs Recientes */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, marginTop: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 600, marginBottom: 20 }}>
-          <Clock size={16} color={T.muted} />
-          <span>Logs Recientes</span>
+      {/* Logs Recientes — real notification_queue entries, not fabricated */}
+      <div className="mt-6 rounded-xl border border-border bg-card p-6">
+        <div className="mb-5 flex items-center gap-2 text-base font-semibold">
+          <Clock size={16} className="text-ink-600" />
+          <span>Logs Recientes (WhatsApp)</span>
         </div>
-        {visibleLogs.length === 0 ? (
-          <p style={{ fontSize: 13, color: T.muted, padding: "12px 0" }}>
-            Sin eventos recientes. Conecta una integración para ver actividad.
+        {isLoading ? (
+          <p className="py-3 text-[13px] text-ink-600">Cargando…</p>
+        ) : logs.length === 0 ? (
+          <p className="py-3 text-[13px] text-ink-600">
+            Sin eventos recientes. Los envíos por WhatsApp aparecerán acá una vez configurado Twilio.
           </p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="w-full border-collapse">
             <tbody>
-              {visibleLogs.map((log, i) => (
-                <tr key={i} style={{ borderTop: i === 0 ? "none" : `1px solid ${T.border}` }}>
-                  <td style={{ padding: "12px 0", fontSize: 12, color: T.muted, width: 110 }}>{relativeTime(log.minutesAgo)}</td>
-                  <td style={{ padding: "12px 0", fontSize: 13, fontWeight: 600, color: T.text, width: 160 }}>{log.integration}</td>
-                  <td style={{ padding: "12px 0", fontSize: 13, color: T.muted }}>{log.event}</td>
-                  <td style={{ padding: "12px 0", textAlign: "right" }}>
-                    {log.status === "success" ? (
-                      <CheckCircle size={16} color={T.teal} />
-                    ) : (
-                      <span style={{
-                        width: 16, height: 16, borderRadius: "50%",
-                        border: `2px solid #FFB400`, borderTopColor: "transparent",
-                        display: "inline-block", animation: "spin 1s linear infinite",
-                      }} />
-                    )}
-                  </td>
+              {logs.map((log, i) => (
+                <tr key={log.id} className={i === 0 ? "" : "border-t border-border"}>
+                  <td className="w-[110px] py-3 text-xs text-ink-600">{relativeTime(log.created_at)}</td>
+                  <td className="w-40 py-3 text-[13px] font-semibold text-foreground">{log.recipient_name ?? "—"}</td>
+                  <td className="py-3 text-[13px] text-ink-600">{log.type}</td>
+                  <td className="py-3 text-right text-xs text-ink-600">{log.status}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
     </div>

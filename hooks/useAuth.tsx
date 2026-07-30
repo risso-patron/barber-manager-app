@@ -18,7 +18,7 @@ export interface AuthUser {
   email: string
   profile?: {
     name: string
-    role: "client" | "employee" | "admin" | "manager"
+    role: "client" | "employee" | "admin"
     phone?: string
     avatar_url?: string
   }
@@ -30,8 +30,6 @@ export interface UseAuthReturn {
   isAuthenticated: boolean
   /** true cuando el perfil tiene role === 'admin' */
   isAdmin: boolean
-  /** true cuando el perfil tiene role === 'manager' */
-  isManager: boolean
   /** true cuando el perfil tiene role === 'employee' */
   isEmployee: boolean
   /** true cuando el perfil tiene role === 'client' */
@@ -189,7 +187,6 @@ function useAuthInternal(): UseAuthReturn {
     isLoading,
     isAuthenticated: !!user,
     isAdmin: role === "admin",
-    isManager: role === "manager",
     isEmployee: role === "employee",
     isClient: role === "client",
     error,

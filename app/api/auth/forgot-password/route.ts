@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { withRateLimit, loginLimiter } from "@/lib/rate-limit"
 import { forgotPasswordSchema } from "@/lib/schemas"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 
 /**

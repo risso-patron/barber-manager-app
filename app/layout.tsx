@@ -1,10 +1,21 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
-import { Cormorant_Garamond, DM_Sans, DM_Mono } from "next/font/google"
+import { Cormorant_Garamond, Inter, DM_Sans, DM_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
+
+// ORNO M0 — Inter is the product typeface (--font-sans).
+// Cormorant Garamond: wordmark / brand moments only.
+// DM Sans + DM Mono stay TEMPORARILY: 6 legacy components reference
+// var(--font-dm-sans) directly; they migrate in M1, then remove both.
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+})
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -30,7 +41,8 @@ const dmMono = DM_Mono({
 
 export const metadata: Metadata = {
   title: "Ornō — Gestión que embellece tu negocio",
-  description: "Citas, empleados e inventario para barberías, salones y espacios de belleza que quieren operar con precisión.",
+  description:
+    "Citas, empleados e inventario para barberías, salones y espacios de belleza que quieren operar con precisión.",
   icons: {
     icon: [
       { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -47,12 +59,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${
-          GeistSans.variable
-        } ${GeistMono.variable} ${cormorant.variable} ${dmSans.variable} ${dmMono.variable} font-sans antialiased`}
-      >
+    // Font variables must live on <html>: globals.css declares
+    // --font-sans: var(--font-inter) at :root, and custom properties
+    // resolve var() where they are declared — with the variables on
+    // <body>, :root can't see them, font-family computes invalid and
+    // the whole app falls back to the browser serif.
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${inter.variable} ${GeistMono.variable} ${cormorant.variable} ${dmSans.variable} ${dmMono.variable}`}
+    >
+      <body className="font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

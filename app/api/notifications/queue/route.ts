@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
 
 const EnqueueSchema = z
@@ -19,10 +21,24 @@ const EnqueueSchema = z
 
 /**
  * POST /api/notifications/queue
- * Encola una notificación para envío asíncrono por la Edge Function.
+ * Encola una notificación para envío asíncrono por el cron de Vercel
+ * (/api/cron/send-reminders — NotificationProcessor, ADR-028).
  */
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll() } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 })
+
+    const { data: caller } = await supabase.from("users").select("role").eq("id", user.id).single()
+    if (caller?.role !== "admin")
+      return NextResponse.json({ success: false, error: "Sin permisos" }, { status: 403 })
+
     const body = await request.json()
     const parsed = EnqueueSchema.safeParse(body)
 
@@ -42,9 +58,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, queued: true, id: `demo-${Date.now()}` })
     }
 
-    const supabase = createAdminSupabaseClient()
+    const supabaseAdmin = createAdminSupabaseClient()
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("notification_queue")
       .insert(parsed.data)
       .select("id")

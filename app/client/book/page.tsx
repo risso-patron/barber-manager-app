@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Calendar, User, ArrowLeft, Scissors, Loader2 } from "lucide-react"
-import { DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_APPOINTMENTS } from "@/lib/demo-appointments"
+import { DEMO_SERVICES, DEMO_EMPLOYEES, DEMO_APPOINTMENTS } from "@/lib/demo"
 import { TimeSlot } from "@/components/booking/TimeSlot"
 import { ServiceCard } from "@/components/booking/ServiceCard"
 import { BarberCard } from "@/components/booking/BarberCard"
@@ -134,16 +134,19 @@ export default function BookAppointmentPage() {
     setAvailabilityError(null)
     setSelectedTime("")
 
+    const selectedServiceData = services.find((s) => s.id === selectedService)
+    const duration = selectedServiceData?.duration ?? 30
+
     const params = new URLSearchParams({
-      barberId: selectedBarber,
-      serviceId: selectedService,
+      barber_id: selectedBarber,
       date: selectedDate,
+      duration: String(duration),
     })
 
     fetch(`/api/availability?${params}`)
       .then(res => res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`)))
       .then(data => {
-        setAvailableSlots(Array.isArray(data.slots) ? data.slots : [])
+        setAvailableSlots(Array.isArray(data.available) ? data.available : [])
       })
       .catch(() => {
         setAvailabilityError("No pudimos cargar los horarios. Intenta nuevamente.")
@@ -152,7 +155,7 @@ export default function BookAppointmentPage() {
       .finally(() => {
         setIsLoadingAvailability(false)
       })
-  }, [selectedService, selectedBarber, selectedDate])
+  }, [selectedService, selectedBarber, selectedDate, services])
 
   const handleSubmit = async () => {
     if (!user || !service || !barber) return

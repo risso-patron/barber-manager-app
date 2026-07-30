@@ -13,14 +13,14 @@ Lanzar una versión funcional y cobrada del producto con riesgo controlado, pasa
 | `pnpm lint` | ✅ Sin errores — solo warnings (variables sin usar, `<img>` sin optimizar, un `console.log` no permitido) |
 | `pnpm type-check` | ✅ Sin errores (corregido 2026-06-30 — ver nota abajo) |
 | `pnpm build` | ✅ Build de producción completo y verificado, 60 rutas generadas |
-| Seguridad (`SECURITY-REPORT.md`) | 7/10 — rotación de secrets pendiente y vencida (ver `docs/SECRET-ROTATION.md`) |
+| Seguridad (`SECURITY-REPORT.md`) | 7/10 — rotación de secrets ejecutada 2026-06-30 (Twilio/Resend/CRON) |
 | Facturación (`/admin/billing`) | 🔴 Stub sin backend — no se puede cobrar nada con esto |
 | Integraciones (`/admin/integrations`) | 🟡 UI sin conexiones reales a terceros |
 | RLS en Supabase | Definido en 31 scripts SQL; **no verificado en runtime** contra una instancia real |
 
 > Nota: esta sección se escribió originalmente con 2 errores reales de `pnpm type-check` (`app/admin/page.tsx:134` y `components/admin/appointments/appointment-modal.tsx:47`). Ambos se corrigieron el mismo día — el primero cambiando `.then().catch()` por `.then(onFulfilled, onRejected)` (el query builder de Supabase es `PromiseLike`, no `Promise`, y no tiene `.catch()`); el segundo agregando un non-null assertion (`!`) consistente con el patrón ya usado en `app/admin/page.tsx:84` para `new Date().toISOString().split("T")[0]`. Se deja esta nota como evidencia de que el estado de un documento de auditoría puede quedar desactualizado en minutos — siempre verificar contra el código antes de confiar en una fecha de "última revisión".
 
-**Bloqueador principal actualizado:** ya no son los errores de type-check (resueltos), sino: (1) la rotación de secrets vencida, y (2) que el sistema de cobro real (`/admin/billing`) no existe — es un requisito para la Fase 2 de este mismo plan (monetización) y hoy es 100% mock.
+**Bloqueador principal actualizado:** ya no son los errores de type-check (resueltos 2026-06-30), ni la rotación de secrets (resuelta ~2026-06-30, confirmada 2026-07-07), sino que el sistema de cobro real (`/admin/billing`) no existe — es un requisito para la Fase 2 de este mismo plan (monetización) y hoy tiene schema real pero sin proveedor de pago integrado.
 
 ## Estrategia por fases
 
@@ -31,14 +31,14 @@ Objetivo: eliminar errores que rompen el flujo de negocio.
 Checklist de salida:
 - [x] `pnpm type-check` sin errores (corregido 2026-06-30)
 - [x] Lint sin errores bloqueantes (verificado 2026-06-30)
-- [ ] Rotar los secrets expuestos (`docs/SECRET-ROTATION.md`) — bloqueante para cualquier despliegue público
-- [ ] Variables de entorno validadas con `pnpm validate-env`
+- [x] Rotar los secrets expuestos — resuelto ~2026-06-30 (Twilio/Resend/CRON, ver `docs/SECRET-ROTATION.md`)
+- [x] Variables de entorno validadas con `pnpm validate-env` — los 3 secrets rotados pasan (2026-07-07)
 - [ ] Flujo E2E mínimo verde:
   - Reserva pública (`/reservar`)
   - Login cliente
   - Cancelación/reprogramación de cita
 
-Criterio go/no-go: Go solo si los secrets están rotados y los 3 flujos E2E pasan (el type-check ya no es bloqueante).
+Criterio go/no-go: Go solo si los 3 flujos E2E pasan (secrets ya rotados, type-check ya resuelto).
 
 ### Fase 1 — Piloto cerrado (3-7 días)
 
@@ -77,7 +77,7 @@ KPI mínimos: 3 clientes pagos · churn mensual < 20% · CAC recuperado ≤ 1 me
 
 ## Priorización técnica inmediata
 
-1. Rotar secrets expuestos (`docs/SECRET-ROTATION.md`) — vencido
+1. ~~Rotar secrets expuestos (`docs/SECRET-ROTATION.md`)~~ — resuelto ~2026-06-30 (confirmado 2026-07-07)
 2. Decidir el destino de `/admin/billing`: implementarlo con un proveedor real, ocultarlo, o marcarlo "Próximamente" — no puede quedar como está si se va a cobrar
 3. Verificar RLS contra una instancia real de Supabase antes de manejar datos de un cliente real
 
@@ -94,18 +94,17 @@ pnpm validate-env
 ## Definición de éxito para iniciar pruebas reales
 
 - [x] Cero errores en `pnpm type-check` (cumplido 2026-06-30)
-- Secrets rotados y `pnpm validate-env` sin errores
+- [x] Secrets rotados y `pnpm validate-env` sin errores (cumplido ~2026-06-30, confirmado 2026-07-07)
 - E2E de negocio en verde
 - Plan de soporte y rollback operativo
 - `/admin/billing` no es necesario para el piloto cerrado (Fase 1, sin cobro), pero **sí es bloqueante para la Fase 2**
 
 ## Riesgos actuales
 
-- Rotación de secrets vencida — riesgo de seguridad activo, no solo técnico
 - Dependencia de una instancia real de Supabase para producción, no verificada en runtime
 - `/admin/billing` e `/admin/integrations` pueden generar expectativas falsas si se muestran a un cliente sin aclarar que son demostraciones
 - Riesgo de desviar foco hacia funciones no monetizables (ej. completar Integraciones) antes de resolver el bloqueador real de cobro
 
 ## Decisión recomendada
 
-No abrir pruebas reales masivas todavía. Ejecutar lo que queda de Fase 0 (rotación de secrets como bloqueante concreto — el type-check ya está resuelto), luego lanzar el piloto cerrado de Fase 1 sin expectativa de cobro, y no avanzar a Fase 2 hasta tener un proveedor de pagos real conectado a `/admin/billing`.
+No abrir pruebas reales masivas todavía. Ejecutar lo que queda de Fase 0 (la rotación de secrets ya está resuelta ~2026-06-30, el type-check también — solo falta RLS verification), luego lanzar el piloto cerrado de Fase 1 sin expectativa de cobro, y no avanzar a Fase 2 hasta tener un proveedor de pagos real conectado a `/admin/billing`.

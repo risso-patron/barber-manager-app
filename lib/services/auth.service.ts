@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr"
-import { DEMO_USERS } from "@/lib/demo-config"
+import { DEMO_USERS } from "@/lib/demo"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

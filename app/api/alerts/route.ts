@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
-import { isDemoMode } from "@/lib/demo-config"
+import { isDemoMode } from "@/lib/demo"
 import { z } from "zod"
 
 const resolveSchema = z.object({ is_resolved: z.literal(true) })
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     if (isDemoMode()) return NextResponse.json({ alerts: DEMO_ALERTS, total: DEMO_ALERTS.length })
 
@@ -74,7 +74,7 @@ export async function PATCH(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single()
-    if (!["admin", "manager"].includes(profile?.role ?? "")) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    if (profile?.role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
 
     const alertId = new URL(request.url).searchParams.get("id")
     if (!alertId) return NextResponse.json({ error: "ID requerido" }, { status: 400 })

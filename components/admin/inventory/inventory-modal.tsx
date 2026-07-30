@@ -1,11 +1,14 @@
 "use client"
 
+// M3 · Migrated onto FormModal + Field. Same props, same validation, same
+// payloads. Native select kept (ORNO-tokened) to preserve exact behavior.
+
 import { useState, useEffect } from "react"
-import { type InventoryItem } from "@/lib/demo-appointments"
-import { Button } from "@/components/ui/button"
+import { type InventoryItem } from "@/lib/demo"
+import { FormModal } from "@/components/ui/form-modal"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { X, TrendingUp } from "lucide-react"
+import { TrendingUp } from "lucide-react"
 
 interface InventoryModalProps {
   isOpen: boolean
@@ -13,6 +16,10 @@ interface InventoryModalProps {
   onSubmit: (item: Partial<InventoryItem>) => void
   item?: InventoryItem | null
 }
+
+// Native select, ORNO-tokened (mirrors the Input primitive's surface).
+const SELECT_CLS =
+  "flex h-12 w-full rounded-lg border border-border bg-card px-4 text-[15px] text-foreground transition-colors duration-micro ease-orno focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-primary focus-visible:ring-accent"
 
 export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryModalProps) {
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
@@ -57,154 +64,132 @@ export function InventoryModal({ isOpen, onClose, onSubmit, item }: InventoryMod
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     if (validate()) {
       onSubmit(formData)
       setFormData({ name: "", category: "producto", quantity: 0, minStock: 0, price: 0, salePrice: null, sku: "", supplier: "" })
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: 14 }} className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-
-        <div style={{ borderBottom: "1px solid #2E2E2E" }} className="flex justify-between items-center px-6 py-4">
-          <h2 style={{ color: "#F0F0F0", fontFamily: "var(--font-dm-sans), sans-serif", fontSize: 17, fontWeight: 600 }}>
-            {item ? "Editar Artículo" : "Nuevo Artículo"}
-          </h2>
-          <button onClick={onClose} style={{ color: "#8A8A8A", background: "none", border: "none", cursor: "pointer" }}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
-              <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Nombre *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Shampoo Profesional"
-                style={{ background: "#111", borderColor: errors.name ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
-              />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-            </div>
-            <div>
-              <Label style={{ color: "#8A8A8A", fontSize: 12 }}>SKU</Label>
-              <Input
-                value={formData.sku ?? ""}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="Ej: SH-001"
-                style={{ background: "#111", borderColor: "#2E2E2E", color: "#F0F0F0" }}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Categoría *</Label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value as InventoryItem["category"] })}
-              style={{ background: "#111", borderColor: errors.category ? "#E53935" : "#2E2E2E", color: "#F0F0F0", width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid", fontSize: 14 }}
-            >
-              <option value="producto">Producto</option>
-              <option value="herramienta">Herramienta</option>
-              <option value="suministro">Suministro</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Cantidad *</Label>
-              <Input
-                type="number" min="0"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                style={{ background: "#111", borderColor: errors.quantity ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
-              />
-              {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
-            </div>
-            <div>
-              <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Stock Mínimo *</Label>
-              <Input
-                type="number" min="1"
-                value={formData.minStock}
-                onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
-                style={{ background: "#111", borderColor: errors.minStock ? "#E53935" : "#2E2E2E", color: "#F0F0F0" }}
-              />
-              {errors.minStock && <p className="text-red-500 text-xs mt-1">{errors.minStock}</p>}
-            </div>
-          </div>
-
-          <div style={{ background: "#111", border: "1px solid #2E2E2E", borderRadius: 10, padding: 16 }}>
-            <p style={{ color: "#8A8A8A", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Precios</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Costo unitario *</Label>
-                <div className="relative">
-                  <span style={{ position: "absolute", left: 10, top: 9, color: "#8A8A8A", fontSize: 13 }}>$</span>
-                  <Input
-                    type="number" min="0" step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    style={{ background: "#161616", borderColor: errors.price ? "#E53935" : "#2E2E2E", color: "#F0F0F0", paddingLeft: 24 }}
-                    placeholder="0.00"
-                  />
-                </div>
-                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-              </div>
-              <div>
-                <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Precio de venta</Label>
-                <div className="relative">
-                  <span style={{ position: "absolute", left: 10, top: 9, color: "#8A8A8A", fontSize: 13 }}>$</span>
-                  <Input
-                    type="number" min="0" step="0.01"
-                    value={formData.salePrice ?? ""}
-                    onChange={(e) => setFormData({ ...formData, salePrice: e.target.value ? parseFloat(e.target.value) : null })}
-                    style={{ background: "#161616", borderColor: errors.salePrice ? "#E53935" : "#2E2E2E", color: "#F0F0F0", paddingLeft: 24 }}
-                    placeholder="0.00"
-                  />
-                </div>
-                {errors.salePrice && <p className="text-red-500 text-xs mt-1">{errors.salePrice}</p>}
-              </div>
-            </div>
-            {margin && profit && (
-              <div style={{ marginTop: 12, padding: "10px 14px", background: "#0F2E1A", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                <TrendingUp className="h-4 w-4" style={{ color: "#22C55E", flexShrink: 0 }} />
-                <div style={{ fontSize: 12 }}>
-                  <span style={{ color: "#22C55E", fontWeight: 600 }}>Margen: {margin}%</span>
-                  <span style={{ color: "#8A8A8A", marginLeft: 8 }}>· Ganancia por unidad: </span>
-                  <span style={{ color: "#22C55E", fontWeight: 600 }}>${profit}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <Label style={{ color: "#8A8A8A", fontSize: 12 }}>Proveedor</Label>
-            <Input
-              value={formData.supplier}
-              onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-              placeholder="Ej: Beauty Supply Co."
-              style={{ background: "#111", borderColor: "#2E2E2E", color: "#F0F0F0" }}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1" style={{ borderColor: "#2E2E2E", color: "#8A8A8A" }}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="flex-1" style={{ background: "#E53935", color: "#fff", border: "none" }}>
-              {item ? "Actualizar" : "Crear"}
-            </Button>
-          </div>
-
-        </form>
+    <FormModal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={item ? "Editar Artículo" : "Nuevo Artículo"}
+      submitLabel={item ? "Actualizar" : "Crear"}
+      onSubmit={handleSubmit}
+      size="md"
+    >
+      <div className="grid grid-cols-3 gap-3">
+        <Field label="Nombre" htmlFor="inv-name" required error={errors.name} className="col-span-2">
+          <Input
+            id="inv-name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Ej: Shampoo Profesional"
+            error={!!errors.name}
+          />
+        </Field>
+        <Field label="SKU" htmlFor="inv-sku">
+          <Input
+            id="inv-sku"
+            value={formData.sku ?? ""}
+            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+            placeholder="Ej: SH-001"
+          />
+        </Field>
       </div>
-    </div>
+
+      <Field label="Categoría" htmlFor="inv-category" required error={errors.category}>
+        <select
+          id="inv-category"
+          aria-label="Categoría"
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value as InventoryItem["category"] })}
+          className={SELECT_CLS}
+        >
+          <option value="producto">Producto</option>
+          <option value="herramienta">Herramienta</option>
+          <option value="suministro">Suministro</option>
+        </select>
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Cantidad" htmlFor="inv-quantity" required error={errors.quantity}>
+          <Input
+            id="inv-quantity"
+            type="number" min="0"
+            value={formData.quantity}
+            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+            error={!!errors.quantity}
+          />
+        </Field>
+        <Field label="Stock Mínimo" htmlFor="inv-minstock" required error={errors.minStock}>
+          <Input
+            id="inv-minstock"
+            type="number" min="1"
+            value={formData.minStock}
+            onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
+            error={!!errors.minStock}
+          />
+        </Field>
+      </div>
+
+      {/* Precios */}
+      <div className="rounded-xl border border-border bg-background p-4">
+        <p className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">Precios</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Costo unitario" htmlFor="inv-price" required error={errors.price}>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+              <Input
+                id="inv-price"
+                type="number" min="0" step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                className="pl-8"
+                placeholder="0.00"
+                error={!!errors.price}
+              />
+            </div>
+          </Field>
+          <Field label="Precio de venta" htmlFor="inv-saleprice" error={errors.salePrice}>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+              <Input
+                id="inv-saleprice"
+                type="number" min="0" step="0.01"
+                value={formData.salePrice ?? ""}
+                onChange={(e) => setFormData({ ...formData, salePrice: e.target.value ? parseFloat(e.target.value) : null })}
+                className="pl-8"
+                placeholder="0.00"
+                error={!!errors.salePrice}
+              />
+            </div>
+          </Field>
+        </div>
+        {margin && profit && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-success/25 bg-success-tint px-3.5 py-2.5">
+            <TrendingUp className="h-4 w-4 shrink-0 text-success-text" aria-hidden="true" />
+            <div className="text-[12.5px]">
+              <span className="font-semibold text-success-text">Margen: {margin}%</span>
+              <span className="ml-2 text-ink-600">· Ganancia por unidad: </span>
+              <span className="font-semibold text-success-text">${profit}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Field label="Proveedor" htmlFor="inv-supplier">
+        <Input
+          id="inv-supplier"
+          value={formData.supplier}
+          onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+          placeholder="Ej: Beauty Supply Co."
+        />
+      </Field>
+    </FormModal>
   )
 }

@@ -1,93 +1,53 @@
 "use client"
 
-import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { EmployeeSidebar } from "@/components/employee/layout/employee-sidebar"
-import { EmployeeBottomNav } from "@/components/employee/layout/employee-bottom-nav"
+// M2 · Replaces app/employee/layout.tsx — same pattern as admin.
 
-export default function EmployeeLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { AppShell } from "@/components/shell/app-shell"
+import { UserMenu } from "@/components/shell/user-menu"
+import { BrandProvider } from "@/components/shell/brand-provider"
+import { Skeleton } from "@/components/ui/skeleton"
+import { signOut } from "@/lib/sign-out"
+
+export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const user = useRequireAuth(["employee", "admin"])
+  const router = useRouter()
 
   if (!user) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: "#0F0F0F",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              border: "2px solid #2E2E2E",
-              borderTopColor: "#E53935",
-              animation: "orno-spin 0.8s linear infinite",
-              margin: "0 auto",
-            }}
-          />
-          <p
-            style={{
-              marginTop: 16,
-              fontFamily: "var(--font-dm-sans), sans-serif",
-              color: "#8A8A8A",
-              fontSize: 13,
-            }}
-          >
-            Verificando permisos...
-          </p>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4" role="status" aria-label="Verificando permisos">
+          <Skeleton className="size-10 rounded-full" />
+          <p className="text-[13px] text-muted-foreground">Verificando permisos…</p>
         </div>
-        <style>{`@keyframes orno-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
 
   return (
-    <div
-      data-theme="orno-admin"
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "#0F0F0F",
-        color: "#F0F0F0",
-        fontFamily: "var(--font-dm-sans), sans-serif",
-      }}
-    >
-      {/* Desktop sidebar */}
-      <div className="hidden lg:block">
-        <EmployeeSidebar />
-      </div>
-
-      {/* Main content */}
-      <main
-        style={{
-          flex: 1,
-          minHeight: "100vh",
-          overflowY: "auto",
+    <BrandProvider>
+      <AppShell
+        role="employee"
+        shopName={user.businessName ?? undefined}
+        onCreateAction={(key) => {
+          if (key === "block") router.push("/employee/schedule?block=1")
         }}
-        className="lg:ml-[240px]"
+        userSlot={
+          <UserMenu
+            name={user.name ?? "Cuenta"}
+            roleLabel="Barbero"
+            email={user.email ?? undefined}
+            onProfile={() => router.push("/employee/profile")}
+            onSignOut={async () => {
+              await signOut()
+              router.push("/auth/login")
+            }}
+          />
+        }
       >
         {children}
-      </main>
-
-      {/* Mobile bottom nav */}
-      <EmployeeBottomNav />
-
-      <style>{`
-        @keyframes orno-spin { to { transform: rotate(360deg); } }
-        [data-theme="orno-admin"] ::-webkit-scrollbar { width: 6px; height: 6px; }
-        [data-theme="orno-admin"] ::-webkit-scrollbar-track { background: #0F0F0F; }
-        [data-theme="orno-admin"] ::-webkit-scrollbar-thumb { background: #2E2E2E; border-radius: 3px; }
-        [data-theme="orno-admin"] ::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
-      `}</style>
-    </div>
+      </AppShell>
+    </BrandProvider>
   )
 }

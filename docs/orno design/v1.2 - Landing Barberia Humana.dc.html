@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    * { box-sizing: border-box; }
+    a { color: #3E7354; text-decoration: none; }
+    a:hover { color: #4C8862; }
+    @keyframes orno-pulse { 0% { box-shadow: 0 0 0 0 rgba(95,159,119,.3); } 70% { box-shadow: 0 0 0 6px rgba(95,159,119,0); } 100% { box-shadow: 0 0 0 0 rgba(95,159,119,0); } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F">
+
+  <!-- ═══ 1 · NAVBAR ═══ -->
+  <nav style="position: sticky; top: 0; z-index: 50; background: rgba(250,249,247,.9); backdrop-filter: blur(12px); border-bottom: 1px solid #E8E4DE">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 32px; height: 68px; display: flex; align-items: center; gap: 28px">
+      <a href="#" style="font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; color: #26231F">Ornō<span style="color: #E53935">.</span></a>
+      <div style="flex: 1; display: flex; gap: 24px; justify-content: center; font-size: 14px; font-weight: 500">
+        <a href="#funciones" style="color: #57534B">Funciones</a>
+        <a href="#barberias" style="color: #57534B">Barberías</a>
+        <a href="#como" style="color: #57534B">Cómo funciona</a>
+        <a href="#planes" style="color: #57534B">Planes</a>
+        <a href="#faq" style="color: #57534B">FAQ</a>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <a href="/login" style="height: 40px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center">Iniciar sesión</a>
+        <a href="/crear" style="height: 40px; padding: 0 18px; border-radius: 12px; background: #5F9F77; color: #FFFFFF; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center" style-hover="background: #4C8862; color: #FFFFFF">Organizar mi barbería</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ 2 · HERO HUMANO ═══ -->
+  <header style="max-width: 1280px; margin: 0 auto; padding: 72px 32px 80px; display: flex; gap: 56px; align-items: center; flex-wrap: wrap">
+    <div style="flex: 1; min-width: 380px">
+      <div style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 14px; border-radius: 999px; background: #EAF2ED; color: #3E7354; font-size: 12.5px; font-weight: 600; margin-bottom: 22px"><i data-lucide="scissors" style="width: 13px; height: 13px"></i>Hecho para barberías reales</div>
+      <h1 style="font-size: 50px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 20px; text-wrap: balance">La forma más simple de controlar tu barbería.</h1>
+      <p style="font-size: 17px; color: #57534B; line-height: 1.6; margin: 0 0 30px; max-width: 460px; text-wrap: pretty">Citas, barberos, clientes, ingresos e inventario en un solo lugar. No más WhatsApp, libretas ni memoria.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap">
+        <a href="/crear" style="height: 52px; padding: 0 26px; border-radius: 14px; background: #5F9F77; color: #FFFFFF; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px" style-hover="background: #4C8862; color: #FFFFFF">Organizar mi barbería<i data-lucide="arrow-right" style="width: 17px; height: 17px"></i></a>
+        <a href="#como" style="height: 52px; padding: 0 24px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center">Ver cómo funciona</a>
+      </div>
+    </div>
+
+    <!-- photo + floating UI -->
+    <div style="flex: 1; min-width: 420px; position: relative">
+      <div style="width: 100%; aspect-ratio: 4/5; max-height: 560px; border-radius: 24px; overflow: hidden; box-shadow: 0 16px 48px rgba(38,35,31,.12); position: relative">
+        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="hero-photo" shape="rect" placeholder="Barbero profesional atendiendo a un cliente en una barbería boutique moderna, luz cálida, estilo editorial" style="width: 100%; height: 100%" hint-size="100%,100%"></x-import>
+      </div>
+      <!-- floating chips -->
+      <div style="position: absolute; top: 24px; left: -20px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; padding: 12px 16px; box-shadow: 0 4px 16px rgba(38,35,31,.08); display: flex; align-items: center; gap: 10px">
+        <span style="width: 32px; height: 32px; border-radius: 10px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center"><i data-lucide="calendar-check" style="width: 16px; height: 16px"></i></span>
+        <div><div style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">8 citas hoy</div><div style="font-size: 11px; color: #8A847A">3 barberos activos</div></div>
+      </div>
+      <div style="position: absolute; bottom: 96px; right: -20px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; padding: 12px 16px; box-shadow: 0 4px 16px rgba(38,35,31,.08)">
+        <div style="font-size: 11px; color: #8A847A">Generado hoy</div>
+        <div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: #3E7354">$420</div>
+      </div>
+      <div style="position: absolute; bottom: 20px; left: -16px; right: 60px; background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; padding: 12px 16px; box-shadow: 0 4px 16px rgba(38,35,31,.08); display: flex; align-items: center; gap: 10px; animation: orno-pulse 2.6s infinite">
+        <span style="width: 8px; height: 8px; border-radius: 999px; background: #5F9F77; flex-shrink: 0"></span>
+        <div style="font-size: 13px; font-weight: 600">Próximo cliente en 15 min · hueco libre detectado a las 15:00</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ 3 · FRANJA DE CONFIANZA ═══ -->
+  <section style="border-top: 1px solid #E8E4DE; border-bottom: 1px solid #E8E4DE; background: #F4F2EE">
+    <div style="max-width: 1000px; margin: 0 auto; padding: 40px 32px; text-align: center">
+      <p style="font-size: 16px; color: #57534B; margin: 0 0 22px; text-wrap: balance">Diseñado para barberías que ya no quieren manejar todo por WhatsApp, libretas o memoria.</p>
+      <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap">
+        <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><i data-lucide="calendar-days" style="width: 16px; height: 16px; color: #3E7354"></i>Agenda clara</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><i data-lucide="users" style="width: 16px; height: 16px; color: #3E7354"></i>Equipo alineado</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600"><i data-lucide="trending-up" style="width: 16px; height: 16px; color: #3E7354"></i>Ingresos visibles</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4 · EL PROBLEMA (con foto lateral) ═══ -->
+  <section style="max-width: 1280px; margin: 0 auto; padding: 88px 32px; display: flex; gap: 56px; align-items: center; flex-wrap: wrap">
+    <div style="flex: 1; min-width: 340px">
+      <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 14px; line-height: 1.2; text-wrap: balance">El problema no es cortar cabello. Es controlar el negocio.</h2>
+      <p style="font-size: 15.5px; color: #57534B; line-height: 1.6; margin: 0 0 26px">Tu equipo sabe cortar. Lo que falta es orden alrededor del corte.</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+        <sc-for list="{{ problems }}" as="p" hint-placeholder-count="8">
+          <div style="display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; color: #57534B; line-height: 1.4"><i data-lucide="x" style="width: 14px; height: 14px; color: #A93F34; flex-shrink: 0; margin-top: 2px"></i>{{ p }}</div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="flex: 1; min-width: 340px">
+      <div style="width: 100%; aspect-ratio: 4/3; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(38,35,31,.06)">
+        <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="problema-photo" shape="rect" placeholder="Interior cálido de barbería boutique en movimiento, varios barberos atendiendo, ambiente real" style="width: 100%; height: 100%" hint-size="100%,100%"></x-import>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 5 · SOLUCIÓN ═══ -->
+  <section id="funciones" style="background: #F4F2EE; border-top: 1px solid #E8E4DE; border-bottom: 1px solid #E8E4DE">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 88px 32px">
+      <div style="text-align: center; max-width: 620px; margin: 0 auto 44px">
+        <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px; text-wrap: balance">ORNO convierte el movimiento diario de tu barbería en control.</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px">
+        <sc-for list="{{ solutions }}" as="s" hint-placeholder-count="8">
+          <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 24px; transition: box-shadow 200ms" style-hover="box-shadow: 0 1px 2px rgba(38,35,31,.04), 0 4px 16px rgba(38,35,31,.08)">
+            <span style="width: 40px; height: 40px; border-radius: 12px; background: {{ s.bg }}; color: {{ s.fg }}; display: flex; align-items: center; justify-content: center; margin-bottom: 13px"><i data-lucide="{{ s.icon }}" style="width: 18px; height: 18px"></i></span>
+            <div style="font-size: 15.5px; font-weight: 600; margin-bottom: 4px">{{ s.title }}</div>
+            <div style="font-size: 13px; color: #57534B; line-height: 1.5">{{ s.text }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 6 · UN DÍA CON ORNO ═══ -->
+  <section id="barberias" style="max-width: 1200px; margin: 0 auto; padding: 88px 32px">
+    <div style="text-align: center; max-width: 560px; margin: 0 auto 48px">
+      <div style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #3E7354; margin-bottom: 10px">La rutina real</div>
+      <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px">Un día con ORNO</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0">
+      <sc-for list="{{ dayFlow }}" as="d" hint-placeholder-count="4">
+        <div style="display: flex; gap: 28px; align-items: center; padding: 26px 0; border-bottom: 1px solid #E8E4DE">
+          <div style="width: 96px; height: 96px; border-radius: 18px; overflow: hidden; flex-shrink: 0">
+            <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ d.imgId }}" shape="rect" placeholder="{{ d.imgHint }}" style="width: 100%; height: 100%" hint-size="96,96"></x-import>
+          </div>
+          <div style="width: 90px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: #8A847A; text-transform: uppercase; letter-spacing: 0.06em">{{ d.time }}</div>
+          <div style="flex: 1; min-width: 200px"><div style="font-size: 16.5px; font-weight: 600">{{ d.title }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ═══ 7 · MÓDULOS ═══ -->
+  <section style="background: #F4F2EE; border-top: 1px solid #E8E4DE; border-bottom: 1px solid #E8E4DE">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 80px 32px">
+      <div style="text-align: center; max-width: 560px; margin: 0 auto 44px">
+        <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px">Todo lo que tu barbería necesita</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px">
+        <sc-for list="{{ modules }}" as="m" hint-placeholder-count="10">
+          <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; padding: 18px 20px">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 7px"><i data-lucide="{{ m.icon }}" style="width: 17px; height: 17px; color: #3E7354"></i><span style="font-size: 14.5px; font-weight: 600">{{ m.title }}</span></div>
+            <div style="font-size: 12.5px; color: #57534B; line-height: 1.5">{{ m.text }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 8 · DUEÑO / EQUIPO / CLIENTE ═══ -->
+  <section id="como" style="max-width: 1200px; margin: 0 auto; padding: 88px 32px">
+    <div style="text-align: center; max-width: 560px; margin: 0 auto 48px">
+      <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px">Para el dueño, para el equipo, para el cliente</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px">
+      <sc-for list="{{ audiences }}" as="a" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; overflow: hidden">
+          <div style="width: 100%; aspect-ratio: 16/10">
+            <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ a.imgId }}" shape="rect" placeholder="{{ a.imgHint }}" style="width: 100%; height: 100%" hint-size="100%,100%"></x-import>
+          </div>
+          <div style="padding: 22px">
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px">{{ a.title }}</div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{ a.points }}" as="pt" hint-placeholder-count="4">
+                <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: #57534B"><i data-lucide="check" style="width: 14px; height: 14px; color: #3E7354; flex-shrink: 0; margin-top: 2px"></i>{{ pt }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ═══ 9 · MANIFIESTO ═══ -->
+  <section style="position: relative; height: 460px; max-width: 1280px; margin: 0 auto 88px; border-radius: 24px; overflow: hidden">
+    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="manifiesto-photo" shape="rect" placeholder="Barbería boutique amplia, luz natural cálida, sensación de negocio en movimiento y crecimiento" style="width: 100%; height: 100%; position: absolute; inset: 0" hint-size="100%,100%"></x-import>
+    <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(38,35,31,.72) 0%, rgba(38,35,31,.35) 55%, rgba(38,35,31,0) 85%); pointer-events: none"></div>
+    <div style="position: absolute; inset: 0; display: flex; align-items: center; padding: 0 56px">
+      <div style="max-width: 480px; pointer-events: none">
+        <h2 style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; color: #FAF9F7; line-height: 1.25; margin: 0 0 14px; text-wrap: balance">Una barbería no crece solo con buenos cortes. Crece con orden, seguimiento y control.</h2>
+        <p style="font-size: 15px; color: #E8E4DE; line-height: 1.6; margin: 0">ORNO te ayuda a operar con la claridad que necesita un negocio que quiere crecer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 10 · PLANES ═══ -->
+  <section id="planes" style="max-width: 1200px; margin: 0 auto; padding: 0 32px 88px">
+    <div style="text-align: center; max-width: 560px; margin: 0 auto 44px">
+      <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px">Un plan para cada silla</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: stretch">
+      <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border: {{ pl.border }}; border-radius: 24px; padding: 30px; display: flex; flex-direction: column; position: relative">
+          <sc-if value="{{ pl.featured }}" hint-placeholder-val="{{ false }}">
+            <span style="position: absolute; top: -13px; left: 50%; transform: translateX(-50%); height: 26px; padding: 0 14px; border-radius: 999px; background: #5F9F77; color: #FFF; font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; white-space: nowrap">El más elegido</span>
+          </sc-if>
+          <div style="font-size: 17px; font-weight: 600; margin-bottom: 4px">{{ pl.name }}</div>
+          <div style="font-size: 13px; color: #57534B; margin-bottom: 18px; line-height: 1.4">{{ pl.who }}</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 20px"><span style="font-size: 34px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{ pl.price }}</span><span style="font-size: 13px; color: #8A847A">{{ pl.per }}</span></div>
+          <div style="display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; flex: 1">
+            <sc-for list="{{ pl.feats }}" as="f" hint-placeholder-count="4">
+              <div style="display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; color: #57534B"><i data-lucide="check" style="width: 15px; height: 15px; color: #3E7354; flex-shrink: 0; margin-top: 2px"></i>{{ f }}</div>
+            </sc-for>
+          </div>
+          <a href="/crear" style="height: 46px; border-radius: 14px; background: {{ pl.ctaBg }}; border: {{ pl.ctaBorder }}; color: {{ pl.ctaFg }}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center" style-hover="opacity: .92">{{ pl.cta }}</a>
+        </div>
+      </sc-for>
+    </div>
+    <div style="text-align: center; font-size: 12px; color: #8A847A; margin-top: 18px">Planes referenciales sujetos a configuración final.</div>
+  </section>
+
+  <!-- ═══ 11 · TESTIMONIOS ═══ -->
+  <section style="background: #F4F2EE; border-top: 1px solid #E8E4DE; border-bottom: 1px solid #E8E4DE">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 80px 32px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px">
+        <sc-for list="{{ quotes }}" as="q" hint-placeholder-count="3">
+          <figure style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 28px; margin: 0">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 40px; line-height: 0.5; color: #CBB595; margin-bottom: 14px">"</div>
+            <blockquote style="font-size: 15.5px; line-height: 1.6; margin: 0 0 18px; text-wrap: pretty">{{ q.text }}</blockquote>
+            <figcaption style="display: flex; align-items: center; gap: 11px">
+              <span style="width: 36px; height: 36px; border-radius: 999px; background: {{ q.bg }}; color: {{ q.fg }}; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600">{{ q.initials }}</span>
+              <div><div style="font-size: 13.5px; font-weight: 600">{{ q.name }}</div><div style="font-size: 12px; color: #8A847A">{{ q.role }}</div></div>
+            </figcaption>
+          </figure>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 12 · FAQ (details/summary) ═══ -->
+  <section id="faq" style="max-width: 760px; margin: 0 auto; padding: 88px 32px">
+    <h2 style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 36px; text-align: center">Preguntas frecuentes</h2>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="6">
+        <details style="background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 16px; overflow: hidden; padding: 0">
+          <summary style="min-height: 56px; padding: 16px 20px; font-size: 15px; font-weight: 600; color: #26231F; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            {{ f.q }}<i data-lucide="chevron-down" style="width: 17px; height: 17px; color: #8A847A; flex-shrink: 0"></i>
+          </summary>
+          <div style="padding: 0 20px 18px; font-size: 14px; color: #57534B; line-height: 1.6">{{ f.a }}</div>
+        </details>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- ═══ 13 · CTA FINAL ═══ -->
+  <section style="background: #26231F">
+    <div style="max-width: 720px; margin: 0 auto; padding: 88px 32px; text-align: center">
+      <div style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: #FAF9F7; margin-bottom: 8px">Ornō<span style="color: #E53935">.</span></div>
+      <h2 style="font-size: 34px; font-weight: 600; letter-spacing: -0.02em; color: #FAF9F7; margin: 0 0 14px; text-wrap: balance">Tu barbería puede sentirse más ordenada desde el primer día.</h2>
+      <p style="font-size: 15.5px; color: #B5AFA5; line-height: 1.6; margin: 0 0 30px">Deja de manejar tu operación entre mensajes, libretas y memoria. ORNO te da una forma clara de ver y controlar tu negocio.</p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap">
+        <a href="/crear" style="height: 52px; padding: 0 26px; border-radius: 14px; background: #5F9F77; color: #FFFFFF; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px" style-hover="background: #4C8862; color: #FFFFFF">Organizar mi barbería<i data-lucide="arrow-right" style="width: 17px; height: 17px"></i></a>
+        <a href="/login" style="height: 52px; padding: 0 24px; border-radius: 14px; border: 1px solid rgba(250,249,247,.25); color: #FAF9F7; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center" style-hover="background: rgba(250,249,247,.08); color: #FAF9F7">Iniciar sesión</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 14 · FOOTER ═══ -->
+  <footer style="background: #26231F; border-top: 1px solid rgba(250,249,247,.1)">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 40px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+      <div>
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #FAF9F7">Ornō<span style="color: #E53935">.</span></div>
+        <div style="font-size: 12.5px; color: #8A847A; margin-top: 4px">Sistema de gestión para barberías modernas.</div>
+      </div>
+      <div style="display: flex; gap: 22px; font-size: 13px">
+        <a href="#" style="color: #B5AFA5">Inicio</a>
+        <a href="#funciones" style="color: #B5AFA5">Funciones</a>
+        <a href="#planes" style="color: #B5AFA5">Planes</a>
+        <a href="#faq" style="color: #B5AFA5">FAQ</a>
+        <a href="/login" style="color: #B5AFA5">Login</a>
+      </div>
+      <div style="font-size: 12px; color: #8A847A">© 2026 Ornō. Todos los derechos reservados.</div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1000}}">
+class Component extends DCLogic {
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+  renderVals() {
+    return {
+      problems: [
+        'Citas que se cruzan.', 'Clientes que escriben a última hora.',
+        'Barberos sin agenda clara.', 'Pagos que no quedan registrados.',
+        'Inventario que se acaba sin aviso.', 'No sabes cuánto ganó realmente el día.',
+        'Mucho WhatsApp, poca organización.', 'Tiempo perdido coordinando manualmente.',
+      ],
+      solutions: [
+        { icon: 'calendar-days', title: 'Agenda organizada', text: 'Citas visibles por día y por barbero, sin cruces.', bg: '#EAF2ED', fg: '#3E7354' },
+        { icon: 'users', title: 'Barberos asignados', text: 'Cada uno sabe a quién atiende y a qué hora.', bg: '#EAEFF4', fg: '#4A6B87' },
+        { icon: 'heart', title: 'Clientes registrados', text: 'Historial, notas y preferencias de cada visita.', bg: '#F6EBE4', fg: '#9A5A3B' },
+        { icon: 'trending-up', title: 'Ingresos monitoreados', text: 'Sabes cuánto entró hoy, sin sumar a mano.', bg: '#EAF2ED', fg: '#3E7354' },
+        { icon: 'package', title: 'Inventario controlado', text: 'Se descuenta solo y avisa antes de que falte.', bg: '#F6EBE4', fg: '#9A5A3B' },
+        { icon: 'bell', title: 'Alertas importantes', text: 'Cancelaciones, stock bajo y cobros pendientes.', bg: '#EAEFF4', fg: '#4A6B87' },
+        { icon: 'receipt', title: 'Cobros registrados', text: 'Cada servicio, propina y producto queda anotado.', bg: '#EAF2ED', fg: '#3E7354' },
+        { icon: 'shield-check', title: 'Operación más profesional', text: 'Tu barbería se ve — y se siente — más ordenada.', bg: '#EAEFF4', fg: '#4A6B87' },
+      ],
+      dayFlow: [
+        { time: 'Mañana', title: 'Revisas las citas del día antes de abrir.', imgId: 'flow-1', imgHint: 'Dueño revisando la agenda en una tablet, mostrador de barbería, mañana' },
+        { time: 'Durante el día', title: 'Cada barbero sabe a quién atiende y a qué hora.', imgId: 'flow-2', imgHint: 'Barbero cortando cabello a un cliente sentado en silla de barbería' },
+        { time: 'Después de cada servicio', title: 'Registras cobro, cliente y movimiento.', imgId: 'flow-3', imgHint: 'Cobro en caja o POS después de un servicio, celular mostrando confirmación' },
+        { time: 'Al cierre', title: 'Ves cuánto generó la barbería y qué preparar para mañana.', imgId: 'flow-4', imgHint: 'Detalle de herramientas de barbero — tijeras, máquina, peine — al final del día' },
+      ],
+      modules: [
+        { icon: 'calendar-days', title: 'Agenda', text: 'El día completo, por barbero.' },
+        { icon: 'calendar-check', title: 'Citas', text: 'Reservas, reprogramaciones y confirmaciones.' },
+        { icon: 'heart', title: 'Clientes', text: 'Historial y preferencias de cada uno.' },
+        { icon: 'scissors', title: 'Barberos', text: 'Horarios y agendas del equipo.' },
+        { icon: 'circle-dollar-sign', title: 'Caja / POS', text: 'Cobra el servicio y los productos.' },
+        { icon: 'receipt', title: 'Facturación', text: 'Comprobantes claros, también por WhatsApp.' },
+        { icon: 'package', title: 'Inventario', text: 'Stock y recomendaciones de compra.' },
+        { icon: 'bell', title: 'Alertas', text: 'Lo que necesita tu atención, a tiempo.' },
+        { icon: 'sun', title: 'Dashboard', text: 'Cómo va tu negocio, en una mirada.' },
+        { icon: 'plug', title: 'Integraciones', text: 'WhatsApp y enlace público de reservas.' },
+      ],
+      audiences: [
+        { title: 'Dueño', imgId: 'aud-1', imgHint: 'Dueño de barbería revisando ingresos en laptop, ambiente cálido', points: ['Ve ingresos.', 'Controla la agenda.', 'Supervisa al equipo.', 'Toma mejores decisiones.'] },
+        { title: 'Empleado', imgId: 'aud-2', imgHint: 'Equipo de barberos trabajando juntos, ambiente boutique moderno', points: ['Conoce sus citas.', 'Evita confusiones.', 'Trabaja con más orden.'] },
+        { title: 'Cliente', imgId: 'aud-3', imgHint: 'Cliente esperando su turno o entrando a la barbería, ambiente acogedor', points: ['Recibe mejor atención.', 'Menos esperas.', 'Historial más claro.', 'Experiencia más profesional.'] },
+      ],
+      plans: [
+        { name: 'Silla', who: 'Para barberos independientes o equipos pequeños', price: 'Gratis', per: 'para empezar', feats: ['1 barbero, agenda completa', 'Enlace público de reservas', 'Fichas de clientes', 'Recordatorios básicos'], featured: false, border: '1px solid #E8E4DE', cta: 'Empezar gratis', ctaBg: '#FFFFFF', ctaBorder: '1px solid #E8E4DE', ctaFg: '#26231F' },
+        { name: 'Estudio', who: 'Para barberías en crecimiento', price: '$29', per: '/ mes', feats: ['Barberos ilimitados', 'Caja, inventario y comisiones', 'App móvil del equipo', 'Recordatorios por WhatsApp'], featured: true, border: '1.5px solid #5F9F77', cta: 'Organizar mi barbería', ctaBg: '#5F9F77', ctaBorder: 'none', ctaFg: '#FFFFFF' },
+        { name: 'Cadena', who: 'Para negocios con múltiples sillas o sucursales', price: '$79', per: '/ mes', feats: ['Todo lo de Estudio', 'Varios locales, una cuenta', 'Tu propia marca y dominio', 'Reportes consolidados'], featured: false, border: '1px solid #E8E4DE', cta: 'Hablar con nosotros', ctaBg: '#FFFFFF', ctaBorder: '1px solid #E8E4DE', ctaFg: '#26231F' },
+      ],
+      quotes: [
+        { text: 'Antes dependíamos de WhatsApp para todo. Ahora cada cita tiene su lugar.', name: 'Luis M.', role: 'Dueño de barbería', initials: 'LM', bg: '#EAF2ED', fg: '#3E7354' },
+        { text: 'Puedo ver cómo va el día sin estar preguntando a cada barbero.', name: 'Carolina P.', role: 'Administradora de salón', initials: 'CP', bg: '#F6EBE4', fg: '#9A5A3B' },
+        { text: 'La barbería se siente más ordenada, incluso cuando está llena.', name: 'Nico G.', role: 'Barbero independiente', initials: 'NG', bg: '#EAEFF4', fg: '#4A6B87' },
+      ],
+      faqs: [
+        { q: '¿ORNO sirve para barberías pequeñas?', a: 'Sí. El plan Silla está pensado para un barbero independiente o un equipo chico — empieza gratis.' },
+        { q: '¿Puedo manejar varios empleados?', a: 'Sí, sin límite de barberos en Estudio y Cadena. Cada uno con su horario y su agenda.' },
+        { q: '¿Puedo ver citas e ingresos del día?', a: 'Sí — tu panel muestra el día completo y cuánto se generó, sin sumar a mano.' },
+        { q: '¿Funciona desde el celular?', a: 'Sí, tanto para ti como dueño como para tu equipo, que tiene su propia app móvil.' },
+        { q: '¿Puedo usarlo sin instalar nada?', a: 'Sí. Funciona en el navegador y tus clientes reservan desde un enlace, sin instalar nada.' },
+        { q: '¿Puedo empezar con una demo?', a: 'Claro — escríbenos y te mostramos ORNO en acción, o crea tu cuenta gratis ahora mismo.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

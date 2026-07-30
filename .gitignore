@@ -29,3 +29,5 @@ next-env.d.ts
 
 # MCP local config (contains API tokens)
 .vscode/mcp.json
+
+qa-report.txt

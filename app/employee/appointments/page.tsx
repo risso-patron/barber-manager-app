@@ -6,10 +6,11 @@ import {
   type Appointment,
   type AppointmentStatus,
   getAppointmentsByEmployee,
-  APPOINTMENT_STATUS_LABELS,
+  STATUS_LABELS as APPOINTMENT_STATUS_LABELS,
   getNextStatusActions,
-} from "@/lib/demo-appointments"
+} from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
+import { StatusBadge } from "@/components/ui/badge"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -117,9 +118,7 @@ export default function EmployeeAppointmentsPage() {
                   <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "19px", fontWeight: 400, color: "#F0F0F0" }}>
                     {new Date(apt.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {apt.time} · {apt.clientName}
                   </p>
-                  <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: STATUS_COLOR[apt.status], border: `1px solid ${STATUS_COLOR[apt.status]}`, padding: "3px 8px", borderRadius: "2px" }}>
-                    {APPOINTMENT_STATUS_LABELS[apt.status]}
-                  </span>
+                  <StatusBadge status={apt.status} />
                 </div>
                 <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "4px" }}>
                   {apt.serviceName} · {apt.duration} min · ${apt.price}

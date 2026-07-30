@@ -1,35 +1,24 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import Link from "next/link"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  Users,
-  Plus,
-  Search,
-  Mail,
-  Phone,
-  Calendar,
-  MoreVertical,
-  Edit,
-  Trash2,
-  UserPlus,
-  TrendingUp,
-  Eye,
-  Gift,
-  XCircle,
-  Loader2,
-} from "lucide-react"
-import type { Client } from "@/lib/demo-appointments"
-import { DEMO_CLIENTS } from "@/lib/demo-appointments"
+import { SearchInput } from "@/components/ui/search-input"
+import { StatCard, StatStrip } from "@/components/ui/stat-card"
+import { ActionMenu, type ActionMenuAction } from "@/components/ui/action-menu"
+import { useNotify } from "@/components/ui/notify"
+import { Users, Plus, Edit, Trash2, Eye, Gift } from "lucide-react"
+import type { Client } from "@/lib/demo"
+import { DEMO_CLIENTS } from "@/lib/demo"
 import { ClientModal } from "@/components/admin/clients/client-modal"
-import { DeleteConfirmModal } from "@/components/admin/clients/delete-confirm-modal"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { AsyncPane, paneState } from "@/components/ui/async-pane"
+import { EmptyState } from "@/components/ui/empty-state"
+import { SkeletonList } from "@/components/ui/skeleton"
 import { LoyaltyModal } from "@/components/admin/clients/loyalty-modal"
+import { ClientIdentity } from "@/components/admin/clients/client-identity"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -37,17 +26,17 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
 
 export default function ClientsPage() {
-  const user = useRequireAuth(["admin", "manager"])
+  const user = useRequireAuth(["admin"])
   const [clients, setClients] = useState<Client[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [deletingClient, setDeletingClient] = useState<Client | null>(null)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [loyaltyClient, setLoyaltyClient] = useState<Client | null>(null)
   const [page, setPage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const PAGE_SIZE = 25
+  const notify = useNotify()
 
   // Load clients from Supabase (or demo data)
   useEffect(() => {
@@ -131,6 +120,7 @@ export default function ClientsPage() {
         createdAt: new Date().toISOString(),
         isActive: true,
       }, ...prev])
+      notify({ title: "Cliente creado." })
       setIsCreateModalOpen(false)
       return
     }
@@ -149,6 +139,7 @@ export default function ClientsPage() {
         createdAt: new Date().toISOString(),
         isActive: true,
       }, ...clients])
+      notify({ title: "Cliente creado." })
     }
     setIsCreateModalOpen(false)
   }
@@ -157,6 +148,7 @@ export default function ClientsPage() {
     const updatedClient = client as Client
     if (!supabase) {
       setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+      notify({ title: "Cambios guardados." })
       setEditingClient(null)
       return
     }
@@ -165,21 +157,34 @@ export default function ClientsPage() {
       .update({ name: updatedClient.name, email: updatedClient.email, phone: updatedClient.phone })
       .eq("id", updatedClient.id)
     setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c))
+    notify({ title: "Cambios guardados." })
     setEditingClient(null)
   }
 
   const handleDeleteClient = async (id: string) => {
     if (!supabase) {
       setClients(prev => prev.filter(c => c.id !== id))
+      notify({ title: "Cliente eliminado." })
       setDeletingClient(null)
       return
     }
     const res = await fetch(`/api/clients?id=${id}`, { method: "DELETE" })
     if (res.ok) {
       setClients(clients.filter(c => c.id !== id))
+      notify({ title: "Cliente eliminado." })
     }
     setDeletingClient(null)
   }
+
+  /** Acciones por cliente — la lógica de negocio vive acá; ActionMenu solo la presenta. */
+  const buildClientActions = (client: Client): ActionMenuAction[][] => [
+    [
+      { label: "Ver perfil", icon: Eye, href: `/admin/clients/${client.id}` },
+      { label: "Editar", icon: Edit, onSelect: () => setEditingClient(client) },
+      { label: "Puntos", icon: Gift, tone: "warning" as const, onSelect: () => setLoyaltyClient(client) },
+    ],
+    [{ label: "Eliminar", icon: Trash2, tone: "danger" as const, onSelect: () => setDeletingClient(client) }],
+  ]
 
   if (!user) return null
 
@@ -188,91 +193,44 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-          <p className="text-gray-600 mt-1">Administra la base de datos de clientes</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-foreground">Clientes</h1>
+          <p className="mt-1 text-[13px] text-ink-600">Administra la base de datos de clientes</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" aria-hidden="true" />
           Nuevo Cliente
         </Button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Clientes</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Nuevos este Mes</p>
-                <p className="text-2xl font-bold">{stats.newThisMonth}</p>
-              </div>
-              <UserPlus className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Clientes Activos</p>
-                <p className="text-2xl font-bold">{stats.activeClients}</p>
-              </div>
-              <Users className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Crecimiento</p>
-                <p className="text-2xl font-bold">{stats.growth}%</p>
-              </div>
-              <TrendingUp className={`h-8 w-8 ${Number(stats.growth) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Statistics */}
+      <StatStrip>
+        <StatCard label="Total clientes" value={stats.total} loading={isLoading} />
+        <StatCard
+          label="Nuevos este mes"
+          value={stats.newThisMonth}
+          deltaPct={Number(stats.growth)}
+          deltaHint="vs. mes anterior"
+          loading={isLoading}
+        />
+        <StatCard label="Clientes activos" value={stats.activeClients} loading={isLoading} />
+        <StatCard label="Crecimiento" value={`${stats.growth}%`} loading={isLoading} />
+      </StatStrip>
 
       {/* Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Buscar Clientes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar por nombre, email o teléfono..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <SearchInput
+        value={searchTerm}
+        onValueChange={setSearchTerm}
+        placeholder="Buscar por nombre, email o teléfono…"
+        className="w-full sm:w-96"
+      />
 
       {/* Clients Table/Grid */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Listado de Clientes ({filteredClients.length})
+            Clientes ({filteredClients.length})
             {totalPages > 1 && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
+              <span className="ml-2 text-sm font-normal text-ink-600">
                 — página {page + 1} de {totalPages}
               </span>
             )}
@@ -280,143 +238,58 @@ export default function ClientsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : filteredClients.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No se encontraron clientes</p>
-              </div>
-            ) : (
+            <AsyncPane
+              state={paneState({ loading: isLoading, count: filteredClients.length })}
+              skeleton={<SkeletonList rows={6} />}
+              empty={
+                <EmptyState
+                  icon={Users}
+                  title="No se encontraron clientes"
+                  description="Ajusta la búsqueda o crea un cliente nuevo."
+                  action={
+                    <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                      <Plus className="size-4" aria-hidden="true" />
+                      Nuevo Cliente
+                    </Button>
+                  }
+                  size="compact"
+                />
+              }
+              size="compact"
+            >
               <>
                 {pagedClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-white"
+                    className="flex items-center justify-between rounded-[14px] border border-border bg-card p-4 transition-shadow duration-micro hover:shadow-raised"
                   >
-                    {/* Client Info */}
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {client.name.charAt(0).toUpperCase()}
-                      </div>
+                    <ClientIdentity
+                      name={client.name}
+                      email={client.email}
+                      phone={client.phone}
+                      createdAt={client.createdAt}
+                      isActive={client.isActive !== false}
+                      loyaltyPoints={(client as Client & { loyalty_points?: number }).loyalty_points}
+                      noShowCount={(client as Client & { no_show_count?: number }).no_show_count}
+                      className="flex-1"
+                    />
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{client.name}</h3>
-                          {client.isActive !== false ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              Activo
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Inactivo</Badge>
-                          )}
-                          {/* Loyalty points badge */}
-                          {(client as Client & { loyalty_points?: number }).loyalty_points !== null && (client as Client & { loyalty_points?: number }).loyalty_points !== undefined && (
-                            <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                              <Gift className="h-3 w-3" />
-                              <span>{(client as Client & { loyalty_points?: number }).loyalty_points} pts</span>
-                            </div>
-                          )}
-                          {/* No-show badge */}
-                          {(client as Client & { no_show_count?: number }).no_show_count !== null && (client as Client & { no_show_count?: number }).no_show_count !== undefined &&
-                            (client as Client & { no_show_count?: number }).no_show_count! > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-orange-700 bg-orange-50 border border-orange-300 rounded-full px-2 py-0.5">
-                                <XCircle className="h-3 w-3" />
-                                <span>{(client as Client & { no_show_count?: number }).no_show_count} no-show</span>
-                              </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          <span>{client.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          <span>{client.phone}</span>
-                        </div>
-                        {client.createdAt && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Cliente desde {new Date(client.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions Dropdown */}
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveDropdown(activeDropdown === client.id ? null : client.id)}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-
-                      {activeDropdown === client.id && (
-                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border z-50">
-                          <div className="py-1">
-                            <Link
-                              href={`/admin/clients/${client.id}`}
-                              onClick={() => setActiveDropdown(null)}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                              Ver perfil
-                            </Link>
-
-                            <button
-                              onClick={() => {
-                                setEditingClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              <Edit className="h-4 w-4" />
-                              Editar
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setLoyaltyClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-amber-700"
-                            >
-                              <Gift className="h-4 w-4" />
-                              Puntos
-                            </button>
-
-                            <div className="border-t my-1"></div>
-
-                            <button
-                              onClick={() => {
-                                setDeletingClient(client)
-                                setActiveDropdown(null)
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <ActionMenu
+                      label={`Acciones del cliente ${client.name}`}
+                      groups={buildClientActions(client)}
+                    />
                   </div>
                 ))}
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-500">
+                <div className="flex items-center justify-between border-t border-border pt-4">
+                  <span className="nums text-sm text-ink-600">
                     {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredClients.length)} de {filteredClients.length}
                   </span>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       disabled={page === 0}
                       onClick={() => setPage(p => p - 1)}
@@ -424,7 +297,7 @@ export default function ClientsPage() {
                       ← Anterior
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage(p => p + 1)}
@@ -435,7 +308,7 @@ export default function ClientsPage() {
                 </div>
               )}
               </>
-            )}
+            </AsyncPane>
           </div>
         </CardContent>
       </Card>
@@ -459,11 +332,22 @@ export default function ClientsPage() {
       )}
 
       {deletingClient && (
-        <DeleteConfirmModal
-          isOpen={!!deletingClient}
-          onClose={() => setDeletingClient(null)}
+        <ConfirmDialog
+          open={!!deletingClient}
+          onOpenChange={(open) => {
+            if (!open) setDeletingClient(null)
+          }}
+          title="¿Eliminar este cliente?"
+          description={
+            <>
+              <strong>{deletingClient.name}</strong>. Esta acción no se puede deshacer: se eliminan sus
+              datos y el historial de citas asociado.
+            </>
+          }
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Mantener cliente"
+          tone="danger"
           onConfirm={() => handleDeleteClient(deletingClient.id)}
-          clientName={deletingClient.name}
         />
       )}
       {loyaltyClient && (

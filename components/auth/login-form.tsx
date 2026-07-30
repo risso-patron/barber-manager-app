@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { DEMO_USERS } from "@/lib/demo-config"
+import { DEMO_USERS } from "@/lib/demo"
+import { roleHome } from "@/lib/routes"
 
 const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
@@ -35,11 +36,6 @@ const hasSupabaseConfig =
   !isPlaceholder(supabaseUrl) &&
   !isPlaceholder(supabaseAnonKey)
 const supabase = hasSupabaseConfig ? createBrowserClient(supabaseUrl!, supabaseAnonKey!) : null
-
-const ROLE_MAP: Record<string, string> = {
-  admin: "/admin", manager: "/admin",
-  employee: "/employee/dashboard", barber: "/barber", client: "/client",
-}
 
 function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?: string } {
   const demoUser = Object.values(DEMO_USERS).find(
@@ -66,6 +62,8 @@ function tryDemoLogin(data: LoginInput): { ok: boolean; role?: string; userName?
         },
       }),
     )
+    document.cookie = `demo-role=${demoUser.role}; path=/; max-age=86400`
+    document.cookie = `demo-role=${demoUser.role}; Path=/; Max-Age=86400; SameSite=Lax`
   }
 
   return { ok: true, role: demoUser.role, userName: demoUser.name }
@@ -100,11 +98,12 @@ export function LoginForm() {
     if (isDemoMode || !supabase) {
       const demoLogin = tryDemoLogin(data)
       if (demoLogin.ok) {
-        router.push(ROLE_MAP[demoLogin.role ?? ""] || "/auth/login")
-        router.refresh()
-        setIsLoading(false)
+        document.cookie = `demo-role=${demoLogin.role}; path=/; max-age=86400`
+        await new Promise(resolve => setTimeout(resolve, 100))
+        router.push(roleHome(demoLogin.role))
         return
       }
+
       setError("Credenciales inválidas para modo demo.")
       setIsLoading(false)
       return

@@ -1,5 +1,11 @@
 "use client"
 
+// M3 · Fields migrated to Field/Input; dark hexes and solid red/green
+// removed (Constitution: tinted semantics, never solid red). Keeps its
+// M1 Dialog base: the icon title and mode-colored footer are behavior
+// FormModal's standard shell doesn't model. Logic/fetch flow verbatim.
+// CRM-2 · Textarea para motivo, notify() al completar, size-X, text-danger-text.
+
 import { useState } from "react"
 import {
   Dialog,
@@ -10,9 +16,12 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Field } from "@/components/ui/field"
+import { useNotify } from "@/components/ui/notify"
 import { Gift, Plus, Minus } from "lucide-react"
-import type { Client } from "@/lib/demo-appointments"
+import { cn } from "@/lib/utils"
+import type { Client } from "@/lib/demo"
 
 interface Props {
   client: Client & { loyalty_points?: number }
@@ -27,6 +36,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const parsed = parseInt(amount, 10)
   const isValid = !isNaN(parsed) && parsed > 0
@@ -62,7 +72,13 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
         return
       }
 
-      onAdjusted(data.new_balance ?? preview)
+      const newBalance = data.new_balance ?? preview
+      notify({
+        kind: "success",
+        title: mode === "add" ? "Puntos agregados." : "Puntos canjeados.",
+        description: `Nuevo saldo: ${newBalance.toLocaleString("es-ES")} pts`,
+      })
+      onAdjusted(newBalance)
     } catch {
       setError("Error de conexión. Intenta de nuevo.")
     } finally {
@@ -75,7 +91,7 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-amber-600" />
+            <Gift className="size-5 text-warning-text" aria-hidden="true" />
             Puntos de Fidelidad — {client.name}
           </DialogTitle>
           <DialogDescription>
@@ -83,38 +99,40 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           {/* Mode toggle */}
-          <div className="flex rounded-lg border overflow-hidden">
+          <div className="flex overflow-hidden rounded-lg border border-border">
             <button
               type="button"
               onClick={() => setMode("add")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors ${
+              aria-pressed={mode === "add" ? "true" : "false"}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors duration-micro",
                 mode === "add"
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
-              }`}
+                  ? "bg-success-tint text-success-text"
+                  : "bg-card text-ink-600 hover:bg-secondary"
+              )}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" aria-hidden="true" />
               Agregar
             </button>
             <button
               type="button"
               onClick={() => setMode("subtract")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors ${
+              aria-pressed={mode === "subtract" ? "true" : "false"}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors duration-micro",
                 mode === "subtract"
-                  ? "bg-red-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
-              }`}
+                  ? "bg-danger-tint text-danger-text"
+                  : "bg-card text-ink-600 hover:bg-secondary"
+              )}
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="size-4" aria-hidden="true" />
               Canjear
             </button>
           </div>
 
-          {/* Amount */}
-          <div className="space-y-1">
-            <Label htmlFor="loyalty-amount">Puntos</Label>
+          <Field label="Puntos" htmlFor="loyalty-amount">
             <Input
               id="loyalty-amount"
               type="number"
@@ -125,44 +143,44 @@ export function LoyaltyModal({ client, onClose, onAdjusted }: Props) {
               onChange={(e) => { setAmount(e.target.value); setError(null) }}
               required
             />
-          </div>
+          </Field>
 
-          {/* Description */}
-          <div className="space-y-1">
-            <Label htmlFor="loyalty-desc">Motivo (opcional)</Label>
-            <Input
+          <Field label="Motivo (opcional)" htmlFor="loyalty-desc">
+            <Textarea
               id="loyalty-desc"
               placeholder={mode === "add" ? "Ej. Bono especial" : "Ej. Canje por descuento $10"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}
+              className="min-h-[72px]"
             />
-          </div>
+          </Field>
 
           {/* Preview */}
           {isValid && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-600">
               Nuevo saldo:{" "}
-              <span className={`font-semibold ${preview < current ? "text-red-600" : "text-green-600"}`}>
+              <span className={cn("font-semibold", preview < current ? "text-danger-text" : "text-success-text")}>
                 {preview.toLocaleString("es-ES")} pts
               </span>
             </p>
           )}
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p role="alert" className="text-sm font-medium text-danger-text">{error}</p>
           )}
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={!isValid || loading}
-              className={mode === "subtract" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+              loading={loading}
+              variant={mode === "subtract" ? "destructive" : "primary"}
             >
-              {loading ? "Guardando…" : mode === "add" ? "Agregar puntos" : "Canjear puntos"}
+              {mode === "add" ? "Agregar puntos" : "Canjear puntos"}
             </Button>
           </div>
         </form>

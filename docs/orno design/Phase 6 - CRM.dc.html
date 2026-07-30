@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Cormorant+Garamond:wght@500;600&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { margin: 0; background: #FAF9F7; }
+    * { box-sizing: border-box; }
+    @keyframes orno-pop { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes orno-shimmer { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }
+  </style>
+</helmet>
+
+<div style="font-family: 'Inter', 'Manrope', sans-serif; color: #26231F">
+
+  <!-- ══════════ SHELL FRAME ══════════ -->
+  <div style="display: flex; min-height: 100vh; background: #FAF9F7">
+
+    <!-- Rail -->
+    <aside style="width: 76px; flex-shrink: 0; background: #F4F2EE; border-right: 1px solid #E8E4DE; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 6px">
+      <span style="width: 38px; height: 38px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600; margin-bottom: 10px">O<span style="color: #E53935">.</span></span>
+      <span title="Tu día" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="sun" style="width: 20px; height: 20px"></i></span>
+      <span title="Agenda" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="calendar-days" style="width: 20px; height: 20px"></i></span>
+      <span title="Caja" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="shopping-bag" style="width: 20px; height: 20px"></i></span>
+      <span title="Clientes" style="width: 44px; height: 44px; border-radius: 12px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; cursor: pointer"><i data-lucide="heart" style="width: 20px; height: 20px"></i></span>
+      <span title="Análisis" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="line-chart" style="width: 20px; height: 20px"></i></span>
+      <span style="flex: 1"></span>
+      <span title="Configuración" style="width: 44px; height: 44px; border-radius: 12px; color: #57534B; display: flex; align-items: center; justify-content: center; cursor: pointer" style-hover="background: #ECE8E1"><i data-lucide="settings-2" style="width: 20px; height: 20px"></i></span>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+
+      <!-- Header -->
+      <header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: rgba(250,249,247,.85); backdrop-filter: blur(12px); border-bottom: 1px solid #E8E4DE; position: sticky; top: 0; z-index: 40">
+        <sc-if value="{{ inProfile }}" hint-placeholder-val="{{ false }}">
+          <nav style="display: flex; align-items: center; gap: 8px">
+            <span onClick="{{ goList }}" style="font-size: 14px; font-weight: 500; color: #8A847A; cursor: pointer" style-hover="color: #26231F">Clientes</span>
+            <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #C6C0B6"></i>
+            <span style="font-size: 14px; font-weight: 600">Julián Torres</span>
+          </nav>
+        </sc-if>
+        <sc-if value="{{ inList }}" hint-placeholder-val="{{ true }}">
+          <span style="font-size: 14px; font-weight: 600">Clientes</span>
+        </sc-if>
+        <div style="flex: 1"></div>
+        <button style="width: 280px; height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; cursor: pointer; font-family: inherit" style-hover="border-color: #D8D3CA">
+          <i data-lucide="search" style="width: 17px; height: 17px; color: #8A847A"></i>
+          <span style="font-size: 14px; color: #8A847A">Buscar o ir a…</span>
+          <kbd style="margin-left: auto; height: 22px; padding: 0 7px; border-radius: 7px; border: 1px solid #E8E4DE; background: #FAF9F7; font-family: inherit; font-size: 12px; font-weight: 600; color: #8A847A; display: inline-flex; align-items: center">⌘K</kbd>
+        </button>
+        <button style="height: 42px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="plus" style="width: 17px; height: 17px"></i>Nuevo</button>
+      </header>
+
+      <!-- ══════════ VIEW: LIST ══════════ -->
+      <sc-if value="{{ inList }}" hint-placeholder-val="{{ true }}">
+        <main style="flex: 1">
+          <div style="max-width: 1200px; margin: 0 auto; padding: 40px 40px 80px">
+
+            <!-- Page title -->
+            <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; flex-wrap: wrap">
+              <div>
+                <h1 style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px">Clientes</h1>
+                <p style="font-size: 15px; color: #57534B; margin: 0"><span style="font-weight: 600; color: #26231F; font-variant-numeric: tabular-nums">248</span> personas confían en tu tijera · 12 podrían estar alejándose</p>
+              </div>
+              <button style="height: 44px; padding: 0 20px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0" style-hover="background: #4C8862"><i data-lucide="user-round-plus" style="width: 17px; height: 17px"></i>Nuevo cliente</button>
+            </div>
+
+            <!-- Search + filters row -->
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap">
+              <div style="position: relative; display: flex; align-items: center; flex: 1; min-width: 260px">
+                <i data-lucide="search" style="width: 17px; height: 17px; color: #8A847A; position: absolute; left: 16px"></i>
+                <input placeholder="Nombre, teléfono o apodo…" style="height: 48px; width: 100%; padding: 0 16px 0 44px; border-radius: 14px; border: 1px solid #E8E4DE; background: #F4F2EE; font-family: inherit; font-size: 15px; color: #26231F; outline: none; transition: all 120ms" style-focus="background: #FFFFFF; border-color: #5F9F77; box-shadow: 0 0 0 3px #EAF2ED">
+              </div>
+              <button style="height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="scissors" style="width: 15px; height: 15px; color: #57534B"></i>Servicio habitual<i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #8A847A"></i></button>
+              <button style="height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="users" style="width: 15px; height: 15px; color: #57534B"></i>Barbero<i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #8A847A"></i></button>
+              <button style="height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #F4F2EE"><i data-lucide="tag" style="width: 15px; height: 15px; color: #57534B"></i>Etiquetas<i data-lucide="chevron-down" style="width: 14px; height: 14px; color: #8A847A"></i></button>
+            </div>
+
+            <!-- Segments -->
+            <div style="display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap">
+              <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="5">
+                <button onClick="{{ seg.select }}" style="height: 40px; padding: 0 16px; border-radius: 999px; border: {{ seg.border }}; background: {{ seg.bg }}; color: {{ seg.fg }}; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 120ms">
+                  {{ seg.label }}
+                  <span style="font-variant-numeric: tabular-nums; opacity: .7">{{ seg.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <!-- Segment action banner (en riesgo) -->
+            <sc-if value="{{ riskSelected }}" hint-placeholder-val="{{ false }}">
+              <div style="border: 1px solid #DCE9E1; border-radius: 16px; background: #F3F8F5; padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; animation: orno-pop 150ms cubic-bezier(0.2,0,0,1); flex-wrap: wrap">
+                <i data-lucide="sparkles" style="width: 18px; height: 18px; color: #3E7354; flex-shrink: 0"></i>
+                <span style="font-size: 14.5px; flex: 1; min-width: 200px">Estas 12 personas no vienen hace más de 45 días. Un mensaje a tiempo suele recuperar a la mitad.</span>
+                <button style="height: 40px; padding: 0 18px; border-radius: 12px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 7px" style-hover="background: #4C8862"><i data-lucide="message-circle" style="width: 15px; height: 15px"></i>Enviar «Te extrañamos» a 12</button>
+              </div>
+            </sc-if>
+
+            <!-- Client list -->
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+              <div style="display: grid; grid-template-columns: 2.4fr 1.4fr 1.1fr 1.3fr 1fr; padding: 14px 28px; border-bottom: 1px solid #E8E4DE; background: #FAF9F7">
+                <span style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A">Cliente</span>
+                <span style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A">Ritmo</span>
+                <span style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A">Última visita</span>
+                <span style="font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8A847A">Valor</span>
+                <span></span>
+              </div>
+              <sc-for list="{{ clients }}" as="c" hint-placeholder-count="6">
+                <div onClick="{{ c.open }}" style="display: grid; grid-template-columns: 2.4fr 1.4fr 1.1fr 1.3fr 1fr; align-items: center; padding: 16px 28px; border-bottom: 1px solid #F4F2EE; cursor: pointer; transition: background 120ms" style-hover="background: #FAF9F7">
+                  <div style="display: flex; align-items: center; gap: 14px; min-width: 0">
+                    <span style="width: 44px; height: 44px; border-radius: 999px; background: {{ c.avatarBg }}; color: {{ c.avatarFg }}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0">{{ c.initials }}</span>
+                    <div style="min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ c.name }}</span>
+                        <span style="height: 22px; padding: 0 10px; border-radius: 999px; background: {{ c.tagBg }}; color: {{ c.tagFg }}; font-size: 11.5px; font-weight: 600; display: {{ c.tagDisplay }}; align-items: center; flex-shrink: 0">{{ c.tag }}</span>
+                      </div>
+                      <div style="font-size: 13px; color: #8A847A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ c.detail }}</div>
+                    </div>
+                  </div>
+                  <span style="font-size: 13.5px; color: #57534B">{{ c.rhythm }}</span>
+                  <span style="font-size: 13.5px; color: {{ c.lastFg }}; font-weight: {{ c.lastWeight }}">{{ c.last }}</span>
+                  <span style="font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums">{{ c.value }} <span style="font-size: 12.5px; font-weight: 500; color: #8A847A">· {{ c.visits }} visitas</span></span>
+                  <div style="display: flex; justify-content: flex-end; gap: 8px">
+                    <button title="WhatsApp" onClick="{{ stop }}" style="width: 38px; height: 38px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #57534B; cursor: pointer; display: inline-flex; align-items: center; justify-content: center" style-hover="background: #EAF2ED; color: #3E7354"><i data-lucide="message-circle" style="width: 16px; height: 16px"></i></button>
+                    <button title="Reservar" onClick="{{ stop }}" style="height: 38px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Reservar</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- States row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 40px">
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 18px">Vacío — sin clientes aún</div>
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 0">
+                  <span style="width: 52px; height: 52px; border-radius: 17px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; margin-bottom: 16px"><i data-lucide="heart" style="width: 24px; height: 24px"></i></span>
+                  <div style="font-size: 15.5px; font-weight: 600; margin-bottom: 4px">Tus clientes vivirán aquí</div>
+                  <div style="font-size: 13.5px; color: #57534B; line-height: 1.5; margin-bottom: 16px">Cada reserva crea su ficha sola. También puedes importar tus contactos.</div>
+                  <button style="height: 40px; padding: 0 18px; border-radius: 12px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer" style-hover="background: #4C8862">Importar contactos</button>
+                </div>
+              </div>
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 18px">Cargando</div>
+                <div style="display: flex; flex-direction: column; gap: 14px">
+                  <div style="display: flex; align-items: center; gap: 12px"><div style="width: 44px; height: 44px; border-radius: 999px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite"></div><div style="flex: 1"><div style="height: 13px; width: 55%; border-radius: 6px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite; margin-bottom: 7px"></div><div style="height: 11px; width: 38%; border-radius: 6px; background: #F4F2EE; animation: orno-shimmer 1.4s infinite"></div></div></div>
+                  <div style="display: flex; align-items: center; gap: 12px"><div style="width: 44px; height: 44px; border-radius: 999px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite .15s"></div><div style="flex: 1"><div style="height: 13px; width: 68%; border-radius: 6px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite .15s; margin-bottom: 7px"></div><div style="height: 11px; width: 42%; border-radius: 6px; background: #F4F2EE; animation: orno-shimmer 1.4s infinite .15s"></div></div></div>
+                  <div style="display: flex; align-items: center; gap: 12px"><div style="width: 44px; height: 44px; border-radius: 999px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite .3s"></div><div style="flex: 1"><div style="height: 13px; width: 48%; border-radius: 6px; background: #F0EDE8; animation: orno-shimmer 1.4s infinite .3s; margin-bottom: 7px"></div><div style="height: 11px; width: 30%; border-radius: 6px; background: #F4F2EE; animation: orno-shimmer 1.4s infinite .3s"></div></div></div>
+                </div>
+                <div style="font-size: 12.5px; color: #8A847A; margin-top: 16px">Solo tras 300ms; nunca parpadea.</div>
+              </div>
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A847A; margin-bottom: 18px">Error / sin resultados</div>
+                <div style="display: flex; flex-direction: column; gap: 14px">
+                  <div style="border: 1px solid #F0EDE8; border-radius: 14px; padding: 16px 18px">
+                    <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 4px"><i data-lucide="cloud-off" style="width: 16px; height: 16px; color: #C24E42"></i><span style="font-size: 14px; font-weight: 600">No pudimos cargar tus clientes</span></div>
+                    <div style="font-size: 13px; color: #57534B; margin-bottom: 12px">Revisa tu conexión. Tus datos están a salvo.</div>
+                    <button style="height: 34px; padding: 0 14px; border-radius: 10px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer" style-hover="background: #F4F2EE">Reintentar</button>
+                  </div>
+                  <div style="border: 1px solid #F0EDE8; border-radius: 14px; padding: 16px 18px">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px">Nada para «karlos»</div>
+                    <div style="font-size: 13px; color: #57534B">Prueba con menos letras — buscamos también apodos y teléfonos. ¿O es un cliente nuevo?</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </sc-if>
+
+      <!-- ══════════ VIEW: PROFILE ══════════ -->
+      <sc-if value="{{ inProfile }}" hint-placeholder-val="{{ false }}">
+        <main style="flex: 1">
+          <div style="max-width: 1200px; margin: 0 auto; padding: 32px 40px 80px">
+
+            <!-- ── Profile header ── -->
+            <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px 32px; margin-bottom: 20px">
+              <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap">
+                <div style="position: relative; flex-shrink: 0">
+                  <span style="width: 72px; height: 72px; border-radius: 999px; background: #EAF2ED; color: #3E7354; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600">JT</span>
+                  <span title="Foto del último corte" style="position: absolute; bottom: -4px; right: -4px; width: 28px; height: 28px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E8E4DE; display: flex; align-items: center; justify-content: center; color: #57534B; cursor: pointer" style-hover="color: #26231F"><i data-lucide="camera" style="width: 14px; height: 14px"></i></span>
+                </div>
+                <div style="flex: 1; min-width: 260px">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px">
+                    <h1 style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0">Julián Torres</h1>
+                    <span style="height: 24px; padding: 0 11px; border-radius: 999px; background: #EFEAF6; color: #6D5F91; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px"><i data-lucide="star" style="width: 12px; height: 12px"></i>Frecuente</span>
+                    <span style="height: 24px; padding: 0 11px; border-radius: 999px; background: #EAF2ED; color: #3E7354; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px"><i data-lucide="gem" style="width: 12px; height: 12px"></i>Miembro Club</span>
+                  </div>
+                  <p style="font-size: 14px; color: #57534B; margin: 0 0 14px">+54 11 5502 3311 · «Juli» · cliente desde mar 2024 · viene <strong style="color: #26231F">cada ~3 semanas</strong>, casi siempre con Nico</p>
+                  <div style="display: flex; gap: 24px; flex-wrap: wrap">
+                    <div><div style="font-size: 12.5px; color: #8A847A; margin-bottom: 2px">Visitas</div><div style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">24</div></div>
+                    <div><div style="font-size: 12.5px; color: #8A847A; margin-bottom: 2px">Total gastado</div><div style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">$412.000</div></div>
+                    <div><div style="font-size: 12.5px; color: #8A847A; margin-bottom: 2px">Habitual</div><div style="font-size: 15px; font-weight: 600; padding-top: 2px">Corte + barba</div></div>
+                    <div><div style="font-size: 12.5px; color: #8A847A; margin-bottom: 2px">Ausencias</div><div style="font-size: 15px; font-weight: 600; color: #3E7354; padding-top: 2px">Nunca faltó</div></div>
+                  </div>
+                </div>
+                <!-- Quick actions -->
+                <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0">
+                  <button style="height: 46px; padding: 0 22px; border-radius: 14px; border: none; background: #5F9F77; color: #FFFFFF; font-family: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px" style-hover="background: #4C8862"><i data-lucide="calendar-plus" style="width: 17px; height: 17px"></i>Reservar su habitual</button>
+                  <div style="display: flex; gap: 8px">
+                    <button title="WhatsApp" style="flex: 1; height: 40px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="message-circle" style="width: 15px; height: 15px; color: #3E7354"></i>WhatsApp</button>
+                    <button title="Cobrar" style="flex: 1; height: 40px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="shopping-bag" style="width: 15px; height: 15px; color: #57534B"></i>Cobrar</button>
+                    <button title="Nota" style="flex: 1; height: 40px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px" style-hover="background: #F4F2EE"><i data-lucide="sticky-note" style="width: 15px; height: 15px; color: #57534B"></i>Nota</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Insight banner ── -->
+            <div style="border: 1px solid #DCE9E1; border-radius: 16px; background: #F3F8F5; padding: 14px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap">
+              <i data-lucide="sparkles" style="width: 17px; height: 17px; color: #3E7354; flex-shrink: 0"></i>
+              <span style="font-size: 14px; flex: 1; min-width: 240px">Viene cada ~3 semanas y su última visita fue hace 19 días — <strong>le toca esta semana</strong>. Suele reservar los viernes a la tarde.</span>
+              <button style="height: 36px; padding: 0 16px; border-radius: 11px; border: none; background: #FFFFFF; color: #3E7354; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(38,35,31,.06)" style-hover="background: #EAF2ED">Ofrecerle el viernes 15:00</button>
+              <button title="Descartar" style="width: 32px; height: 32px; border-radius: 10px; border: none; background: transparent; color: #8A847A; cursor: pointer; display: inline-flex; align-items: center; justify-content: center" style-hover="background: #EAF2ED"><i data-lucide="x" style="width: 15px; height: 15px"></i></button>
+            </div>
+
+            <!-- ── Two columns ── -->
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start">
+
+              <!-- LEFT: Timeline -->
+              <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 28px">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 12px">
+                  <h2 style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 0">Historia</h2>
+                  <div style="display: inline-flex; background: #F4F2EE; border-radius: 12px; padding: 3px; gap: 2px">
+                    <sc-for list="{{ historyTabs }}" as="t" hint-placeholder-count="4">
+                      <button onClick="{{ t.select }}" style="height: 32px; padding: 0 14px; border-radius: 9px; border: none; background: {{ t.bg }}; color: {{ t.fg }}; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: {{ t.shadow }}">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column">
+                  <sc-for list="{{ timeline }}" as="ev" hint-placeholder-count="6">
+                    <div style="display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #F4F2EE">
+                      <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 40px">
+                        <span style="width: 36px; height: 36px; border-radius: 12px; background: {{ ev.iconBg }}; color: {{ ev.iconFg }}; display: flex; align-items: center; justify-content: center"><i data-lucide="{{ ev.icon }}" style="width: 16px; height: 16px"></i></span>
+                      </div>
+                      <div style="min-width: 0; flex: 1">
+                        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+                          <span style="font-size: 14.5px; font-weight: 600">{{ ev.title }}</span>
+                          <span style="font-size: 12.5px; color: #8A847A; flex-shrink: 0; font-variant-numeric: tabular-nums">{{ ev.when }}</span>
+                        </div>
+                        <div style="font-size: 13.5px; color: #57534B; line-height: 1.5; margin-top: 2px">{{ ev.body }}</div>
+                        <div style="display: {{ ev.photosDisplay }}; gap: 8px; margin-top: 10px">
+                          <span style="width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #E8E4DE, #D8D3CA); display: inline-flex; align-items: center; justify-content: center; color: #8A847A; cursor: pointer" title="Foto del corte"><i data-lucide="image" style="width: 20px; height: 20px"></i></span>
+                          <span style="width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #E8E4DE, #D8D3CA); display: inline-flex; align-items: center; justify-content: center; color: #8A847A; cursor: pointer" title="Foto del corte"><i data-lucide="image" style="width: 20px; height: 20px"></i></span>
+                        </div>
+                        <div style="display: {{ ev.amountDisplay }}; margin-top: 6px"><span style="font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums">{{ ev.amount }}</span> <span style="font-size: 12.5px; color: #8A847A">{{ ev.amountMeta }}</span></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <button style="margin-top: 16px; height: 40px; border-radius: 12px; border: none; background: transparent; color: #57534B; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; align-self: center; padding: 0 20px" style-hover="background: #F4F2EE">Ver historia completa</button>
+                </div>
+              </div>
+
+              <!-- RIGHT: rail -->
+              <div style="display: flex; flex-direction: column; gap: 20px">
+
+                <!-- Notes (pinned first — most valuable) -->
+                <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFF9EE; border-color: #EFE4CC; padding: 24px">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+                    <h2 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px"><i data-lucide="sticky-note" style="width: 16px; height: 16px; color: #8F6A1F"></i>Notas de la silla</h2>
+                    <button style="height: 32px; padding: 0 13px; border-radius: 10px; border: none; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(38,35,31,.06)" style-hover="background: #F4F2EE">Añadir</button>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <div style="background: #FFFFFF; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5">«La <strong>2 a los costados, tijera arriba</strong>. Raya baja a la izquierda.»<div style="font-size: 12px; color: #8A847A; margin-top: 4px">Nico · fijada</div></div>
+                    <div style="background: #FFFFFF; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5">Alergia a productos con mentol.<div style="font-size: 12px; color: #8A847A; margin-top: 4px">María · hace 2 meses</div></div>
+                  </div>
+                </div>
+
+                <!-- Loyalty + membership -->
+                <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                  <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 16px">Club Ornō</h2>
+                  <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px">
+                    <div style="flex: 1">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 6px"><span style="font-size: 13px; color: #57534B">8 de 10 cortes</span><span style="font-size: 13px; font-weight: 600; color: #3E7354">falta 2 para uno gratis</span></div>
+                      <div style="height: 8px; border-radius: 999px; background: #F4F2EE; overflow: hidden"><div style="width: 80%; height: 100%; border-radius: 999px; background: #5F9F77"></div></div>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #F4F2EE">
+                    <div><div style="font-size: 13.5px; font-weight: 600">Membresía mensual</div><div style="font-size: 12.5px; color: #8A847A">2 cortes/mes · renueva el 12 jul</div></div>
+                    <span style="height: 24px; padding: 0 11px; border-radius: 999px; background: #EAF2ED; color: #3E7354; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center">Activa</span>
+                  </div>
+                </div>
+
+                <!-- Products he buys -->
+                <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                  <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 14px">Sus productos</h2>
+                  <div style="display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: flex; align-items: center; gap: 12px">
+                      <span style="width: 36px; height: 36px; border-radius: 11px; background: #F4F2EE; display: flex; align-items: center; justify-content: center; color: #57534B"><i data-lucide="package" style="width: 16px; height: 16px"></i></span>
+                      <div style="flex: 1; min-width: 0"><div style="font-size: 13.5px; font-weight: 600">Cera mate</div><div style="font-size: 12.5px; color: #8A847A">Compra cada ~2 meses · última hace 7 semanas</div></div>
+                      <button style="height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid #E8E4DE; background: #FFFFFF; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; flex-shrink: 0" style-hover="background: #F4F2EE">Sugerir</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px">
+                      <span style="width: 36px; height: 36px; border-radius: 11px; background: #F4F2EE; display: flex; align-items: center; justify-content: center; color: #57534B"><i data-lucide="droplets" style="width: 16px; height: 16px"></i></span>
+                      <div style="flex: 1; min-width: 0"><div style="font-size: 13.5px; font-weight: 600">Aceite de barba</div><div style="font-size: 12.5px; color: #8A847A">1 compra · abr 2026</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- WhatsApp templates -->
+                <div style="border: 1px solid #E8E4DE; border-radius: 20px; background: #FFFFFF; padding: 24px">
+                  <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 6px">Mensajes en un toque</h2>
+                  <p style="font-size: 12.5px; color: #8A847A; margin: 0 0 14px">Se abren en WhatsApp ya escritos, con su nombre y su horario habitual.</p>
+                  <div style="display: flex; flex-direction: column; gap: 8px">
+                    <button style="height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left" style-hover="background: #EAF2ED; border-color: #DCE9E1"><i data-lucide="calendar-heart" style="width: 15px; height: 15px; color: #3E7354"></i>«¿Te reservo el viernes a las 15:00?»</button>
+                    <button style="height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left" style-hover="background: #EAF2ED; border-color: #DCE9E1"><i data-lucide="gift" style="width: 15px; height: 15px; color: #9A5A3B"></i>«¡Feliz cumple, Juli!» · 22 jul</button>
+                    <button style="height: 42px; padding: 0 16px; border-radius: 12px; border: 1px solid #E8E4DE; background: #FFFFFF; color: #26231F; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left" style-hover="background: #EAF2ED; border-color: #DCE9E1"><i data-lucide="heart-handshake" style="width: 15px; height: 15px; color: #6D5F91"></i>«Gracias por la reseña de 5 estrellas»</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 960}}">
+class Component extends DCLogic {
+  state = { view: 'list', segment: 'todos', historyTab: 'todo' };
+
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons() {
+    if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 1.75 } });
+    else setTimeout(() => this._icons(), 200);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const seg = (key, label, count) => ({
+      label, count,
+      bg: s.segment === key ? '#5F9F77' : '#FFFFFF',
+      fg: s.segment === key ? '#FFFFFF' : '#26231F',
+      border: s.segment === key ? '1px solid #5F9F77' : '1px solid #E8E4DE',
+      select: () => this.setState({ segment: key }),
+    });
+
+    const tab = (key, label) => ({
+      label,
+      bg: s.historyTab === key ? '#FFFFFF' : 'transparent',
+      fg: s.historyTab === key ? '#26231F' : '#57534B',
+      shadow: s.historyTab === key ? '0 1px 2px rgba(38,35,31,.08)' : 'none',
+      select: () => this.setState({ historyTab: key }),
+    });
+
+    const allTimeline = [
+      { kind: 'visita', icon: 'scissors', iconBg: '#EAF2ED', iconFg: '#3E7354', title: 'Corte + barba con Nico', when: 'hace 19 días', body: 'Se fue contento. Nota de Nico: «probamos degradado más alto, le gustó».', photosDisplay: 'flex', amountDisplay: 'block', amount: '$24.000', amountMeta: '· tarjeta · con propina' },
+      { kind: 'compra', icon: 'shopping-bag', iconBg: '#EAEFF4', iconFg: '#4A6B87', title: 'Compró Cera mate', when: 'hace 7 sem', body: 'Junto con su corte. Segunda unidad este año.', photosDisplay: 'none', amountDisplay: 'block', amount: '$8.500', amountMeta: '· efectivo' },
+      { kind: 'whatsapp', icon: 'message-circle', iconBg: '#F3F8F5', iconFg: '#3E7354', title: 'Confirmó por WhatsApp', when: 'hace 7 sem', body: '«Dale, nos vemos el viernes 👊» — respondió al recordatorio en 4 minutos.', photosDisplay: 'none', amountDisplay: 'none', amount: '', amountMeta: '' },
+      { kind: 'visita', icon: 'scissors', iconBg: '#EAF2ED', iconFg: '#3E7354', title: 'Corte + barba con Nico', when: 'hace 6 sem', body: 'Llegó 10 min antes. Pidió la raya más marcada.', photosDisplay: 'none', amountDisplay: 'block', amount: '$24.000', amountMeta: '· membresía' },
+      { kind: 'nota', icon: 'sticky-note', iconBg: '#F7EFDD', iconFg: '#8F6A1F', title: 'María añadió una nota', when: 'hace 2 meses', body: '«Alergia a productos con mentol» — marcada como importante.', photosDisplay: 'none', amountDisplay: 'none', amount: '', amountMeta: '' },
+      { kind: 'hito', icon: 'gem', iconBg: '#EFEAF6', iconFg: '#6D5F91', title: 'Se unió al Club Ornō', when: 'mar 2026', body: 'Membresía mensual de 2 cortes. Nunca la pausó.', photosDisplay: 'none', amountDisplay: 'none', amount: '', amountMeta: '' },
+    ];
+    const filterMap = { todo: null, visitas: 'visita', compras: 'compra', notas: 'nota' };
+    const f = filterMap[s.historyTab];
+    const timeline = f ? allTimeline.filter(e => e.kind === f) : allTimeline;
+
+    const client = (name, initials, avatarBg, avatarFg, detail, rhythm, last, lastRisk, value, visits, tag, tagBg, tagFg) => ({
+      name, initials, avatarBg, avatarFg, detail, rhythm, last, value, visits,
+      lastFg: lastRisk ? '#8F6A1F' : '#57534B', lastWeight: lastRisk ? 600 : 400,
+      tag: tag || '', tagBg: tagBg || '#F4F2EE', tagFg: tagFg || '#57534B', tagDisplay: tag ? 'inline-flex' : 'none',
+      open: () => this.setState({ view: 'profile' }),
+    });
+
+    const allClients = [
+      client('Julián Torres', 'JT', '#EAF2ED', '#3E7354', 'Corte + barba · con Nico · «Juli»', 'Cada ~3 semanas', 'hace 19 días', false, '$412.000', 24, 'Frecuente', '#EFEAF6', '#6D5F91'),
+      client('Santiago Duarte', 'SD', '#EFEAF6', '#6D5F91', 'Corte clásico · sin preferencia', 'Cada ~2 semanas', 'ayer', false, '$566.000', 31, 'Frecuente', '#EFEAF6', '#6D5F91'),
+      client('Lucas Ríos', 'LR', '#EAEFF4', '#4A6B87', 'Corte + barba · con Nico', 'Irregular', 'hace 47 días', true, '$144.000', 8, 'En riesgo', '#F7EFDD', '#8F6A1F'),
+      client('Tomás Medina', 'TM', '#F6EBE4', '#9A5A3B', 'Corte + barba · vino ayer por primera vez', '1 visita', 'ayer', false, '$24.000', 1, 'Nuevo', '#F6EBE4', '#9A5A3B'),
+      client('Marcos Vidal', 'MV', '#F6EBE4', '#9A5A3B', 'Corte clásico · con Rama', 'Cada ~4 semanas', 'hace 2 sem', false, '$198.500', 11, '', '', ''),
+      client('Iván Leiva', 'IL', '#EAEFF4', '#4A6B87', 'Corte clásico · faltó 2 veces', 'Irregular', 'hace 61 días', true, '$87.000', 5, 'En riesgo', '#F7EFDD', '#8F6A1F'),
+    ];
+    const segFilter = {
+      todos: () => true,
+      frecuentes: c => c.tag === 'Frecuente',
+      nuevos: c => c.tag === 'Nuevo',
+      riesgo: c => c.tag === 'En riesgo',
+      cumples: c => c.name === 'Julián Torres',
+    }[s.segment] || (() => true);
+
+    return {
+      inList: s.view === 'list',
+      inProfile: s.view === 'profile',
+      goList: () => this.setState({ view: 'list' }),
+      stop: (e) => e.stopPropagation(),
+      riskSelected: s.segment === 'riesgo',
+      segments: [
+        seg('todos', 'Todos', 248),
+        seg('frecuentes', 'Frecuentes', 64),
+        seg('nuevos', 'Nuevos este mes', 17),
+        seg('riesgo', 'En riesgo', 12),
+        seg('cumples', 'Cumplen en julio', 9),
+      ],
+      clients: allClients.filter(segFilter),
+      historyTabs: [tab('todo', 'Todo'), tab('visitas', 'Visitas'), tab('compras', 'Compras'), tab('notas', 'Notas')],
+      timeline,
+    };
+  }
+}
+</script>
+</body>
+</html>

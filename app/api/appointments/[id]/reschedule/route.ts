@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withRateLimit, strictLimiter } from "@/lib/rate-limit"
 import { rescheduleAppointmentSchema } from "@/lib/schemas"
-import { isDemoMode, DEMO_BUSINESS_SETTINGS } from "@/lib/demo-config"
+import { isDemoMode, DEMO_BUSINESS_SETTINGS } from "@/lib/demo"
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server"
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const
@@ -99,7 +99,7 @@ export async function PATCH(
         .eq("id", user.id)
         .single()
 
-      const isAdmin = ["admin", "manager"].includes(userProfile?.role ?? "")
+      const isAdmin = userProfile?.role === "admin"
       const isOwner = appointment.client_id === user.id
 
       if (!isAdmin && !isOwner) {

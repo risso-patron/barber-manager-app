@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { createAdminSupabaseClient } from "@/lib/supabase/server"
+import { signActivationToken } from "@/lib/booking-activation-token"
 
 /**
  * API Route para crear reservas desde el enlace público
@@ -80,8 +83,24 @@ export async function POST(request: NextRequest) {
     // Buscar o crear cliente por teléfono/email
     let clientId: string
 
-    // Si viene un clientId (usuario logueado), usarlo directamente
+    // Si viene un clientId (usuario logueado), verificar que corresponda a
+    // la sesión real que hace la request antes de confiar en él (RR-S3).
     if (data.clientId) {
+      const cookieStore = await cookies()
+      const sessionClient = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { cookies: { getAll: () => cookieStore.getAll() } }
+      )
+      const { data: { user: sessionUser } } = await sessionClient.auth.getUser()
+
+      if (!sessionUser || sessionUser.id !== data.clientId) {
+        return NextResponse.json(
+          { success: false, error: "No autorizado para reservar en nombre de este cliente" },
+          { status: 403 }
+        )
+      }
+
       clientId = data.clientId
     } else {
     // Buscar usuario existente por email o teléfono
@@ -111,16 +130,36 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "Error creando cliente" }, { status: 500 })
       }
 
-      const { error: profileError } = await supabase.from("users").insert({
-        id: authData.user.id,
+      // RH-003: on_auth_user_created ya crea la fila en public.users al
+      // crearse el auth user — UPDATE la completa; INSERT solo si esa
+      // fila no existe (0 filas afectadas por el UPDATE).
+      const profileFields = {
         name: data.clientName,
         email: data.clientEmail || `${data.clientPhone.replace(/\D/g, "")}@guest.barber`,
         phone: data.clientPhone,
         role: "client",
-      })
+      }
 
-      if (profileError) {
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from("users")
+        .update(profileFields)
+        .eq("id", authData.user.id)
+        .select()
+        .maybeSingle()
+
+      if (updateError) {
         return NextResponse.json({ success: false, error: "Error creando perfil" }, { status: 500 })
+      }
+
+      if (!updatedProfile) {
+        const { error: profileError } = await supabase.from("users").insert({
+          id: authData.user.id,
+          ...profileFields,
+        })
+
+        if (profileError) {
+          return NextResponse.json({ success: false, error: "Error creando perfil" }, { status: 500 })
+        }
       }
 
       clientId = authData.user.id
@@ -194,7 +233,11 @@ if (hasOverlap) {
       createdAt: appointment.created_at,
     }
 
-    // Encolar notificación (procesada de forma asíncrona por la Edge Function)
+    // Token de activación de cuenta (RH-002 · A1) — válido solo para este
+    // cliente/teléfono, 15 minutos, sin almacenamiento adicional.
+    const activationToken = signActivationToken(clientId, data.clientPhone)
+
+    // Encolar notificación (procesada de forma asíncrona por el cron de Vercel — ADR-028)
     try {
       const shopName = data.barbershop
         .replace(/-/g, " ")
@@ -236,6 +279,7 @@ if (hasOverlap) {
     return NextResponse.json({
       success: true,
       booking,
+      activationToken,
       message: "Reserva creada exitosamente"
     })
 
@@ -243,94 +287,6 @@ if (hasOverlap) {
     console.error("Error creando reserva pública:", error)
     return NextResponse.json(
       { success: false, error: "Error procesando la reserva" },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * GET /api/bookings/public?phone=xxx
- * Obtener reservas por teléfono (para clientes sin cuenta)
- */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const phone = searchParams.get("phone")
-
-    if (!phone) {
-      return NextResponse.json(
-        { success: false, error: "Teléfono requerido" },
-        { status: 400 }
-      )
-    }
-
-    const hasSupabaseConfig = Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-    if (!hasSupabaseConfig) {
-      return NextResponse.json({ success: true, bookings: [] })
-    }
-
-    const supabase = createAdminSupabaseClient()
-
-    // Buscar cliente por teléfono
-    const { data: client } = await supabase
-      .from("users")
-      .select("id")
-      .eq("phone", phone)
-      .eq("role", "client")
-      .maybeSingle()
-
-    if (!client) {
-      return NextResponse.json({ success: true, bookings: [] })
-    }
-
-    const { data: bookings, error } = await supabase
-      .from("appointments")
-      .select(`
-        id,
-        appointment_date,
-        appointment_time,
-        status,
-        notes,
-        services ( name, price ),
-        users!appointments_barber_id_fkey ( name )
-      `)
-      .eq("client_id", client.id)
-      .order("appointment_date", { ascending: false })
-
-    if (error) {
-      return NextResponse.json({ success: false, error: "Error consultando reservas" }, { status: 500 })
-    }
-
-    interface BookingRow {
-      id: string
-      appointment_date: string
-      appointment_time: string
-      status: string
-      notes?: string | null
-      services?: { name?: string; price?: number }[] | null
-      users?: { name?: string }[] | null
-    }
-    const formatted = (bookings as unknown as BookingRow[] || []).map((b) => ({
-      id: b.id,
-      serviceName: b.services?.[0]?.name,
-      employeeName: b.users?.[0]?.name,
-      date: b.appointment_date,
-      time: b.appointment_time,
-      status: b.status,
-      price: b.services?.[0]?.price,
-    }))
-
-    return NextResponse.json({
-      success: true,
-      bookings: formatted
-    })
-
-  } catch (error) {
-    console.error("Error obteniendo reservas:", error)
-    return NextResponse.json(
-      { success: false, error: "Error obteniendo reservas" },
       { status: 500 }
     )
   }

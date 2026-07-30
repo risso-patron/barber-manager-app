@@ -3,13 +3,18 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
+import { roleHome } from "@/lib/routes"
 
-const DASHBOARD_MAP: Record<string, string> = {
-  admin: "/admin",
-  manager: "/admin",
-  employee: "/employee/dashboard",
-  barber: "/barber",
-  client: "/client",
+function isPlaceholder(value: string | undefined): boolean {
+  if (!value) return true
+  const lower = value.toLowerCase()
+  return (
+    lower.includes("tu_") ||
+    lower.includes("pega_aqui") ||
+    lower.includes("aqui_") ||
+    lower.includes("your-") ||
+    lower.includes("your_")
+  )
 }
 
 export function useRequireAuth(allowedRoles?: string[]) {
@@ -20,9 +25,11 @@ export function useRequireAuth(allowedRoles?: string[]) {
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
+    const hasSupabaseConfig = !isDemoMode && !isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey)
 
     // --- DEMO MODE (sin Supabase) ---
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!hasSupabaseConfig) {
       const currentUserStr = localStorage.getItem("currentUser")
       if (!currentUserStr) {
         router.replace("/auth/login")
@@ -36,7 +43,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
           return
         }
         if (allowedRoles?.length && !allowedRoles.includes(currentUser.role)) {
-          router.replace(DASHBOARD_MAP[currentUser.role] || "/auth/login")
+          router.replace(roleHome(currentUser.role))
           return
         }
         setUser(currentUser)
@@ -48,7 +55,9 @@ export function useRequireAuth(allowedRoles?: string[]) {
     }
 
     // --- SUPABASE MODE ---
-    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+    // hasSupabaseConfig (above) already guarantees these are defined at runtime;
+    // the assertion is needed because isPlaceholder() isn't a type guard TS can follow.
+    const supabase = createBrowserClient(supabaseUrl!, supabaseAnonKey!)
 
     const checkSession = async () => {
       const { data: { user: authUser }, error } = await supabase.auth.getUser()
@@ -68,7 +77,7 @@ export function useRequireAuth(allowedRoles?: string[]) {
       const role = profile?.role || "client"
 
       if (allowedRoles?.length && !allowedRoles.includes(role)) {
-        router.replace(DASHBOARD_MAP[role] || "/auth/login")
+        router.replace(roleHome(role))
         return
       }
 

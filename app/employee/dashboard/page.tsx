@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment, getAppointmentsByEmployee } from "@/lib/demo-appointments"
+import { type Appointment, getAppointmentsByEmployee } from "@/lib/demo"
 import { createBrowserClient } from "@supabase/ssr"
 import { CheckCircle, Calendar, AlertCircle, XCircle, Clock } from "lucide-react"
 

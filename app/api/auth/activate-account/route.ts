@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { verifyActivationToken } from "@/lib/booking-activation-token"
 
 /**
  * Activa la cuenta de un invitado que ya tiene un registro en auth.users (creado por
  * el booking API) pero sin contraseña.
  *
  * POST /api/auth/activate-account
- * Body: { phone, email, password }
+ * Body: { phone, email, password, token }
+ *
+ * `token` es emitido por POST /api/bookings/public al completar la reserva
+ * (RH-002 · A1) — prueba que quien activa es quien acaba de reservar en esta
+ * misma sesión, no solo alguien que conoce el teléfono.
  *
  * 1. Busca el usuario en public.users por teléfono
- * 2. Si el email guardado era el fake (@guest.barber) y el usuario provee uno real → lo actualiza
- * 3. Pone la contraseña con admin.updateUserById
+ * 2. Verifica el token contra ese usuario
+ * 3. Si el email guardado era el fake (@guest.barber) y el usuario provee uno real → lo actualiza
+ * 4. Pone la contraseña con admin.updateUserById
  */
 export async function POST(request: NextRequest) {
   const supabase = createClient(
@@ -19,9 +25,9 @@ export async function POST(request: NextRequest) {
   )
 
   try {
-    const { phone, email, password } = await request.json()
+    const { phone, email, password, token } = await request.json()
 
-    if (!phone || !email || !password) {
+    if (!phone || !email || !password || !token) {
       return NextResponse.json(
         { success: false, error: "Faltan datos requeridos" },
         { status: 400 }
@@ -47,6 +53,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "No se encontró ninguna reserva con ese teléfono" },
         { status: 404 }
+      )
+    }
+
+    const tokenCheck = verifyActivationToken(token, { uid: profile.id, phone })
+    if (!tokenCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: "El enlace de activación expiró o no es válido. Volvé a intentarlo desde tu reserva." },
+        { status: 401 }
       )
     }
 

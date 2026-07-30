@@ -1,0 +1,27 @@
+{
+  "name": "Ornō — Gestión que embellece tu negocio",
+  "short_name": "Ornō",
+  "description": "Citas, caja, clientes y equipo para tu barbería.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F7",
+  "theme_color": "#FAF9F7",
+  "icons": [
+    {
+      "src": "/brand/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/app-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,12 +1,14 @@
 "use client"
 
+// M3 · Migrated onto FormModal + Field. Same props, same validation,
+// same onSave payloads — only the modal shell and inputs changed.
+
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { FormModal } from "@/components/ui/form-modal"
+import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X } from "lucide-react"
-import type { Client } from "@/lib/demo-appointments"
+import type { Client } from "@/lib/demo"
 
 interface ClientModalProps {
   isOpen: boolean
@@ -16,13 +18,6 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProps) {
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", handler)
-    return () => document.removeEventListener("keydown", handler)
-  }, [isOpen, onClose])
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -82,9 +77,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     return !newErrors.name && !newErrors.email && !newErrors.phone
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleSubmit = () => {
     if (!validateForm()) return
 
     const clientData = {
@@ -95,8 +88,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     }
 
     if (client) {
-      onSave({ 
-        ...clientData, 
+      onSave({
+        ...clientData,
         id: client.id,
         createdAt: client.createdAt,
       })
@@ -105,100 +98,65 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    <FormModal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      title={client ? "Editar Cliente" : "Nuevo Cliente"}
+      submitLabel={client ? "Guardar Cambios" : "Crear Cliente"}
+      onSubmit={handleSubmit}
+      size="sm"
     >
-      <Card role="dialog" aria-modal="true" aria-labelledby="client-modal-title" className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle id="client-modal-title">{client ? "Editar Cliente" : "Nuevo Cliente"}</CardTitle>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar modal">
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                Nombre Completo <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="ej. Juan Pérez"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
-              )}
-            </div>
+      <Field label="Nombre Completo" htmlFor="name" required error={errors.name || undefined}>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="ej. Juan Pérez"
+          error={!!errors.name}
+        />
+      </Field>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                Email <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="ej. juan@example.com"
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email}</p>
-              )}
-            </div>
+      <Field label="Email" htmlFor="email" required error={errors.email || undefined}>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          placeholder="ej. juan@example.com"
+          error={!!errors.email}
+        />
+      </Field>
 
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">
-                Teléfono <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="ej. 1234567890"
-              />
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone}</p>
-              )}
-            </div>
+      <Field label="Teléfono" htmlFor="phone" required error={errors.phone || undefined}>
+        <Input
+          id="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          placeholder="ej. 1234567890"
+          error={!!errors.phone}
+        />
+      </Field>
 
-            {/* Active Status */}
-            {client && (
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <Label htmlFor="isActive" className="cursor-pointer">
-                  Cliente activo
-                </Label>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button type="submit" className="flex-1">
-                {client ? "Guardar Cambios" : "Crear Cliente"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      {/* Active Status */}
+      {client && (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            aria-label="Cliente activo"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="size-4 rounded border-border accent-[hsl(var(--primary))]"
+          />
+          <Label htmlFor="isActive" className="cursor-pointer">
+            Cliente activo
+          </Label>
+        </div>
+      )}
+    </FormModal>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
-import { type Appointment, getAppointmentsByEmployee } from "@/lib/demo-appointments"
+import { type Appointment, type AppointmentStatus, getAppointmentsByEmployee, STATUS_LABELS as APPOINTMENT_STATUS_LABELS } from "@/lib/demo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -85,7 +85,7 @@ const BLOCK_TYPE_COLORS: Record<string, string> = {
 }
 
 export default function EmployeeSchedulePage() {
-  const user = useRequireAuth(["employee", "admin", "manager"])
+  const user = useRequireAuth(["employee", "admin"])
   const [activeTab, setActiveTab] = useState<"day" | "week" | "blocks">("day")
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -179,13 +179,10 @@ export default function EmployeeSchedulePage() {
       case "completed": return <CheckCircle className="h-4 w-4" />
       case "pending":   return <AlertCircle className="h-4 w-4" />
       case "cancelled": return <XCircle className="h-4 w-4" />
+      case "no_show":   return <Ban className="h-4 w-4" />
       default:          return <Clock className="h-4 w-4" />
     }
   }
-  const getStatusLabel = (s: string) => ({
-    completed: "Completada", confirmed: "Confirmada", pending: "Pendiente",
-    cancelled: "Cancelada", no_show: "No se presentó",
-  }[s] ?? s)
 
   const handleSaveBlock = async () => {
     setBlockError("")
@@ -427,7 +424,7 @@ export default function EmployeeSchedulePage() {
                         {apt.time} · {apt.serviceName}
                       </p>
                       <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: apt.status === "confirmed" ? "#8A8A8A" : apt.status === "completed" ? "#22C55E" : apt.status === "cancelled" ? "#E53935" : "#F59E0B" }}>
-                        {getStatusLabel(apt.status)}
+                        {APPOINTMENT_STATUS_LABELS[apt.status as AppointmentStatus] ?? apt.status}
                       </span>
                     </div>
                     <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A", marginTop: "2px" }}>
@@ -476,6 +473,12 @@ export default function EmployeeSchedulePage() {
       {/* ── TAB: BLOQUEOS ── */}
       {activeTab === "blocks" && (
         <div className="grid gap-6 lg:grid-cols-2">
+          {!supabase && (
+            <div className="lg:col-span-2" style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: "4px", padding: "10px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "9px", letterSpacing: "0.14em", textTransform: "uppercase", color: "#111", background: "#8A8A8A", padding: "2px 6px", borderRadius: "2px", flexShrink: 0 }}>Demo</span>
+              <p style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: "#8A8A8A" }}>Los bloqueos se guardan en memoria y se pierden al reiniciar el servidor.</p>
+            </div>
+          )}
           <div style={{ background: "#1A1A1A", border: "1px solid #2E2E2E", borderRadius: "8px", padding: "24px" }}>
             <div style={{ marginBottom: "20px" }}>
               <p style={{ fontFamily: "var(--font-cormorant)", fontSize: "20px", fontWeight: 300, color: "#F0F0F0" }}>Nuevo bloqueo</p>
